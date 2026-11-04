@@ -1,0 +1,24 @@
+# Valla: ficheros de estado de los hooks, no se versionan.
+.cursor/hooks/gauntlet.lock
+.cursor/hooks/gate-timings.log
+.cursor/hooks/gates.lock
+
+# Gradle y Java
+.gradle/
+backend/build/
+backend/.gradle/
+out/
+*.class
+*.log
+# .cursor/red.log no se ignora: es la evidencia del RED.
+!.cursor/red.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# Sistema
+.DS_Store
+Thumbs.db

@@ -1,0 +1,27 @@
+server:
+  address: 0.0.0.0
+  port: ${PORT:8080}
+
+spring:
+  datasource:
+    url: ${RESOLVO_DB_URL:jdbc:postgresql://localhost:5432/resolvo}
+    username: ${RESOLVO_DB_USER:resolvo}
+    password: ${RESOLVO_DB_PASSWORD:resolvo}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+    placeholder-replacement: false
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+resolvo:
+  cookie:
+    secure: false
+  jwt:
+    secret: ${RESOLVO_JWT_SECRET}

@@ -1,0 +1,12 @@
+:root {
+  --status-open: var(--blue);
+  --status-pending: var(--yellow);
+  --status-resolved: var(--green);
+  --status-closed: var(--text-3);
+  --sla-ok: var(--text-3);
+  --sla-risk: var(--orange);
+  --sla-breached: var(--red);
+  --priority-urgent: var(--red);
+  --priority-high: var(--orange);
+  --tint: 12%;
+}
