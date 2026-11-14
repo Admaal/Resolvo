@@ -24,6 +24,8 @@ public class FiltroHttp {
                     .permitAll()
                     .requestMatchers(HttpMethod.DELETE, "/api/sesion")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/salud")
+                    .permitAll()
                     .anyRequest()
                     .authenticated())
         .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> {}))

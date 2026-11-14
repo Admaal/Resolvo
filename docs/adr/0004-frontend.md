@@ -24,3 +24,4 @@ Angular standalone con Angular Material, `core/` para auth e interceptores y `fe
 - El runner de tests unitarios (Karma o Jest) queda abierto en `docs/producto.md`.
 - Cualquier pantalla nueva sigue [docs/design.md](../design.md). Si el diseño y este ADR se contradicen, manda el diseño en lo visual y este ADR en el stack.
 - Cerrado el 2026-11-04: Angular 22.2.5 y Vitest. No se sube de mayor a mitad del plan.
+- Cerrado el 2026-11-14: no hay `API_URL` en build. La SPA sigue llamando a `/api/...` y una Pages Function (`frontend/functions/api/[[path]].ts`) reenvía a la API con la variable `API_ORIGIN`. Mismo origen, sin CORS.

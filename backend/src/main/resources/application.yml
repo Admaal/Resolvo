@@ -16,6 +16,11 @@ spring:
   flyway:
     enabled: true
     placeholder-replacement: false
+    # Neon: la app sirve por el endpoint pooled y migra por la conexion directa (ADR-0009).
+    # Sin RESOLVO_DB_MIGRATION_*, Flyway usa la misma conexion que la app.
+    url: ${RESOLVO_DB_MIGRATION_URL:${spring.datasource.url}}
+    user: ${RESOLVO_DB_MIGRATION_USER:${spring.datasource.username}}
+    password: ${RESOLVO_DB_MIGRATION_PASSWORD:${spring.datasource.password}}
   jackson:
     serialization:
       write-dates-as-timestamps: false

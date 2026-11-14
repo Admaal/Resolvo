@@ -8,6 +8,13 @@ html, body {
   font-feature-settings: "cv01", "ss03", "tnum";
 }
 
+.aviso-servidor {
+  padding: var(--space-1) 16px;
+  background: color-mix(in srgb, var(--orange) 16%, var(--bg-1));
+  border-bottom: 1px solid var(--orange);
+  color: var(--text-1);
+}
+
 button, input, select, textarea {
   font: inherit;
   color: inherit;
