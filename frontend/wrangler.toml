@@ -1,0 +1,7 @@
+name = "resolvo"
+compatibility_date = "2026-11-01"
+pages_build_output_dir = "dist/frontend/browser"
+
+# URL pública de la API (no es un secreto). La Pages Function de /api reenvía aquí.
+[vars]
+API_ORIGIN = "https://resolvo-api.onrender.com"
