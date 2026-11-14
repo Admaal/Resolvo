@@ -19,3 +19,4 @@
 2026-11-04T17:12:22 fast no-sha RED backend/src/test/java/com/admaal/resolvo/application/ListarTicketsTest.java exit=1
 2026-11-04T17:12:33 fast no-sha RED backend/src/test/java/com/admaal/resolvo/application/AsignarTicketTest.java exit=1
 2026-11-04T17:47:04 fast no-sha RED backend/src/test/java/com/admaal/resolvo/infrastructure/web/TicketHttpTest.java exit=1
+2026-11-14T13:17:36 fast 9b4e8a4a63a6fb6a5d9a0306ba07550cf178988e RED frontend/src/app/core/servidor.service.spec.ts exit=1

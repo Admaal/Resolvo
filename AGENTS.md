@@ -6,11 +6,11 @@ Este archivo es la fuente de verdad de la fase y de la valla. El historial vive 
 
 ## Fase actual
 
-**Fase 1 — sesión, tickets y bandeja local.** Hecha.
+**Fase 2 — MVP desplegado con URL pública y login demo.** En curso.
 
-Un cliente entra, abre un ticket en ABIERTO con vencimiento de primera respuesta, y la API aísla organizaciones y roles. La SPA local cubre login, alta, bandeja y detalle. Sin IA y sin despliegue.
+Hecho en el repo: `GET /api/salud`, semilla de demo `V3`, Flyway por conexión directa, proxy de Pages (`frontend/functions/`), aviso «despertando servidor…» y `backend/Dockerfile`. Falta aprovisionar Neon, Render y Pages, el ping, el humo en la URL pública y cerrar la fase (pasos en [README.md](README.md)). Sin IA.
 
-**La fase 2 no está empezada.** No hay URL pública, ni aviso de servidor dormido, ni panel de IA.
+La fase 1 (sesión, tickets y bandeja local) está hecha. **La fase 3 no está empezada.**
 
 ## Stack
 

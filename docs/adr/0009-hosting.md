@@ -29,3 +29,5 @@ Tres servicios: **Neon Free** para Postgres + pgvector, **Render Free** para la 
 - La conexión a Neon usa el endpoint pooled; las migraciones Flyway se ejecutan contra la cadena de conexión directa o con el pooler en modo sesión, según lo que admita el plan.
 - Si el ping se cae, la API se duerme igual y despierta con la siguiente visita: no hay pérdida de datos, solo latencia.
 - Las cuotas reales de Neon y Render se anotan con fecha antes de la fase 2.
+- Cerrado el 2026-11-14: la API se empaqueta con CDS, no con AOT. En JVM, AOT solo entra en el jar con el plugin nativo de GraalVM. CDS se entrena en el build sin base de datos (`ddl-auto=none`, sin Flyway). Medido en local con 512 MB: 3,26 s sin CDS y 3,09 s con CDS, una mejora pequeña; en Render Free (menos CPU) se espera algo más, sin medir. La imagen arranca con 199 MiB.
+- Cerrado el 2026-11-14: Flyway migra por `RESOLVO_DB_MIGRATION_URL` (conexión directa) y la app sirve por `RESOLVO_DB_URL` (pooled). Sin esas variables, ambas usan la misma conexión.
