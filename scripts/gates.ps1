@@ -18,7 +18,8 @@ $ErrorActionPreference = "Continue"
 # Los comandos corren desde la raiz del repo: cada uno entra en backend/ primero.
 $isWindowsOs = ([System.IO.Path]::DirectorySeparatorChar -eq '\')
 if ($isWindowsOs) {
-  $Gradle = "cd backend && gradlew.bat"
+  # .\ explicito: Claude Code fija NoDefaultCurrentDirectoryInExePath=1 y cmd no busca en el directorio actual.
+  $Gradle = "cd backend && .\gradlew.bat"
 } else {
   $Gradle = "cd backend && bash ./gradlew"
 }

@@ -1,4 +1,6 @@
 # postToolUse: bucle rapido. Siempre devuelve additional_context (el agente no ve el exit de afterFileEdit).
+# -Cliente cursor (por defecto) o claude: solo cambia el formato de salida.
+param([string]$Cliente = "cursor")
 $ErrorActionPreference = "Continue"
 [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false
 
@@ -8,7 +10,12 @@ function Emit([string]$text) {
   if ($text.Length -gt 8000) {
     $text = $text.Substring($text.Length - 8000)
   }
-  $json = @{ additional_context = $text } | ConvertTo-Json -Compress
+  if ($Cliente -eq "claude") {
+    $obj = @{ hookSpecificOutput = @{ hookEventName = "PostToolUse"; additionalContext = $text } }
+  } else {
+    $obj = @{ additional_context = $text }
+  }
+  $json = $obj | ConvertTo-Json -Compress -Depth 5
   [Console]::Out.WriteLine($json)
 }
 

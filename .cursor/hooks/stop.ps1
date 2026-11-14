@@ -1,9 +1,19 @@
 # stop: gauntlet solo si hay cambios. Sin cambios o aborted, sale al momento.
+# -Cliente cursor (por defecto) o claude: cambia entrada, salida y como se limita el bucle.
+param([string]$Cliente = "cursor")
 $ErrorActionPreference = "Continue"
 [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false
 
+# Claude no tiene loop_limit: se cuenta aqui. A la 3.a vez seguida con fallo se deja parar.
+$maxVueltas = 3
+$countPath = Join-Path $PSScriptRoot "stop.count"
+
 function Write-Empty {
   [Console]::Out.WriteLine("{}")
+}
+
+function Reset-Count {
+  if (Test-Path $countPath) { Remove-Item $countPath -Force -ErrorAction SilentlyContinue }
 }
 
 $inputJson = [Console]::In.ReadToEnd()
@@ -12,11 +22,15 @@ if ($inputJson -and $inputJson.Length -gt 0 -and $inputJson[0] -eq [char]0xFEFF)
 }
 
 $status = "completed"
+$stopActive = $false
 try {
   if ($inputJson) {
     $payload = $inputJson | ConvertFrom-Json
     if ($payload.PSObject.Properties.Name -contains "status" -and $payload.status) {
       $status = [string]$payload.status
+    }
+    if ($payload.PSObject.Properties.Name -contains "stop_hook_active" -and $payload.stop_hook_active) {
+      $stopActive = $true
     }
   }
 } catch {
@@ -28,13 +42,26 @@ if ($status -eq "aborted") {
   exit 0
 }
 
+if ($Cliente -eq "claude" -and -not $stopActive) { Reset-Count }
+
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 Set-Location $repoRoot
 
 $porcelain = & git status --porcelain 2>$null
 if ($LASTEXITCODE -ne 0 -or -not $porcelain) {
+  if ($Cliente -eq "claude") { Reset-Count }
   Write-Empty
   exit 0
+}
+
+if ($Cliente -eq "claude" -and $stopActive) {
+  $vueltas = 0
+  if (Test-Path $countPath) { [int]::TryParse((Get-Content $countPath -Raw).Trim(), [ref]$vueltas) | Out-Null }
+  if ($vueltas -ge $maxVueltas) {
+    Reset-Count
+    Write-Empty
+    exit 0
+  }
 }
 
 $lockPath = Join-Path $PSScriptRoot "gauntlet.lock"
@@ -62,9 +89,17 @@ try {
       $text = $text.Substring($text.Length - 8000)
     }
     $msg = "La gauntlet ha fallado. Corrige antes de dar la tarea por cerrada.`n$text"
-    $json = @{ followup_message = $msg } | ConvertTo-Json -Compress
+    if ($Cliente -eq "claude") {
+      $v = 0
+      if (Test-Path $countPath) { [int]::TryParse((Get-Content $countPath -Raw).Trim(), [ref]$v) | Out-Null }
+      Set-Content -Path $countPath -Value ($v + 1) -Encoding ascii
+      $json = @{ decision = "block"; reason = $msg } | ConvertTo-Json -Compress
+    } else {
+      $json = @{ followup_message = $msg } | ConvertTo-Json -Compress
+    }
     [Console]::Out.WriteLine($json)
   } else {
+    if ($Cliente -eq "claude") { Reset-Count }
     Write-Empty
   }
 } finally {
