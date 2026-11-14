@@ -2,6 +2,8 @@
 .cursor/hooks/gauntlet.lock
 .cursor/hooks/gate-timings.log
 .cursor/hooks/gates.lock
+.cursor/hooks/stop.count
+.claude/settings.local.json
 
 # Gradle y Java
 .gradle/

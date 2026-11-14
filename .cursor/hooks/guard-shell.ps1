@@ -1,12 +1,28 @@
 # Bloquea comandos que borran trabajo sin commitear.
+# -Cliente cursor (por defecto) o claude: solo cambia entrada y salida.
+param([string]$Cliente = "cursor")
 $ErrorActionPreference = "Continue"
 [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false
 
 function Write-Allow {
-  [Console]::Out.WriteLine('{"permission":"allow"}')
+  if ($Cliente -eq "claude") {
+    $obj = @{ hookSpecificOutput = @{ hookEventName = "PreToolUse"; permissionDecision = "allow" } }
+    [Console]::Out.WriteLine(($obj | ConvertTo-Json -Compress -Depth 5))
+  } else {
+    [Console]::Out.WriteLine('{"permission":"allow"}')
+  }
 }
 
 function Write-Deny([string]$why) {
+  if ($Cliente -eq "claude") {
+    $obj = @{ hookSpecificOutput = @{
+      hookEventName            = "PreToolUse"
+      permissionDecision       = "deny"
+      permissionDecisionReason = "La valla ha bloqueado este comando ($why). No lo reintentes. Si hace falta de verdad, lo ejecuta la persona en su terminal."
+    } }
+    [Console]::Out.WriteLine(($obj | ConvertTo-Json -Compress -Depth 5))
+    return
+  }
   $obj = @{
     permission    = "deny"
     user_message  = "Comando bloqueado por la valla: $why"
@@ -131,6 +147,7 @@ try {
   if ($inputJson) {
     $payload = $inputJson | ConvertFrom-Json
     if ($payload.command) { $command = [string]$payload.command }
+    elseif ($payload.tool_input -and $payload.tool_input.command) { $command = [string]$payload.tool_input.command }
     if ($payload.cwd) { $cwd = [string]$payload.cwd }
   }
 } catch {
