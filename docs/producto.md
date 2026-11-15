@@ -77,3 +77,10 @@ Categorías de semilla, sin CRUD: Incidencia (1 h / 4 h / 8 h / 24 h) y Consulta
 - Angular 22.2.5, la estable del CLI el 2026-11-04. No se sube de mayor a mitad del plan.
 - JWT firmado con Nimbus y validado con `spring-boot-starter-oauth2-resource-server`. Sin jjwt.
 - Tests de la SPA con Vitest, el runner por defecto del CLI desde la versión 21.
+
+## Preguntas cerradas en la fase 2
+
+- Cookie de refresh entre Pages y Render: proxy de Pages en el mismo origen, sin CORS y con `SameSite=Lax` (ADR-0005).
+- `API_URL` en build: no hace falta, la SPA llama a `/api` (ADR-0004).
+- Arranque de la JVM: CDS en la imagen, sin AOT (ADR-0009).
+- Ping: GitHub Actions cada 5 minutos en vez de un cron externo, para no crear otra cuenta.

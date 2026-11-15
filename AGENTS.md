@@ -6,11 +6,11 @@ Este archivo es la fuente de verdad de la fase y de la valla. El historial vive 
 
 ## Fase actual
 
-**Fase 2 — MVP desplegado con URL pública y login demo.** En curso.
+**Fase 2 — MVP desplegado con URL pública y login demo.** Hecha.
 
-Hecho en el repo: `GET /api/salud`, semilla de demo `V3`, Flyway por conexión directa, proxy de Pages (`frontend/functions/`), aviso «despertando servidor…» y `backend/Dockerfile`. Falta aprovisionar Neon, Render y Pages, el ping, el humo en la URL pública y cerrar la fase (pasos en [README.md](README.md)). Sin IA.
+La demo corre en https://resolvo-6lc.pages.dev: SPA en Cloudflare Pages, proxy `/api` a la API en Render Free (Docker, Frankfurt) y Postgres en Neon Free. Semilla de demo idempotente (`V3`), aviso «despertando servidor…» y ping cada 5 minutos con GitHub Actions. Despliegue explicado en [README.md](README.md). Sin IA.
 
-La fase 1 (sesión, tickets y bandeja local) está hecha. **La fase 3 no está empezada.**
+**La fase 3 no está empezada.** No hay RAG, ni pgvector, ni panel de IA.
 
 ## Stack
 
@@ -44,7 +44,7 @@ Cada principio tiene una comprobación mecánica. Un principio sin comprobación
    - `scripts/gates.ps1` toma un candado propio para que dos escrituras seguidas no peleen por `build/test-results`.
    - Duración de cada gate en `.cursor/hooks/gate-timings.log`.
 5. **CI** ([.github/workflows/ci.yml](.github/workflows/ci.yml)): llama a `scripts/gates.ps1 full`, con caché de Gradle y el job agregador bloqueante `Gate obligatorio`. Misma fuente de comandos que los hooks.
-6. **Rama `main`:** pendiente de decidir cuando exista remoto. Si el repo es público, ruleset que exige `Gate obligatorio` y prohíbe force push y borrado. Si es privado con cuenta gratuita, fichero `.cursor/proteger-main`: los cambios llegan por PR con `gh pr checks` en verde. Un push desde la terminal lo salta.
+6. **Rama `main`:** el repo es público (`github.com/Admaal/Resolvo`). Falta el ruleset que exige `Gate obligatorio` y prohíbe force push y borrado: se pone en Settings, Rules (`gh` no está instalado). Si el repo pasara a privado con cuenta gratuita, se usaría el fichero `.cursor/proteger-main`.
 
 ### Presupuestos de feedback
 
@@ -71,4 +71,7 @@ Repetir la medición: `powershell -NoProfile -File scripts/medir-bucle.ps1`.
 ## Riesgos anotados
 
 - La mutación sobre dominio real quedó en 98 % (121/124) el 2026-11-04.
-- `.cursor/proteger-main` no existe todavía porque no hay remoto. Antes del primer push hay que crear el repo y decidir visibilidad: público con ruleset, o privado con el fichero de bloqueo.
+- `main` sigue sin ruleset: hasta que se ponga, un push directo lo salta todo.
+- La contraseña de `neondb_owner` se compartió en un chat el 2026-11-14: conviene rotarla en Neon y actualizar `RESOLVO_DB_PASSWORD` y `RESOLVO_DB_MIGRATION_PASSWORD` en Render.
+- Cuotas reales de Neon y Render sin anotar con fecha: la búsqueda web no estuvo disponible al cerrar la fase 2.
+- En Render Free la API tarda unos 46 s en arrancar en frío (3 s en local); lo cubre el aviso de la SPA.
