@@ -2,7 +2,7 @@
 
 Helpdesk B2B multi-tenant para equipos de soporte. Proyecto de portfolio: la demo pública usa datos ficticios. Producto en [docs/producto.md](docs/producto.md), decisiones en [docs/adr/](docs/adr/).
 
-**Demo:** _pendiente de desplegar (URL de Cloudflare Pages)._
+**Demo:** https://resolvo-6lc.pages.dev
 
 ## Entrar a la demo
 
