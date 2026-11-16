@@ -18,6 +18,7 @@ import com.admaal.resolvo.domain.OrganizacionId;
 import com.admaal.resolvo.domain.Prioridad;
 import com.admaal.resolvo.domain.Prohibido;
 import com.admaal.resolvo.domain.Rol;
+import com.admaal.resolvo.domain.TextoInvalido;
 import com.admaal.resolvo.domain.Ticket;
 import com.admaal.resolvo.domain.TransicionNoPermitida;
 import com.admaal.resolvo.domain.UsuarioId;
@@ -189,6 +190,20 @@ class AplicarClasificacionTest {
 
     assertThatThrownBy(() -> aplicar(ajena.id(), Prioridad.ALTA)).isInstanceOf(NoEncontrado.class);
 
+    assertThat(tickets.vecesGuardado()).isEqualTo(ticketsAntes);
+    assertThat(clasificaciones.vecesGuardado()).isEqualTo(clasificacionesAntes);
+  }
+
+  @Test
+  void sinPrioridadONiCategoriaEsTextoInvalidoYNoCambiaNada() {
+    int ticketsAntes = tickets.vecesGuardado();
+    int clasificacionesAntes = clasificaciones.vecesGuardado();
+
+    assertThatThrownBy(() -> aplicar(incidencia.id(), null)).isInstanceOf(TextoInvalido.class);
+    assertThatThrownBy(() -> aplicar(null, Prioridad.ALTA)).isInstanceOf(TextoInvalido.class);
+
+    assertThat(propuesta.estado()).isEqualTo(EstadoClasificacion.PENDIENTE);
+    assertThat(ticket.prioridad()).isEqualTo(Prioridad.BAJA);
     assertThat(tickets.vecesGuardado()).isEqualTo(ticketsAntes);
     assertThat(clasificaciones.vecesGuardado()).isEqualTo(clasificacionesAntes);
   }

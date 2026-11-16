@@ -53,3 +53,6 @@
 2026-11-16T19:07:39 fast c24c98f5766d552f37e2e6d6940816512a94288d RED backend/src/test/java/com/admaal/resolvo/evals/MetricasEvalTest.java exit=1
 2026-11-16T19:09:15 fast c24c98f5766d552f37e2e6d6940816512a94288d RED backend/src/test/java/com/admaal/resolvo/evals/MetricasEvalTest.java exit=1
 2026-11-16T19:09:30 fast c24c98f5766d552f37e2e6d6940816512a94288d RED backend/src/test/java/com/admaal/resolvo/evals/MetricasEvalTest.java exit=1
+2026-11-16T19:29:11 fast 84084409e02318b32a3bd3f4dbd5bfe97cea02fb RED backend/src/test/java/com/admaal/resolvo/evals/UmbralesTest.java exit=1
+2026-11-16T19:29:44 fast 84084409e02318b32a3bd3f4dbd5bfe97cea02fb RED backend/src/test/java/com/admaal/resolvo/application/AplicarClasificacionTest.java exit=1
+2026-11-16T19:32:55 fast 84084409e02318b32a3bd3f4dbd5bfe97cea02fb RED backend/src/test/java/com/admaal/resolvo/evals/InformeEvalTest.java exit=1

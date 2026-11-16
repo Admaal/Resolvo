@@ -10,6 +10,7 @@ import com.admaal.resolvo.domain.PoliticaSla;
 import com.admaal.resolvo.domain.Prioridad;
 import com.admaal.resolvo.domain.Prohibido;
 import com.admaal.resolvo.domain.Rol;
+import com.admaal.resolvo.domain.TextoInvalido;
 import com.admaal.resolvo.domain.Ticket;
 import com.admaal.resolvo.domain.UsuarioId;
 
@@ -42,6 +43,9 @@ public final class AplicarClasificacion {
       Rol rol) {
     if (rol == Rol.CLIENTE) {
       throw new Prohibido();
+    }
+    if (categoriaId == null || prioridad == null) {
+      throw new TextoInvalido();
     }
     Clasificacion clasificacion =
         clasificaciones.porId(organizacionId, clasificacionId).orElseThrow(NoEncontrado::new);

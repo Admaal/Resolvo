@@ -50,7 +50,7 @@ public class ClasificacionControlador {
         aplicacion.aplicar(
             actor.organizacionId(),
             new ClasificacionId(id),
-            new CategoriaId(cuerpo.categoriaId()),
+            cuerpo.categoriaId() == null ? null : new CategoriaId(cuerpo.categoriaId()),
             cuerpo.prioridad(),
             actor.id(),
             actor.rol());

@@ -164,6 +164,8 @@ class ConcurrenciaClasificacionTest {
                   Integer.class,
                   ticket.id().valor().toString()))
           .isEqualTo(1);
+      // La segunda peticion espera a la primera y reutiliza su resultado: una sola llamada al modelo.
+      assertThat(clasificador.llamadas.get()).isEqualTo(1);
     } finally {
       hilos.shutdownNow();
     }

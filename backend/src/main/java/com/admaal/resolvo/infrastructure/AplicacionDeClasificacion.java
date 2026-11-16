@@ -21,7 +21,11 @@ import com.admaal.resolvo.domain.Rol;
 import com.admaal.resolvo.domain.Ticket;
 import com.admaal.resolvo.domain.TicketId;
 import com.admaal.resolvo.domain.UsuarioId;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.locks.ReentrantLock;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +41,13 @@ public class AplicacionDeClasificacion {
 
   public record TicketClasificado(Ticket ticket, List<Comentario> comentarios) {}
 
+  /** Un cerrojo por ticket con cuenta de usos, para soltarlo del mapa cuando nadie lo espera. */
+  private static final class Cerrojo {
+    final ReentrantLock cerrojo = new ReentrantLock();
+    int usos;
+  }
+
+  private final Map<UUID, Cerrojo> cerrojos = new HashMap<>();
   private final Reloj reloj;
   private final TicketRepositorio tickets;
   private final Clasificaciones clasificaciones;
@@ -59,18 +70,48 @@ public class AplicacionDeClasificacion {
     this.clasificador = clasificador;
   }
 
+  /**
+   * Dos peticiones a la vez sobre el mismo ticket (doble clic, dos pestanas) no llaman las dos al
+   * modelo: la segunda espera a la primera y devuelve su clasificacion. Es un cerrojo del proceso,
+   * suficiente para una sola instancia; entre instancias el indice unico parcial de V6 sigue
+   * impidiendo la duplicada, aunque entonces se gasten dos llamadas.
+   */
   public ClasificacionVista sugerir(
       OrganizacionId organizacionId, TicketId ticketId, UsuarioId actor, Rol rol) {
-    boolean existia = clasificaciones.pendienteDe(organizacionId, ticketId).isPresent();
+    Cerrojo cerrojo = adquirir(ticketId.valor());
     try {
-      Clasificacion clasificacion =
-          new SugerirClasificacion(tickets, clasificaciones, catalogo, clasificador, reloj)
-              .ejecutar(organizacionId, ticketId, actor, rol);
-      return new ClasificacionVista(clasificacion, !existia);
-    } catch (DuplicateKeyException carrera) {
-      // Dos peticiones a la vez: gana la primera y la segunda devuelve su clasificacion.
-      return new ClasificacionVista(
-          clasificaciones.pendienteDe(organizacionId, ticketId).orElseThrow(), false);
+      boolean existia = clasificaciones.pendienteDe(organizacionId, ticketId).isPresent();
+      try {
+        Clasificacion clasificacion =
+            new SugerirClasificacion(tickets, clasificaciones, catalogo, clasificador, reloj)
+                .ejecutar(organizacionId, ticketId, actor, rol);
+        return new ClasificacionVista(clasificacion, !existia);
+      } catch (DuplicateKeyException carrera) {
+        // Otra instancia gano la carrera: devolvemos su clasificacion.
+        return new ClasificacionVista(
+            clasificaciones.pendienteDe(organizacionId, ticketId).orElseThrow(), false);
+      }
+    } finally {
+      liberar(ticketId.valor(), cerrojo);
+    }
+  }
+
+  private Cerrojo adquirir(UUID ticket) {
+    Cerrojo cerrojo;
+    synchronized (cerrojos) {
+      cerrojo = cerrojos.computeIfAbsent(ticket, clave -> new Cerrojo());
+      cerrojo.usos++;
+    }
+    cerrojo.cerrojo.lock();
+    return cerrojo;
+  }
+
+  private void liberar(UUID ticket, Cerrojo cerrojo) {
+    cerrojo.cerrojo.unlock();
+    synchronized (cerrojos) {
+      if (--cerrojo.usos == 0) {
+        cerrojos.remove(ticket);
+      }
     }
   }
 

@@ -14,5 +14,6 @@ create table clasificacion (
   resuelta_en timestamptz
 );
 
--- Una sola clasificacion pendiente por ticket: el doble clic no duplica ni gasta cuota.
+-- Una sola clasificacion pendiente por ticket: el indice impide duplicarla aunque dos peticiones lleguen
+-- a la vez. La aplicacion evita ademas la segunda llamada al modelo, pero solo dentro de un proceso.
 create unique index clasificacion_una_pendiente_por_ticket on clasificacion (ticket_id) where estado = 'PENDIENTE';

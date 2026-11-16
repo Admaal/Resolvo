@@ -208,6 +208,28 @@ class ClasificacionHttpTest {
   }
 
   @Test
+  void aplicarConElCuerpoIncompletoEs422YNoCambiaNada() throws Exception {
+    String ticket = nuevoTicket();
+    String id = clasificacionId(ticket);
+
+    for (String cuerpo :
+        new String[] {"{}", "{\"categoriaId\":\"%s\"}".formatted(CONSULTA), "{\"prioridad\":\"ALTA\"}"}) {
+      mvc.perform(
+              post("/api/clasificaciones/" + id + "/aplicacion")
+                  .header("Authorization", "Bearer " + agente)
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(cuerpo))
+          .andExpect(status().isUnprocessableEntity())
+          .andExpect(jsonPath("$.error").value("invalido"));
+    }
+
+    mvc.perform(get("/api/tickets/" + ticket).header("Authorization", "Bearer " + agente))
+        .andExpect(jsonPath("$.prioridad").value("ALTA"));
+    assertThat(jdbc.queryForObject("select estado from clasificacion where id = ?::uuid", String.class, id))
+        .isEqualTo("PENDIENTE");
+  }
+
+  @Test
   void aplicarDosVecesEs409() throws Exception {
     String id = clasificacionId(nuevoTicket());
     aplicar(agente, id, CONSULTA, "ALTA").andExpect(status().isOk());
