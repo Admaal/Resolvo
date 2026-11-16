@@ -39,7 +39,7 @@ Fuera de la fase 1:
 
 - Fase 2: MVP desplegado, URL pública con login demo y datos semilla idempotentes.
 - Fase 3: RAG con pgvector, sugerencias con citas y aprobación humana.
-- Fase 4: evals en CI con umbral de calidad, coste y latencia.
+- Fase 4: clasificación de tickets (categoría y prioridad sugeridas) y evals en CI con umbral de calidad, coste y latencia.
 - Fase 5: outbox, eventos idempotentes y métricas de tokens, coste y latencia.
 - Fase 6: seguridad (prompt injection, PII, rate limit, presupuesto diario) y difusión.
 
@@ -58,7 +58,6 @@ Fuera de la fase 1:
 
 ## Preguntas abiertas
 
-- Modelo de embeddings y dimensión N: se cierra antes de la migración vectorial de la fase 3.
 - Versión exacta de Spring Boot 3.5.x y de Spring AI: Spring Boot queda fijado en 3.5.16 al crear el esqueleto; la versión de Spring AI se fija al añadir el primer adapter de LLM.
 - Cuotas reales de Gemini y del free tier de Neon y Render: se anotan con fecha antes de la fase 2.
 
@@ -84,3 +83,9 @@ Categorías de semilla, sin CRUD: Incidencia (1 h / 4 h / 8 h / 24 h) y Consulta
 - `API_URL` en build: no hace falta, la SPA llama a `/api` (ADR-0004).
 - Arranque de la JVM: CDS en la imagen, sin AOT (ADR-0009).
 - Ping: GitHub Actions cada 5 minutos en vez de un cron externo, para no crear otra cuenta.
+
+## Preguntas cerradas en la fase 3
+
+- Embeddings: `gemini-embedding-001` con N = 768 (ADR-0007).
+- Fuentes del RAG: artículos ficticios de ayuda en semilla y tickets RESUELTO o CERRADO de la misma organización. Sin CRUD de artículos.
+- La clasificación de tickets pasa a la fase 4.
