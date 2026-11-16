@@ -19,11 +19,16 @@ public final class BaseConocimientoEnMemoria implements BaseConocimiento {
 
   @Override
   public boolean estaIndexada(
-      FuenteConocimiento fuente, UUID fuenteId, String hashFuente, String modelo) {
+      OrganizacionId organizacionId,
+      FuenteConocimiento fuente,
+      UUID fuenteId,
+      String hashFuente,
+      String modelo) {
     return entradas.stream()
         .anyMatch(
             e ->
-                e.fuenteId().equals(fuenteId)
+                e.fragmento().organizacionId().equals(organizacionId)
+                    && e.fuenteId().equals(fuenteId)
                     && e.fragmento().fuente() == fuente
                     && e.hashFuente().equals(hashFuente)
                     && e.modelo().equals(modelo));
@@ -31,12 +36,17 @@ public final class BaseConocimientoEnMemoria implements BaseConocimiento {
 
   @Override
   public void reemplazar(
+      OrganizacionId organizacionId,
       FuenteConocimiento fuente,
       UUID fuenteId,
       String hashFuente,
       String modelo,
       List<FragmentoIndexado> fragmentos) {
-    entradas.removeIf(e -> e.fuenteId().equals(fuenteId) && e.fragmento().fuente() == fuente);
+    entradas.removeIf(
+        e ->
+            e.fragmento().organizacionId().equals(organizacionId)
+                && e.fuenteId().equals(fuenteId)
+                && e.fragmento().fuente() == fuente);
     for (FragmentoIndexado indexado : fragmentos) {
       entradas.add(new Entrada(fuenteId, hashFuente, modelo, indexado.fragmento()));
     }

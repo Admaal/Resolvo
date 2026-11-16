@@ -64,7 +64,7 @@ public final class IndexarConocimiento {
       String texto) {
     String hashFuente = Fragmento.hashDe(texto);
     String modelo = embebedor.modelo();
-    if (base.estaIndexada(fuente, fuenteId, hashFuente, modelo)) {
+    if (base.estaIndexada(organizacionId, fuente, fuenteId, hashFuente, modelo)) {
       return;
     }
     List<FragmentoIndexado> fragmentos = new ArrayList<>();
@@ -73,6 +73,6 @@ public final class IndexarConocimiento {
           new Fragmento(FragmentoId.nuevo(), organizacionId, fuente, fuenteId, titulo, trozo);
       fragmentos.add(new FragmentoIndexado(fragmento, embebedor.embeber(trozo)));
     }
-    base.reemplazar(fuente, fuenteId, hashFuente, modelo, fragmentos);
+    base.reemplazar(organizacionId, fuente, fuenteId, hashFuente, modelo, fragmentos);
   }
 }

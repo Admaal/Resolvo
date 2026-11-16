@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Busqueda vectorial con JdbcTemplate y no con PgVectorStore: el filtro por organizacion es una
@@ -27,16 +28,22 @@ public class BaseConocimientoPgvector implements BaseConocimiento {
 
   @Override
   public boolean estaIndexada(
-      FuenteConocimiento fuente, UUID fuenteId, String hashFuente, String modelo) {
+      OrganizacionId organizacionId,
+      FuenteConocimiento fuente,
+      UUID fuenteId,
+      String hashFuente,
+      String modelo) {
     Integer filas =
         jdbc.queryForObject(
             """
             select count(*) from (
               select 1 from fragmento
-              where fuente = ? and fuente_id = ? and hash_fuente = ? and modelo = ?
+              where organizacion_id = ? and fuente = ? and fuente_id = ?
+                and hash_fuente = ? and modelo = ?
               limit 1) existente
             """,
             Integer.class,
+            organizacionId.valor(),
             fuente.name(),
             fuenteId,
             hashFuente,
@@ -44,14 +51,26 @@ public class BaseConocimientoPgvector implements BaseConocimiento {
     return filas != null && filas > 0;
   }
 
+  /**
+   * Borra e inserta en una sola transaccion: una caida a mitad no deja la fuente incompleta. El
+   * cerrojo por fuente serializa dos indexados simultaneos (arranque y reindexado manual).
+   */
   @Override
+  @Transactional
   public void reemplazar(
+      OrganizacionId organizacionId,
       FuenteConocimiento fuente,
       UUID fuenteId,
       String hashFuente,
       String modelo,
       List<FragmentoIndexado> fragmentos) {
-    jdbc.update("delete from fragmento where fuente = ? and fuente_id = ?", fuente.name(), fuenteId);
+    jdbc.queryForList(
+        "select pg_advisory_xact_lock(hashtextextended(?, 0))", fuente.name() + ":" + fuenteId);
+    jdbc.update(
+        "delete from fragmento where organizacion_id = ? and fuente = ? and fuente_id = ?",
+        organizacionId.valor(),
+        fuente.name(),
+        fuenteId);
     int orden = 0;
     for (FragmentoIndexado indexado : fragmentos) {
       Fragmento fragmento = indexado.fragmento();
@@ -74,6 +93,12 @@ public class BaseConocimientoPgvector implements BaseConocimiento {
     }
   }
 
+  /**
+   * Busqueda exacta dentro de la organizacion. Ordenar por la expresion pelada usaria el indice
+   * HNSW, que filtra por organizacion despues de elegir los vecinos: con otra organizacion mucho
+   * mayor devolveria pocas filas o ninguna. El "+ 0" impide usar el indice y obliga a filtrar
+   * primero; con cientos o pocos miles de fragmentos por organizacion es barato.
+   */
   @Override
   public List<Fragmento> buscar(
       OrganizacionId organizacionId, Embedding consulta, int k, UUID excluirFuenteId) {
@@ -82,7 +107,7 @@ public class BaseConocimientoPgvector implements BaseConocimiento {
         select id, organizacion_id, fuente, fuente_id, titulo, texto
         from fragmento
         where organizacion_id = ? and fuente_id <> ?
-        order by embedding <=> ?::vector
+        order by (embedding <=> ?::vector) + 0
         limit ?
         """,
         (fila, numero) ->

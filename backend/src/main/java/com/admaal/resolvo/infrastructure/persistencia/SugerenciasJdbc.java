@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class SugerenciasJdbc implements Sugerencias {
@@ -33,7 +34,9 @@ public class SugerenciasJdbc implements Sugerencias {
     this.jdbc = jdbc;
   }
 
+  /** Sugerencia y citas se escriben juntas: si falla una cita no queda una pendiente a medias. */
   @Override
+  @Transactional
   public void guardar(Sugerencia sugerencia) {
     Integer existe =
         jdbc.queryForObject(
@@ -113,16 +116,22 @@ public class SugerenciasJdbc implements Sugerencias {
         .findFirst();
   }
 
-  public List<CitaDetalle> citasDe(SugerenciaId id) {
+  public List<CitaDetalle> citasDe(OrganizacionId organizacionId, SugerenciaId id) {
     return jdbc.query(
-        "select orden, fuente, fuente_id, titulo from cita where sugerencia_id = ? order by orden",
+        """
+        select c.orden, c.fuente, c.fuente_id, c.titulo
+        from cita c join sugerencia s on s.id = c.sugerencia_id
+        where c.sugerencia_id = ? and s.organizacion_id = ?
+        order by c.orden
+        """,
         (fila, numero) ->
             new CitaDetalle(
                 fila.getInt("orden"),
                 FuenteConocimiento.valueOf(fila.getString("fuente")),
                 fila.getObject("fuente_id", UUID.class),
                 fila.getString("titulo")),
-        id.valor());
+        id.valor(),
+        organizacionId.valor());
   }
 
   private Sugerencia fila(ResultSet fila, int numero) throws SQLException {

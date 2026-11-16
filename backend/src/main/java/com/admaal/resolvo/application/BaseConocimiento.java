@@ -9,9 +9,15 @@ import java.util.UUID;
 
 public interface BaseConocimiento {
 
-  boolean estaIndexada(FuenteConocimiento fuente, UUID fuenteId, String hashFuente, String modelo);
+  boolean estaIndexada(
+      OrganizacionId organizacionId,
+      FuenteConocimiento fuente,
+      UUID fuenteId,
+      String hashFuente,
+      String modelo);
 
   void reemplazar(
+      OrganizacionId organizacionId,
       FuenteConocimiento fuente,
       UUID fuenteId,
       String hashFuente,

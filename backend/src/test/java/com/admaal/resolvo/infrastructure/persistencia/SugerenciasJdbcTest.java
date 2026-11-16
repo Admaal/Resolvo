@@ -69,6 +69,7 @@ class SugerenciasJdbcTest {
         new Fragmento(
             FragmentoId.nuevo(), ACME, FuenteConocimiento.ARTICULO, fuente, titulo, "texto");
     base.reemplazar(
+        ACME,
         FuenteConocimiento.ARTICULO,
         fuente,
         "h",
@@ -108,9 +109,9 @@ class SugerenciasJdbcTest {
     Sugerencia original = nueva(List.of(uno));
     sugerencias.guardar(original);
 
-    base.reemplazar(FuenteConocimiento.ARTICULO, uno.fuenteId(), "h2", "m", List.of());
+    base.reemplazar(ACME, FuenteConocimiento.ARTICULO, uno.fuenteId(), "h2", "m", List.of());
 
-    assertThat(sugerencias.citasDe(original.id()))
+    assertThat(sugerencias.citasDe(ACME, original.id()))
         .singleElement()
         .satisfies(
             c -> {
@@ -126,11 +127,11 @@ class SugerenciasJdbcTest {
     Fragmento desaparecido = fragmento("Se va");
     Fragmento queda = fragmento("Queda");
     Sugerencia original = nueva(List.of(desaparecido, queda));
-    base.reemplazar(FuenteConocimiento.ARTICULO, desaparecido.fuenteId(), "h2", "m", List.of());
+    base.reemplazar(ACME, FuenteConocimiento.ARTICULO, desaparecido.fuenteId(), "h2", "m", List.of());
 
     sugerencias.guardar(original);
 
-    assertThat(sugerencias.citasDe(original.id())).extracting(CitaDetalle::titulo).containsExactly("Queda");
+    assertThat(sugerencias.citasDe(ACME, original.id())).extracting(CitaDetalle::titulo).containsExactly("Queda");
   }
 
   @Test
@@ -192,5 +193,41 @@ class SugerenciasJdbcTest {
 
     assertThatThrownBy(() -> sugerencias.guardar(nueva(List.of())))
         .isInstanceOf(DuplicateKeyException.class);
+  }
+
+  @Test
+  void citasDeOtraOrganizacionNoDevuelveNada() {
+    Sugerencia original = nueva(List.of(fragmento("Uno")));
+    sugerencias.guardar(original);
+    UUID otra = UUID.randomUUID();
+    jdbc.update("insert into organizacion (id, nombre) values (?, 'Otra')", otra);
+
+    assertThat(sugerencias.citasDe(new OrganizacionId(otra), original.id())).isEmpty();
+    assertThat(sugerencias.citasDe(ACME, original.id())).hasSize(1);
+  }
+
+  @Test
+  void siFallaUnaCitaNoQuedaLaSugerenciaACaballo() {
+    Fragmento uno = fragmento("Uno");
+    Fragmento dos = fragmento("Dos");
+    SugerenciaId id = SugerenciaId.nuevo();
+    Sugerencia conOrdenRepetido =
+        Sugerencia.rehidratar(
+            id,
+            ACME,
+            TICKET,
+            "Borrador",
+            "m",
+            AHORA,
+            List.of(new Cita(uno.id(), 1), new Cita(dos.id(), 1)),
+            EstadoSugerencia.PENDIENTE,
+            null,
+            null);
+
+    assertThatThrownBy(() -> sugerencias.guardar(conOrdenRepetido))
+        .isInstanceOf(DuplicateKeyException.class);
+
+    assertThat(sugerencias.porId(ACME, id)).isEmpty();
+    assertThat(sugerencias.pendienteDe(ACME, TICKET)).isEmpty();
   }
 }
