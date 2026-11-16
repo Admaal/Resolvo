@@ -43,6 +43,10 @@ tasks.withType<Test>().configureEach {
         if (project.hasProperty("fast")) {
             excludeTags("full")
         }
+        // Los evals llaman a Gemini real y gastan cuota: solo corren con la tarea `evals`.
+        if (name != "evals") {
+            excludeTags("eval")
+        }
     }
     // El bucle rapido filtra por paquete; un paquete todavia sin tests no es un fallo.
     filter {
@@ -51,6 +55,21 @@ tasks.withType<Test>().configureEach {
     testLogging {
         events("failed")
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+}
+
+tasks.register<Test>("evals") {
+    description = "Evals de IA contra Gemini real. Necesita RESOLVO_GEMINI_API_KEY y Docker."
+    group = "verification"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    useJUnitPlatform {
+        includeTags("eval")
+    }
+    // Un eval cuesta cuota: nunca se da por hecho a partir de una cache.
+    outputs.upToDateWhen { false }
+    testLogging {
+        showStandardStreams = true
     }
 }
 

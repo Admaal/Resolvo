@@ -1,0 +1,10 @@
+{
+  "categoriaAcierto": 0.9,
+  "prioridadExacta": 0.7,
+  "respuestaValida": 0.95,
+  "recallAtCinco": 0.8,
+  "sinRespuestaAcierto": 0.8,
+  "citaLaFuenteEsperada": 0.8,
+  "tokensMediosPorLlamada": 3000,
+  "p95Milisegundos": 8000
+}

@@ -26,6 +26,13 @@ class IaDesactivadaTest {
   }
 
   @Test
+  void clasificarDiceQueLaIaNoEstaConfigurada() {
+    assertThatThrownBy(() -> ia.clasificar(null, List.of()))
+        .isInstanceOf(IaNoDisponible.class)
+        .hasMessage("ia-no-configurada");
+  }
+
+  @Test
   void anunciaUnModeloVacio() {
     assertThat(ia.modelo()).isEqualTo("desactivada");
   }

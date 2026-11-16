@@ -1,5 +1,6 @@
 package com.admaal.resolvo.infrastructure.ai;
 
+import com.admaal.resolvo.application.ClasificadorTickets;
 import com.admaal.resolvo.application.Embebedor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
@@ -40,14 +41,24 @@ public class ConfiguracionGemini {
     return new EmbebedorSpringAi(modelo, nombre);
   }
 
-  /** Devuelve el tipo concreto para que la comprobacion de arranque pueda inyectarlo. */
+  /** Un solo llamador: el sondeo de modelos al arrancar sirve al redactor y al clasificador. */
   @Bean
-  RedactorSpringAi redactor(
+  LlamadorGemini llamadorGemini(
       ChatModel chat,
-      ObjectMapper json,
       @Value("${resolvo.gemini.modelos}") List<String> modelos,
       @Value("${resolvo.gemini.timeout-segundos:15}") int segundos,
       @Value("${resolvo.gemini.max-intentos:3}") int maxIntentos) {
-    return new RedactorSpringAi(chat, json, modelos, Duration.ofSeconds(segundos), maxIntentos);
+    return new LlamadorGemini(chat, modelos, Duration.ofSeconds(segundos), maxIntentos);
+  }
+
+  /** Devuelve el tipo concreto para que la comprobacion de arranque pueda inyectarlo. */
+  @Bean
+  RedactorSpringAi redactor(LlamadorGemini llamador, ObjectMapper json) {
+    return new RedactorSpringAi(llamador, json);
+  }
+
+  @Bean
+  ClasificadorTickets clasificador(LlamadorGemini llamador, ObjectMapper json) {
+    return new ClasificadorSpringAi(llamador, json);
   }
 }

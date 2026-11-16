@@ -47,6 +47,11 @@ class SugerirRespuestaTest {
         tickets, sugerencias, embebedor, base, redactorEnUso, new RelojManual(AHORA));
   }
 
+  private SugerirRespuesta casoConUmbral(double distanciaMaxima) {
+    return new SugerirRespuesta(
+        tickets, sugerencias, embebedor, base, redactor, new RelojManual(AHORA), distanciaMaxima);
+  }
+
   private Sugerencia sugerir() {
     return caso(redactor).ejecutar(acme, ticket.id(), agente, Rol.AGENTE);
   }
@@ -156,5 +161,45 @@ class SugerirRespuestaTest {
         .isInstanceOf(IllegalStateException.class);
 
     assertThat(sugerencias.total()).isZero();
+  }
+
+  @Test
+  void pasaLaDistanciaMaximaConfigurada() {
+    base.sembrar(acme, UUID.randomUUID(), "A", "texto");
+
+    casoConUmbral(0.35).ejecutar(acme, ticket.id(), agente, Rol.AGENTE);
+
+    assertThat(base.ultimaDistanciaMaxima()).isEqualTo(0.35);
+  }
+
+  @Test
+  void sinUmbralConfiguradoNoFiltraNada() {
+    base.sembrar(acme, UUID.randomUUID(), "Lejano", "texto", 1.9);
+
+    sugerir();
+
+    assertThat(base.ultimaDistanciaMaxima()).isEqualTo(BaseConocimiento.SIN_LIMITE);
+    assertThat(redactor.llamadas()).isEqualTo(1);
+  }
+
+  @Test
+  void sinFragmentosBajoElUmbralEsSinFuentesYNoLlamaAlRedactor() {
+    base.sembrar(acme, UUID.randomUUID(), "Irrelevante", "texto", 0.8);
+
+    assertThatThrownBy(() -> casoConUmbral(0.5).ejecutar(acme, ticket.id(), agente, Rol.AGENTE))
+        .isInstanceOf(SinFuentes.class);
+
+    assertThat(redactor.llamadas()).isZero();
+    assertThat(sugerencias.total()).isZero();
+  }
+
+  @Test
+  void soloLlegaAlRedactorLoQueEstaBajoElUmbral() {
+    Fragmento cercano = base.sembrar(acme, UUID.randomUUID(), "Cercano", "texto", 0.2);
+    base.sembrar(acme, UUID.randomUUID(), "Lejano", "texto", 0.9);
+
+    casoConUmbral(0.5).ejecutar(acme, ticket.id(), agente, Rol.AGENTE);
+
+    assertThat(redactor.recibidos()).containsExactly(cercano);
   }
 }

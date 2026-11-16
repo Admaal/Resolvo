@@ -28,6 +28,7 @@ import java.util.concurrent.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +52,7 @@ public class AplicacionDeConocimiento {
   private final BaseConocimiento base;
   private final RedactorRespuestas redactor;
   private final Executor indexador;
+  private final double distanciaMaxima;
 
   public AplicacionDeConocimiento(
       Reloj reloj,
@@ -60,7 +62,8 @@ public class AplicacionDeConocimiento {
       Embebedor embebedor,
       BaseConocimiento base,
       RedactorRespuestas redactor,
-      @Qualifier("indexadorEjecutor") Executor indexador) {
+      @Qualifier("indexadorEjecutor") Executor indexador,
+      @Value("${resolvo.rag.distancia-maxima:2.0}") double distanciaMaxima) {
     this.reloj = reloj;
     this.tickets = tickets;
     this.sugerencias = sugerencias;
@@ -69,6 +72,7 @@ public class AplicacionDeConocimiento {
     this.base = base;
     this.redactor = redactor;
     this.indexador = indexador;
+    this.distanciaMaxima = distanciaMaxima;
   }
 
   public SugerenciaVista sugerir(
@@ -76,7 +80,8 @@ public class AplicacionDeConocimiento {
     boolean existia = sugerencias.pendienteDe(organizacionId, ticketId).isPresent();
     try {
       Sugerencia sugerencia =
-          new SugerirRespuesta(tickets, sugerencias, embebedor, base, redactor, reloj)
+          new SugerirRespuesta(
+                  tickets, sugerencias, embebedor, base, redactor, reloj, distanciaMaxima)
               .ejecutar(organizacionId, ticketId, actor, rol);
       return vista(sugerencia, !existia);
     } catch (DuplicateKeyException carrera) {

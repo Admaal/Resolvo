@@ -27,6 +27,7 @@ public final class SugerirRespuesta {
   private final BaseConocimiento base;
   private final RedactorRespuestas redactor;
   private final Reloj reloj;
+  private final double distanciaMaxima;
 
   public SugerirRespuesta(
       TicketRepositorio tickets,
@@ -35,12 +36,25 @@ public final class SugerirRespuesta {
       BaseConocimiento base,
       RedactorRespuestas redactor,
       Reloj reloj) {
+    this(tickets, sugerencias, embebedor, base, redactor, reloj, BaseConocimiento.SIN_LIMITE);
+  }
+
+  /** Con {@code distanciaMaxima}, un fragmento poco parecido al ticket no se cita aunque sea el mas cercano. */
+  public SugerirRespuesta(
+      TicketRepositorio tickets,
+      Sugerencias sugerencias,
+      Embebedor embebedor,
+      BaseConocimiento base,
+      RedactorRespuestas redactor,
+      Reloj reloj,
+      double distanciaMaxima) {
     this.tickets = tickets;
     this.sugerencias = sugerencias;
     this.embebedor = embebedor;
     this.base = base;
     this.redactor = redactor;
     this.reloj = reloj;
+    this.distanciaMaxima = distanciaMaxima;
   }
 
   public Sugerencia ejecutar(
@@ -58,7 +72,8 @@ public final class SugerirRespuesta {
             organizacionId,
             embebedor.embeber(ticket.asunto() + "\n" + ticket.cuerpo()),
             FRAGMENTOS,
-            ticket.id().valor());
+            ticket.id().valor(),
+            distanciaMaxima);
     if (fragmentos.isEmpty()) {
       throw new SinFuentes();
     }

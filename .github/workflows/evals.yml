@@ -1,0 +1,62 @@
+name: Evals de IA
+
+# Mide calidad, coste y latencia de la clasificacion y del RAG contra Gemini real (ADR-0011).
+# NO forma parte del job agregador `Gate obligatorio`: depende de una clave y de un proveedor
+# externo, y un 503 o una cuota agotada no debe bloquear un merge. Falla el job si un umbral no se
+# cumple, pero el ruleset de main no lo exige.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "backend/src/main/resources/prompts/**"
+      - "backend/src/main/java/com/admaal/resolvo/infrastructure/ai/**"
+      - "backend/src/test/java/com/admaal/resolvo/evals/**"
+      - "backend/src/test/resources/evals/**"
+      - ".github/workflows/evals.yml"
+
+concurrency:
+  group: evals-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  evals:
+    name: Evals
+    # Un PR desde un fork no recibe secretos: se salta en vez de fallar. Nunca pull_request_target.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+          cache-dependency-path: |
+            backend/gradle/wrapper/gradle-wrapper.properties
+            backend/build.gradle.kts
+            backend/settings.gradle.kts
+      - name: gradlew evals
+        working-directory: backend
+        env:
+          RESOLVO_GEMINI_API_KEY: ${{ secrets.RESOLVO_GEMINI_API_KEY }}
+        run: bash ./gradlew evals --console=plain
+      - name: Informe en el resumen del job
+        if: ${{ always() }}
+        run: |
+          if [ -f backend/build/reports/evals/informe.md ]; then
+            cat backend/build/reports/evals/informe.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Los evals no llegaron a escribir informe: mira el log del paso anterior." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Subir el informe
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: informe-evals
+          path: backend/build/reports/evals/
+          if-no-files-found: ignore

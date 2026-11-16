@@ -55,6 +55,7 @@ Fuera de la fase 1:
 - [ADR-0008](adr/0008-eventos.md): outbox transaccional, cola en Postgres online y Redpanda en local.
 - [ADR-0009](adr/0009-hosting.md): Neon Free, Render Free y Cloudflare Pages.
 - [ADR-0010](adr/0010-tests-y-valla.md): JUnit 5, Testcontainers, ArchUnit, PIT en dominio al 80 % y Playwright.
+- [ADR-0011](adr/0011-evals.md): evals de IA contra Gemini real, en un job aparte y fuera del gate obligatorio.
 
 ## Preguntas abiertas
 
@@ -89,3 +90,9 @@ Categorías de semilla, sin CRUD: Incidencia (1 h / 4 h / 8 h / 24 h) y Consulta
 - Embeddings: `gemini-embedding-001` con N = 768 (ADR-0007).
 - Fuentes del RAG: artículos ficticios de ayuda en semilla y tickets RESUELTO o CERRADO de la misma organización. Sin CRUD de artículos.
 - La clasificación de tickets pasa a la fase 4.
+
+## Preguntas cerradas en la fase 4
+
+- La clasificación se pide bajo demanda (AGENTE o ADMIN), no al abrir el ticket: la demo es pública y cada clasificación gasta cuota. Una pendiente por ticket; la persona puede corregirla antes de aplicarla y aplicar recalcula el SLA.
+- Los evals miden calidad, coste en tokens y latencia contra Gemini real, en un job que no bloquea el merge (ADR-0011).
+- El umbral de similitud del RAG existe pero queda desactivado (2.0) hasta calibrarlo con la primera corrida real de los evals.
