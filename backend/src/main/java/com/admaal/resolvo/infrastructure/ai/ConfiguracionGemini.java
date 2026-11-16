@@ -1,8 +1,9 @@
 package com.admaal.resolvo.infrastructure.ai;
 
 import com.admaal.resolvo.application.Embebedor;
-import com.admaal.resolvo.application.RedactorRespuestas;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Duration;
+import java.util.List;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,11 +40,13 @@ public class ConfiguracionGemini {
     return new EmbebedorSpringAi(modelo, nombre);
   }
 
+  /** Devuelve el tipo concreto para que la comprobacion de arranque pueda inyectarlo. */
   @Bean
-  RedactorRespuestas redactor(
+  RedactorSpringAi redactor(
       ChatModel chat,
       ObjectMapper json,
-      @Value("${spring.ai.google.genai.chat.options.model}") String nombre) {
-    return new RedactorSpringAi(chat, json, nombre);
+      @Value("${resolvo.gemini.modelos}") List<String> modelos,
+      @Value("${resolvo.gemini.timeout-segundos:20}") int segundos) {
+    return new RedactorSpringAi(chat, json, modelos, Duration.ofSeconds(segundos));
   }
 }
