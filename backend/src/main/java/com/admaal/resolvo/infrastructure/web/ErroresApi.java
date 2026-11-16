@@ -1,9 +1,11 @@
 package com.admaal.resolvo.infrastructure.web;
 
+import com.admaal.resolvo.application.IaNoDisponible;
 import com.admaal.resolvo.domain.CredencialesInvalidas;
 import com.admaal.resolvo.domain.CuentaBloqueada;
 import com.admaal.resolvo.domain.NoEncontrado;
 import com.admaal.resolvo.domain.Prohibido;
+import com.admaal.resolvo.domain.SinFuentes;
 import com.admaal.resolvo.domain.TextoInvalido;
 import com.admaal.resolvo.domain.TransicionNoPermitida;
 import java.util.Map;
@@ -49,5 +51,15 @@ public class ErroresApi {
   @ExceptionHandler(CuentaBloqueada.class)
   ResponseEntity<Map<String, String>> bloqueado(CuentaBloqueada error) {
     return ResponseEntity.status(401).body(Map.of("error", error.getMessage()));
+  }
+
+  @ExceptionHandler(SinFuentes.class)
+  ResponseEntity<Map<String, String>> sinFuentes() {
+    return ResponseEntity.unprocessableEntity().body(Map.of("error", "sin-fuentes"));
+  }
+
+  @ExceptionHandler(IaNoDisponible.class)
+  ResponseEntity<Map<String, String>> iaNoDisponible(IaNoDisponible error) {
+    return ResponseEntity.status(503).body(Map.of("error", error.getMessage()));
   }
 }

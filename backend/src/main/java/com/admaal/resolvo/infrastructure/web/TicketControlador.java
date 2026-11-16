@@ -10,6 +10,7 @@ import com.admaal.resolvo.domain.Prioridad;
 import com.admaal.resolvo.domain.Ticket;
 import com.admaal.resolvo.domain.TicketId;
 import com.admaal.resolvo.domain.UsuarioId;
+import com.admaal.resolvo.infrastructure.AplicacionDeConocimiento;
 import com.admaal.resolvo.infrastructure.AplicacionDeResolvo;
 import java.time.Instant;
 import java.util.List;
@@ -27,9 +28,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class TicketControlador {
 
   private final AplicacionDeResolvo aplicacion;
+  private final AplicacionDeConocimiento conocimiento;
 
-  public TicketControlador(AplicacionDeResolvo aplicacion) {
+  public TicketControlador(AplicacionDeResolvo aplicacion, AplicacionDeConocimiento conocimiento) {
     this.aplicacion = aplicacion;
+    this.conocimiento = conocimiento;
   }
 
   @PostMapping
@@ -85,6 +88,7 @@ public class TicketControlador {
     Actor actor = Actor.actual();
     Ticket ticket =
         aplicacion.transicionar(actor.organizacionId(), new TicketId(id), cuerpo.estado(), actor.rol());
+    conocimiento.indexarTicketEnSegundoPlano(actor.organizacionId(), ticket.id());
     return TicketRespuesta.de(ticket, aplicacion.comentarios(actor.organizacionId(), ticket.id(), actor.rol()));
   }
 
