@@ -51,21 +51,37 @@ public class RedactorSpringAi implements RedactorRespuestas {
             hilo.setDaemon(true);
             return hilo;
           });
+  private final int maxIntentos;
+  private volatile List<String> orden;
   private volatile String modeloUsado;
+
+  private record Sondeo(String modelo, boolean responde, long milisegundos, IaNoDisponible fallo) {}
+
+  public RedactorSpringAi(
+      ChatModel chat, ObjectMapper json, List<String> modelos, Duration limitePorIntento) {
+    this(chat, json, modelos, limitePorIntento, modelos.size());
+  }
 
   /**
    * Los modelos se prueban por orden: Google retira o satura modelos concretos (404, 503, cuota) y
-   * una demo no puede depender de que uno siga vivo. Cada intento tiene un limite de tiempo.
+   * una demo no puede depender de que uno siga vivo. Cada intento tiene un limite de tiempo y una
+   * peticion no prueba mas de {@code maxIntentos} modelos, para acotar cuanto puede tardar.
    */
   public RedactorSpringAi(
-      ChatModel chat, ObjectMapper json, List<String> modelos, Duration limitePorIntento) {
+      ChatModel chat,
+      ObjectMapper json,
+      List<String> modelos,
+      Duration limitePorIntento,
+      int maxIntentos) {
     if (modelos.isEmpty()) {
       throw new IllegalArgumentException("hace falta al menos un modelo");
     }
     this.chat = chat;
     this.json = json;
     this.modelos = List.copyOf(modelos);
+    this.orden = this.modelos;
     this.limite = limitePorIntento;
+    this.maxIntentos = Math.max(1, maxIntentos);
     this.modeloUsado = this.modelos.get(0);
   }
 
@@ -75,10 +91,67 @@ public class RedactorSpringAi implements RedactorRespuestas {
     return modeloUsado;
   }
 
-  /** Una llamada minima para saber si algun modelo responde, sin datos de nadie. */
+  /**
+   * Sondea todos los modelos a la vez con una llamada minima y sin datos de nadie, deja en el log
+   * cuanto tarda cada uno y pone primero los que responden, del mas rapido al mas lento. Los que
+   * fallan quedan al final como ultimo recurso: pueden recuperarse.
+   */
   public String comprobar() {
-    llamarConRespaldo("Responde solo con la palabra: ok");
+    List<Future<Sondeo>> tareas = new ArrayList<>();
+    for (String modelo : modelos) {
+      tareas.add(llamadas.submit(() -> sondear(modelo)));
+    }
+    List<Sondeo> sanos = new ArrayList<>();
+    IaNoDisponible ultimoFallo = null;
+    for (Future<Sondeo> tarea : tareas) {
+      Sondeo sondeo = esperar(tarea);
+      if (sondeo.responde()) {
+        sanos.add(sondeo);
+      } else {
+        ultimoFallo = sondeo.fallo();
+      }
+    }
+    if (sanos.isEmpty()) {
+      LOG.warn("Gemini sondeo: ningun modelo responde ({})", modelos);
+      throw ultimoFallo;
+    }
+    sanos.sort(java.util.Comparator.comparingLong(Sondeo::milisegundos));
+    List<String> nuevoOrden = new ArrayList<>();
+    sanos.forEach(sondeo -> nuevoOrden.add(sondeo.modelo()));
+    modelos.stream().filter(modelo -> !nuevoOrden.contains(modelo)).forEach(nuevoOrden::add);
+    orden = List.copyOf(nuevoOrden);
+    modeloUsado = orden.get(0);
+    LOG.info("Gemini sondeo: orden de modelos {}", orden);
     return modeloUsado;
+  }
+
+  private Sondeo sondear(String modelo) {
+    long inicio = System.nanoTime();
+    try {
+      llamar(modelo, "Responde solo con la palabra: ok");
+      long ms = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - inicio);
+      LOG.info("Gemini sondeo: {} responde en {} ms", modelo, ms);
+      return new Sondeo(modelo, true, ms, null);
+    } catch (RuntimeException error) {
+      long ms = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - inicio);
+      LOG.warn(
+          "Gemini sondeo: {} no responde tras {} ms ({})",
+          modelo,
+          ms,
+          FalloDelProveedor.resumen(error));
+      return new Sondeo(modelo, false, ms, FalloDelProveedor.de(error));
+    }
+  }
+
+  private static Sondeo esperar(Future<Sondeo> tarea) {
+    try {
+      return tarea.get();
+    } catch (InterruptedException interrumpido) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException(interrumpido);
+    } catch (ExecutionException fallo) {
+      throw new IllegalStateException(fallo.getCause());
+    }
   }
 
   @Override
@@ -88,7 +161,11 @@ public class RedactorSpringAi implements RedactorRespuestas {
 
   private String llamarConRespaldo(String prompt) {
     IaNoDisponible ultimo = null;
-    for (String modelo : modelos) {
+    int intentos = 0;
+    for (String modelo : orden) {
+      if (intentos++ >= maxIntentos) {
+        break;
+      }
       try {
         String texto = llamar(modelo, prompt);
         modeloUsado = modelo;
@@ -106,7 +183,7 @@ public class RedactorSpringAi implements RedactorRespuestas {
             FalloDelProveedor.resumen(error));
       }
     }
-    LOG.warn("Gemini: ningun modelo respondio ({})", modelos);
+    LOG.warn("Gemini: ningun modelo respondio ({})", orden);
     throw ultimo;
   }
 
