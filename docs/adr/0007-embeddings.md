@@ -22,3 +22,4 @@ Un único modelo de embeddings con una dimensión `N` fija, declarada en la migr
 - Cambiar de modelo de embeddings es una decisión con migración y reindexado, no un cambio de perfil.
 - Los documentos guardan qué modelo los indexó para detectar contenido desfasado tras un cambio.
 - `docs/producto.md` mantiene el modelo y `N` como pregunta abierta hasta la fase 3.
+- Cerrado el 2026-11-16: modelo `gemini-embedding-001` con `outputDimensionality=768`, el mismo en local y en la demo. Columna `vector(768)`, distancia coseno e índice HNSW (`vector_cosine_ops`). Los tests usan un embebedor falso determinista, nunca el proveedor. `fragmento.modelo` guarda qué modelo indexó cada fragmento.
