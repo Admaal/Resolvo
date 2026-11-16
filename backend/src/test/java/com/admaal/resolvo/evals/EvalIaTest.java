@@ -178,6 +178,12 @@ class EvalIaTest {
     List<Double> distanciasSinRespuesta = new ArrayList<>();
     Set<String> errores = new LinkedHashSet<>();
     for (CasoRag caso : casos) {
+      // Se cuenta antes de llamar al proveedor: un caso que falla es un fallo, no un caso menos.
+      if (caso.tieneRespuesta()) {
+        conRespuesta++;
+      } else {
+        sinRespuesta++;
+      }
       Ticket ticket = ticket(caso.id(), caso.asunto(), caso.cuerpo());
       try {
         Embedding consulta = embebedor.embeber(caso.asunto() + "\n" + caso.cuerpo());
@@ -186,7 +192,6 @@ class EvalIaTest {
         List<Fragmento> fragmentos =
             base.buscar(ACME, consulta, K, UUID.randomUUID(), distanciaMaxima);
         if (caso.tieneRespuesta()) {
-          conRespuesta++;
           distanciasConRespuesta.add(mejor);
           UUID esperado = articulos.get(caso.articulo());
           if (fuentesCercanas(consulta).contains(esperado)) {
@@ -197,7 +202,6 @@ class EvalIaTest {
             citan++;
           }
         } else {
-          sinRespuesta++;
           distanciasSinRespuesta.add(mejor);
           if (fragmentos.isEmpty()) {
             sinRespuestaAcertada++;

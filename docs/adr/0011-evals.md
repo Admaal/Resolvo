@@ -21,11 +21,11 @@ Lo que no necesita red sí está en el gate: aritmética de métricas, informe, 
 
 Los datasets y los umbrales viven en `backend/src/test/resources/evals/` (`clasificacion.jsonl`, `rag.jsonl`, `umbrales.json`), con datos ficticios. Medidas y cifras iniciales:
 
-- Calidad: respuestas válidas ≥ 95 %, acierto de categoría ≥ 90 %, prioridad exacta ≥ 70 %, recall@5 del artículo esperado ≥ 80 %, consultas sin respuesta que devuelven sin fuentes ≥ 80 %, borrador que cita la fuente esperada ≥ 80 %.
+- Calidad: respuestas válidas ≥ 95 %, acierto de categoría ≥ 90 %, prioridad exacta ≥ 70 %, recall@5 del artículo esperado ≥ 80 %, consultas sin respuesta que devuelven sin fuentes ≥ 80 %, borrador que cita la fuente esperada ≥ 90 % (el plan pedía una «precisión de citas» ≥ 90 %; se mide como «el borrador cita el artículo esperado», que es la versión que se puede etiquetar a mano).
 - Coste: tokens medios por llamada ≤ 3000. Sin cálculo en euros: no hay tabla de precios versionada y no se inventa; el free tier cuesta 0 €.
 - Latencia: p95 por llamada ≤ 8 s.
 
-`UmbralesTest` fija estos suelos. Bajar un umbral para que el eval pase cuenta como debilitar un test (AGENTS.md): se cambia con un cambio de este ADR, no en silencio.
+`UmbralesTest` fija el suelo de cada una de estas cifras. Bajar un umbral para que el eval pase cuenta como debilitar un test (AGENTS.md): se cambia con un cambio de este ADR, no en silencio.
 
 ## Consecuencias
 
@@ -33,3 +33,10 @@ Los datasets y los umbrales viven en `backend/src/test/resources/evals/` (`clasi
 - El eval imprime el umbral de distancia que separa las consultas con y sin respuesta; con él se fija `resolvo.rag.distancia-maxima` (por defecto 2.0, que no descarta nada).
 - Cada llamada del eval espera `resolvo.evals.pausa-ms` (4,5 s) para no pasar la cuota por minuto: unas 90 llamadas tardan varios minutos.
 - `LlamadorGemini.observar` expone tokens y duración de cada llamada; la fase 5 puede reutilizarlo para las métricas de producción.
+
+## Desviaciones respecto al plan de la fase 4
+
+- Los evals y sus datasets viven en `src/test` (etiqueta `eval`, tarea `evals`) y no en un source set `evals` aparte: una sola compilación y las pruebas de su aritmética corren en el gate normal.
+- `Clasificacion` no guarda tokens ni se persisten métricas: es de la fase 5. Los tokens y la duración de cada llamada se observan con `LlamadorGemini.observar`.
+- Se añadió `GET /api/tickets/{id}/clasificaciones/actual` (no estaba en el plan) para que la SPA recupere la propuesta pendiente al recargar, igual que las sugerencias.
+- El doble clic sobre el mismo ticket llama una sola vez al modelo gracias a un cerrojo por ticket **dentro del proceso**; entre instancias solo el índice único de V6 evita la duplicada y entonces sí se gastan dos llamadas. Render Free corre una instancia.

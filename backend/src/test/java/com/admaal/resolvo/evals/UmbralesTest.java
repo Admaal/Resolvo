@@ -36,6 +36,10 @@ class UmbralesTest {
     assertThat(umbrales.prioridadExacta()).isGreaterThanOrEqualTo(0.7);
     assertThat(umbrales.recallAtCinco()).isGreaterThanOrEqualTo(0.8);
     assertThat(umbrales.sinRespuestaAcierto()).isGreaterThanOrEqualTo(0.8);
+    assertThat(umbrales.respuestaValida()).isGreaterThanOrEqualTo(0.95);
+    // El plan pide una precision de citas >= 0,9: el borrador cita la fuente esperada.
+    assertThat(umbrales.citaLaFuenteEsperada()).isGreaterThanOrEqualTo(0.9);
+    assertThat(umbrales.tokensMediosPorLlamada()).isLessThanOrEqualTo(3000);
     assertThat(umbrales.p95Milisegundos()).isLessThanOrEqualTo(8000);
   }
 }
