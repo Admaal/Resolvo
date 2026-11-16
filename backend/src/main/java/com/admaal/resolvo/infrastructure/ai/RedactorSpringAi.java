@@ -11,17 +11,30 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
 import org.springframework.core.io.ClassPathResource;
 
 public class RedactorSpringAi implements RedactorRespuestas {
 
+  private static final Logger LOG = LoggerFactory.getLogger(RedactorSpringAi.class);
   private static final Pattern DELIMITADOR =
       Pattern.compile("<\\s*/?\\s*ticket\\s*>", Pattern.CASE_INSENSITIVE);
   private static final Pattern MARCADOR = Pattern.compile("\\{\\{(\\w+)}}");
@@ -29,28 +42,100 @@ public class RedactorSpringAi implements RedactorRespuestas {
 
   private final ChatModel chat;
   private final ObjectMapper json;
-  private final String nombreDelModelo;
+  private final List<String> modelos;
+  private final Duration limite;
+  private final ExecutorService llamadas =
+      Executors.newCachedThreadPool(
+          tarea -> {
+            Thread hilo = new Thread(tarea, "gemini-llamada");
+            hilo.setDaemon(true);
+            return hilo;
+          });
+  private volatile String modeloUsado;
 
-  public RedactorSpringAi(ChatModel chat, ObjectMapper json, String nombreDelModelo) {
+  /**
+   * Los modelos se prueban por orden: Google retira o satura modelos concretos (404, 503, cuota) y
+   * una demo no puede depender de que uno siga vivo. Cada intento tiene un limite de tiempo.
+   */
+  public RedactorSpringAi(
+      ChatModel chat, ObjectMapper json, List<String> modelos, Duration limitePorIntento) {
+    if (modelos.isEmpty()) {
+      throw new IllegalArgumentException("hace falta al menos un modelo");
+    }
     this.chat = chat;
     this.json = json;
-    this.nombreDelModelo = nombreDelModelo;
+    this.modelos = List.copyOf(modelos);
+    this.limite = limitePorIntento;
+    this.modeloUsado = this.modelos.get(0);
   }
 
+  /** El modelo que contesto en la ultima llamada; antes de la primera, el preferido. */
   @Override
   public String modelo() {
-    return nombreDelModelo;
+    return modeloUsado;
+  }
+
+  /** Una llamada minima para saber si algun modelo responde, sin datos de nadie. */
+  public String comprobar() {
+    llamarConRespaldo("Responde solo con la palabra: ok");
+    return modeloUsado;
   }
 
   @Override
   public BorradorConCitas redactar(Ticket ticket, List<Fragmento> fragmentos) {
-    String respuesta;
-    try {
-      respuesta = chat.call(prompt(ticket, fragmentos));
-    } catch (RuntimeException error) {
-      throw FalloDelProveedor.de(error);
+    return interpretar(llamarConRespaldo(prompt(ticket, fragmentos)));
+  }
+
+  private String llamarConRespaldo(String prompt) {
+    IaNoDisponible ultimo = null;
+    for (String modelo : modelos) {
+      try {
+        String texto = llamar(modelo, prompt);
+        modeloUsado = modelo;
+        return texto;
+      } catch (RuntimeException error) {
+        ultimo = FalloDelProveedor.de(error);
+        if (!FalloDelProveedor.sePuedeProbarOtroModelo(error)) {
+          LOG.warn(
+              "Gemini: el modelo {} falla sin remedio: {}", modelo, FalloDelProveedor.resumen(error));
+          throw ultimo;
+        }
+        LOG.warn(
+            "Gemini: el modelo {} no sirve ({}); pruebo el siguiente",
+            modelo,
+            FalloDelProveedor.resumen(error));
+      }
     }
-    return interpretar(respuesta);
+    LOG.warn("Gemini: ningun modelo respondio ({})", modelos);
+    throw ultimo;
+  }
+
+  private String llamar(String modelo, String prompt) {
+    Future<ChatResponse> tarea =
+        llamadas.submit(
+            () ->
+                chat.call(
+                    new Prompt(prompt, GoogleGenAiChatOptions.builder().model(modelo).build())));
+    ChatResponse respuesta;
+    try {
+      respuesta = tarea.get(limite.toMillis(), TimeUnit.MILLISECONDS);
+    } catch (TimeoutException agotado) {
+      tarea.cancel(true);
+      throw new RuntimeException("tiempo agotado con el modelo " + modelo, agotado);
+    } catch (InterruptedException interrumpido) {
+      Thread.currentThread().interrupt();
+      tarea.cancel(true);
+      throw new IllegalStateException(interrumpido);
+    } catch (ExecutionException fallo) {
+      if (fallo.getCause() instanceof RuntimeException causa) {
+        throw causa;
+      }
+      throw new RuntimeException(fallo.getCause());
+    }
+    if (respuesta == null || respuesta.getResult() == null) {
+      throw new IaNoDisponible("ia-no-disponible");
+    }
+    return respuesta.getResult().getOutput().getText();
   }
 
   private BorradorConCitas interpretar(String respuesta) {

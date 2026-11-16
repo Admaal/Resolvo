@@ -49,6 +49,10 @@ SPRING_PROFILES_ACTIVE=gemini RESOLVO_GEMINI_API_KEY=<tu-clave> RESOLVO_JWT_SECR
 
 Al arrancar se indexan en segundo plano los artículos de ayuda y los tickets resueltos; un ADMIN puede forzarlo con `POST /api/conocimiento/reindexar`. La clave solo se lee de la variable de entorno.
 
+**Modelos de redacción.** Google retira o satura modelos concretos, así que la app prueba una lista por orden y pasa al siguiente si uno da 404 (retirado), 503 (saturado), cuota agotada o no contesta en 20 s. Un 403 (clave o permisos) no se reintenta con otro modelo. La lista por defecto es `gemini-flash-latest,gemini-3.8-flash,gemini-3.5-flash,gemini-2.5-flash-lite` y se cambia con `RESOLVO_GEMINI_MODELOS` (separados por comas), sin tocar el código. Los embeddings van fijos con `gemini-embedding-001` a 768 dimensiones (ADR-0007).
+
+Al arrancar, el log dice `IA lista: el modelo de redaccion X responde` o, si no, el motivo. Es la forma de comprobar la clave y los modelos sin iniciar sesión.
+
 ## Despliegue (Neon + Render + Cloudflare Pages)
 
 1. **Neon:** proyecto y base de datos. Guarda dos cadenas: la _pooled_ (para la app) y la _directa_ (para migrar).

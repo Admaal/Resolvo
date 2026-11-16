@@ -34,6 +34,6 @@ class PerfilGeminiTest {
     assertThat(embebedor).isInstanceOf(EmbebedorSpringAi.class);
     assertThat(redactor).isInstanceOf(RedactorSpringAi.class);
     assertThat(embebedor.modelo()).isEqualTo("gemini-embedding-001");
-    assertThat(redactor.modelo()).isEqualTo("gemini-2.5-flash");
+    assertThat(redactor.modelo()).isEqualTo("gemini-flash-latest");
   }
 }
