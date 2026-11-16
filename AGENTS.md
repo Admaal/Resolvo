@@ -10,7 +10,9 @@ Este archivo es la fuente de verdad de la fase y de la valla. El historial vive 
 
 La demo corre en https://resolvo-6lc.pages.dev: SPA en Cloudflare Pages, proxy `/api` a la API en Render Free (Docker, Frankfurt) y Postgres en Neon Free. Semilla de demo idempotente (`V3`), aviso «despertando servidor…» y ping cada 5 minutos con GitHub Actions. Despliegue explicado en [README.md](README.md). Sin IA.
 
-**Fase 3 en curso (2026-11-16):** RAG con pgvector, sugerencias con citas y aprobación humana, en tres PRs (dominio y casos de uso; adapters y HTTP; SPA y despliegue). El PR 1 (dominio, casos de uso, esquema) y el PR 2 (adapters, HTTP e indexado) están hechos; hasta el PR 3 la demo pública sigue sin IA y sin SPA para ella.
+**Fase 3 — RAG con pgvector, sugerencias con citas y aprobación humana.** Código hecho el 2026-11-16 en tres PRs: dominio y casos de uso, adapters y HTTP, y panel en la SPA. **Falta activarla en la demo pública**: poner `SPRING_PROFILES_ACTIVE=gemini` y `RESOLVO_GEMINI_API_KEY` en Render, comprobar el flujo en `resolvo-6lc.pages.dev` y anotar la cuota de Gemini con fecha. Hasta entonces la demo responde «La IA no está disponible en este entorno» y el resto sigue igual. Cuando eso esté comprobado se añade la fila a [docs/fases.md](docs/fases.md).
+
+La IA es un perfil: sin `gemini` no se carga ninguna autoconfiguración de Spring AI y los endpoints de IA responden 503 (ADR-0006). Embeddings `gemini-embedding-001` a 768 (ADR-0007).
 
 ## Stack
 
@@ -18,9 +20,9 @@ La demo corre en https://resolvo-6lc.pages.dev: SPA en Cloudflare Pages, proxy `
 - Tests: `backend\gradlew.bat -p backend test` (JUnit 5 + AssertJ + ArchUnit). El tag `full` marca lo que arranca Spring o Docker y queda fuera del bucle rápido.
 - Dominio: `backend/src/main/java/com/admaal/resolvo/domain/` (sin Spring, sin JPA, sin Spring AI).
 - Casos de uso: `backend/src/main/java/com/admaal/resolvo/application/` (solo depende de `domain` y de sus puertos).
-- Adapters: `backend/src/main/java/com/admaal/resolvo/infrastructure/` (JPA, Flyway, JWT y HTTP).
+- Adapters: `backend/src/main/java/com/admaal/resolvo/infrastructure/` (JPA, JDBC y pgvector, Flyway, JWT, HTTP y `ai/` con Spring AI).
 - Lint de pureza: ArchUnit, en `backend/src/test/java/com/admaal/resolvo/architecture/`.
-- Frontend: Angular 22.2.5 standalone, Angular Material y Vitest, en `frontend/`. El access token vive en un campo de `AuthService`.
+- Frontend: Angular 22.2.5 standalone, Angular Material y Vitest, en `frontend/`. El access token vive en un campo de `AuthService`. El panel de sugerencias (`features/tickets/sugerencia-panel.ts`) solo se pinta a AGENTE y ADMIN.
 
 ## Principios no negociables
 
@@ -74,4 +76,8 @@ Repetir la medición: `powershell -NoProfile -File scripts/medir-bucle.ps1`.
 - `gh` no está instalado: abrir PRs y mirar su CI se hace desde la web de GitHub.
 - La contraseña de `neondb_owner` se compartió en un chat el 2026-11-14: conviene rotarla en Neon y actualizar `RESOLVO_DB_PASSWORD` y `RESOLVO_DB_MIGRATION_PASSWORD` en Render.
 - Cuotas reales de Neon y Render sin anotar con fecha: la búsqueda web no estuvo disponible al cerrar la fase 2.
-- En Render Free la API tarda unos 46 s en arrancar en frío (3 s en local); lo cubre el aviso de la SPA.
+- En Render Free la API tarda unos 46 s en arrancar en frío (3 s en local); lo cubre el aviso de la SPA. Con Spring AI en el classpath la imagen sigue arrancando en 3,2 s en local con 512 MB (203 MiB sin IA, 213 MiB con el perfil `gemini`, medidos el 2026-11-16); el arranque en frío de Render con Spring AI no está medido.
+- Los gates crecieron con la fase 3 (2026-11-16, Windows, Docker en marcha): `gates.ps1 full` 28,6 s con 156 tests de backend y mutación 35,9 s (215 mutantes, 95,8 %), frente a los 13 s de la mutación del 2026-11-04. Muy por debajo del techo de 300 s. Los tests `full` limitan Hikari a 3 conexiones porque cada contexto distinto de Spring guarda su pool.
+- Sin umbral de similitud: si la organización tiene fragmentos, siempre se citan los más cercanos aunque no sean relevantes. Es tema de los evals de la fase 4.
+- Reabrir un ticket resuelto no borra sus fragmentos del índice.
+- Cuota real de Gemini sin anotar con fecha: se anota al activar la IA en la demo.
