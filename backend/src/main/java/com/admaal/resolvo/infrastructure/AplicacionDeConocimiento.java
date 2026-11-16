@@ -140,7 +140,7 @@ public class AplicacionDeConocimiento {
   }
 
   private SugerenciaVista vista(Sugerencia sugerencia, boolean creada) {
-    return new SugerenciaVista(sugerencia, sugerencias.citasDe(sugerencia.id()), creada);
+    return new SugerenciaVista(sugerencia, sugerencias.citasDe(sugerencia.organizacionId(), sugerencia.id()), creada);
   }
 
   private static void exigirPersonal(Rol rol) {

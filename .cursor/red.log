@@ -20,3 +20,6 @@
 2026-11-04T17:12:33 fast no-sha RED backend/src/test/java/com/admaal/resolvo/application/AsignarTicketTest.java exit=1
 2026-11-04T17:47:04 fast no-sha RED backend/src/test/java/com/admaal/resolvo/infrastructure/web/TicketHttpTest.java exit=1
 2026-11-14T13:17:36 fast 9b4e8a4a63a6fb6a5d9a0306ba07550cf178988e RED frontend/src/app/core/servidor.service.spec.ts exit=1
+2026-11-16T11:34:25 fast 72b03f56c98184fd07e0149e572c023973d228a3 RED backend/src/test/java/com/admaal/resolvo/application/AprobarSugerenciaTest.java exit=1
+2026-11-16T11:34:39 fast 72b03f56c98184fd07e0149e572c023973d228a3 RED backend/src/test/java/com/admaal/resolvo/application/DescartarSugerenciaTest.java exit=1
+2026-11-16T11:40:13 fast 72b03f56c98184fd07e0149e572c023973d228a3 RED backend/src/test/java/com/admaal/resolvo/infrastructure/ai/RedactorSpringAiTest.java exit=1

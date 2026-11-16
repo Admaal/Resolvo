@@ -41,7 +41,7 @@ Tests: `powershell -NoProfile -File scripts/gates.ps1 full`. Más comandos en [A
 
 ### IA (fase 3, opcional)
 
-Sin clave la app funciona igual: las sugerencias y el reindexado responden `503` con `ia-no-configurada`. Para encenderla, una clave de Gemini (free tier) y el perfil `gemini`:
+Sin clave la app funciona igual: las sugerencias y el reindexado responden `503` con `ia-no-configurada`. Para encenderla, una clave de Gemini (free tier) y el perfil `gemini`. El perfil exige la clave: sin ella el arranque falla diciendo qué variable falta; si quieres la IA apagada, no actives el perfil.
 
 ```bash
 SPRING_PROFILES_ACTIVE=gemini RESOLVO_GEMINI_API_KEY=<tu-clave> RESOLVO_JWT_SECRET=... backend/gradlew -p backend bootRun

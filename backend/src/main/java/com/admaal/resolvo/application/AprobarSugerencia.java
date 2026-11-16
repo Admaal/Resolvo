@@ -4,6 +4,7 @@ import com.admaal.resolvo.domain.Comentario;
 import com.admaal.resolvo.domain.ComentarioId;
 import com.admaal.resolvo.domain.NoEncontrado;
 import com.admaal.resolvo.domain.OrganizacionId;
+import com.admaal.resolvo.domain.Prohibido;
 import com.admaal.resolvo.domain.Rol;
 import com.admaal.resolvo.domain.Sugerencia;
 import com.admaal.resolvo.domain.SugerenciaId;
@@ -29,6 +30,9 @@ public final class AprobarSugerencia {
       UsuarioId actor,
       Rol rol,
       String textoFinal) {
+    if (rol == Rol.CLIENTE) {
+      throw new Prohibido();
+    }
     Sugerencia sugerencia =
         sugerencias.porId(organizacionId, sugerenciaId).orElseThrow(NoEncontrado::new);
     Ticket ticket =

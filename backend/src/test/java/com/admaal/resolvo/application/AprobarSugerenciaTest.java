@@ -103,4 +103,11 @@ class AprobarSugerenciaTest {
     assertThat(tickets.vecesGuardado()).isEqualTo(ticketsAntes + 1);
     assertThat(sugerencias.vecesGuardado()).isEqualTo(sugerenciasAntes + 1);
   }
+
+  @Test
+  void clienteConUnIdInventadoRecibeLoMismoQueConUnIdReal() {
+    assertThatThrownBy(
+            () -> caso.ejecutar(acme, SugerenciaId.nuevo(), agente, Rol.CLIENTE, "x"))
+        .isInstanceOf(Prohibido.class);
+  }
 }

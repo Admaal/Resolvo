@@ -70,4 +70,10 @@ class DescartarSugerenciaTest {
 
     assertThat(sugerencias.vecesGuardado()).isEqualTo(antes + 1);
   }
+
+  @Test
+  void clienteConUnIdInventadoRecibeLoMismoQueConUnIdReal() {
+    assertThatThrownBy(() -> caso.ejecutar(acme, SugerenciaId.nuevo(), agente, Rol.CLIENTE))
+        .isInstanceOf(Prohibido.class);
+  }
 }
