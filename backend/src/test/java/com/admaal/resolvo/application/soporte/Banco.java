@@ -39,4 +39,24 @@ public final class Banco {
                 "Asunto valido",
                 "Cuerpo valido"));
   }
+
+  public static Ticket abrirConTexto(
+      RepositorioEnMemoria tickets, OrganizacionId organizacion, String asunto, String cuerpo) {
+    CategoriaId categoria = new CategoriaId(UUID.randomUUID());
+    Instant ahora = Instant.parse("2026-11-16T10:00:00Z");
+    return new AbrirTicket(
+            () -> ahora,
+            ignorada -> "RS-1",
+            tickets,
+            (org, id) -> Optional.of(new Categoria(id, org, "Incidencia")))
+        .ejecutar(
+            new AbrirTicketComando(
+                organizacion,
+                new UsuarioId(UUID.randomUUID()),
+                Rol.CLIENTE,
+                categoria,
+                Prioridad.ALTA,
+                asunto,
+                cuerpo));
+  }
 }

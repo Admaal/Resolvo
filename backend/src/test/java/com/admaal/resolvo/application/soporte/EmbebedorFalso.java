@@ -33,4 +33,8 @@ public final class EmbebedorFalso implements Embebedor {
   public List<String> textos() {
     return List.copyOf(textos);
   }
+
+  public void reiniciar() {
+    textos.clear();
+  }
 }
