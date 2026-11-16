@@ -23,7 +23,7 @@ import org.springframework.core.io.ClassPathResource;
 public class RedactorSpringAi implements RedactorRespuestas {
 
   private static final Pattern DELIMITADOR =
-      Pattern.compile("<\s*/?\s*ticket\s*>", Pattern.CASE_INSENSITIVE);
+      Pattern.compile("<\\s*/?\\s*ticket\\s*>", Pattern.CASE_INSENSITIVE);
   private static final Pattern MARCADOR = Pattern.compile("\\{\\{(\\w+)}}");
   private static final String PLANTILLA = cargar("prompts/redactar-respuesta-v1.txt");
 
@@ -118,7 +118,14 @@ public class RedactorSpringAi implements RedactorRespuestas {
   }
 
   private static String sinDelimitadores(String texto) {
-    return DELIMITADOR.matcher(texto).replaceAll("");
+    // Se repite hasta que no cambie: quitar uno puede juntar los trozos de otro ("<tic<ticket>ket>").
+    String actual = texto;
+    String anterior;
+    do {
+      anterior = actual;
+      actual = DELIMITADOR.matcher(anterior).replaceAll("");
+    } while (!actual.equals(anterior));
+    return actual;
   }
 
   private static String cargar(String ruta) {
