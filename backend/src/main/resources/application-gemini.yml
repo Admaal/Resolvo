@@ -4,12 +4,20 @@ spring:
       chat: google-genai
       embedding:
         text: google-genai
+    # Sin reintentos largos: con el valor por defecto (10 intentos y esperas de hasta minutos) una
+    # sobrecarga de Google dejaba la peticion colgada. Fallar pronto deja pasar al modelo siguiente.
+    retry:
+      max-attempts: 2
+      backoff:
+        initial-interval: 500ms
+        multiplier: 2
+        max-interval: 2s
     google:
       genai:
         api-key: ${RESOLVO_GEMINI_API_KEY:}
         chat:
           options:
-            model: gemini-2.5-flash
+            model: gemini-flash-latest
             temperature: 0.2
         embedding:
           api-key: ${RESOLVO_GEMINI_API_KEY:}
@@ -18,3 +26,11 @@ spring:
               model: gemini-embedding-001
               dimensions: 768
               task-type: RETRIEVAL_DOCUMENT
+
+resolvo:
+  gemini:
+    # Modelos de redaccion en orden de preferencia. Si uno da 404 (retirado), 503 (saturado), cuota
+    # agotada o no contesta a tiempo, se prueba el siguiente. Se cambian con RESOLVO_GEMINI_MODELOS
+    # (separados por comas) sin tocar el codigo. gemini-flash-latest es un alias que apunta al flash vigente.
+    modelos: ${RESOLVO_GEMINI_MODELOS:gemini-flash-latest,gemini-3.8-flash,gemini-3.5-flash,gemini-2.5-flash-lite}
+    timeout-segundos: 20
