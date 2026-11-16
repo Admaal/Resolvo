@@ -7,6 +7,7 @@ import com.admaal.resolvo.bootstrap.ResolvoApplication;
 import com.admaal.resolvo.infrastructure.PostgresDePrueba;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,7 @@ class EsquemaConocimientoTest {
   @Autowired JdbcTemplate jdbc;
   @Autowired DataSource datos;
 
+  @BeforeEach
   @AfterEach
   void limpiar() {
     jdbc.update("delete from cita");

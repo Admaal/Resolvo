@@ -48,4 +48,11 @@ public final class RedactorFalso implements RedactorRespuestas {
   public List<Fragmento> recibidos() {
     return recibidos;
   }
+
+  public void reiniciar() {
+    llamadas = 0;
+    recibidos = List.of();
+    citasForzadas = null;
+    fallo = null;
+  }
 }

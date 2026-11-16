@@ -30,3 +30,21 @@ resolvo:
     secure: false
   jwt:
     secret: ${RESOLVO_JWT_SECRET}
+  # RESOLVO_IA_SINCRONA: solo para tests; indexa en el hilo de la peticion en vez de en segundo plano.
+  ia:
+    indexar-al-arrancar: ${RESOLVO_IA_INDEXAR_AL_ARRANCAR:true}
+    sincrona: ${RESOLVO_IA_SINCRONA:false}
+
+---
+# IA apagada salvo con el perfil "gemini": sin RESOLVO_GEMINI_API_KEY la app arranca y los
+# endpoints de IA responden 503. La autoconfiguracion de Spring AI exige credenciales al crearse,
+# asi que se excluye entera en vez de apagarla por propiedad.
+spring:
+  config:
+    activate:
+      on-profile: "!gemini"
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.model.google.genai.autoconfigure.chat.GoogleGenAiChatAutoConfiguration
+      - org.springframework.ai.model.google.genai.autoconfigure.embedding.GoogleGenAiEmbeddingConnectionAutoConfiguration
+      - org.springframework.ai.model.google.genai.autoconfigure.embedding.GoogleGenAiTextEmbeddingAutoConfiguration

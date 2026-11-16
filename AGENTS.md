@@ -10,7 +10,7 @@ Este archivo es la fuente de verdad de la fase y de la valla. El historial vive 
 
 La demo corre en https://resolvo-6lc.pages.dev: SPA en Cloudflare Pages, proxy `/api` a la API en Render Free (Docker, Frankfurt) y Postgres en Neon Free. Semilla de demo idempotente (`V3`), aviso «despertando servidor…» y ping cada 5 minutos con GitHub Actions. Despliegue explicado en [README.md](README.md). Sin IA.
 
-**Fase 3 en curso (2026-11-16):** RAG con pgvector, sugerencias con citas y aprobación humana, en tres PRs (dominio y casos de uso; adapters y HTTP; SPA y despliegue). Hasta el PR 3 la demo pública sigue sin IA.
+**Fase 3 en curso (2026-11-16):** RAG con pgvector, sugerencias con citas y aprobación humana, en tres PRs (dominio y casos de uso; adapters y HTTP; SPA y despliegue). El PR 1 (dominio, casos de uso, esquema) y el PR 2 (adapters, HTTP e indexado) están hechos; hasta el PR 3 la demo pública sigue sin IA y sin SPA para ella.
 
 ## Stack
 
