@@ -27,5 +27,9 @@ public final class PostgresDePrueba {
     registro.add("spring.datasource.password", CONTENEDOR::getPassword);
     registro.add("resolvo.jwt.secret", () -> SECRETO);
     registro.add("resolvo.cookie.secure", () -> "false");
+    registro.add("resolvo.ia.indexar-al-arrancar", () -> "false");
+    registro.add("resolvo.ia.sincrona", () -> "true");
+    // Cada contexto de Spring distinto guarda su pool; con el de 10 por defecto se agotan las 100 conexiones.
+    registro.add("spring.datasource.hikari.maximum-pool-size", () -> "3");
   }
 }

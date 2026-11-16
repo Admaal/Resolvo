@@ -4,12 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { TicketDetalle, UsuarioResumen } from './ticket.model';
+import { SugerenciaPanel } from './sugerencia-panel';
 import { TicketThread } from './ticket-thread';
 import { TicketsService } from './tickets.service';
 
 @Component({
   selector: 'app-detalle',
-  imports: [FormsModule, TicketThread],
+  imports: [FormsModule, SugerenciaPanel, TicketThread],
   template: `
     @if (ticket(); as actual) {
       <p class="codigo">{{ actual.codigo }}</p>
@@ -35,6 +36,7 @@ import { TicketsService } from './tickets.service';
         </label>
         <button class="secundario" type="button" (click)="asignar()">Asignar</button>
       }
+      <app-sugerencia-panel [ticketId]="actual.id" (aprobada)="refrescar()" />
       <app-ticket-thread
         [comentarios]="actual.comentarios"
         [puedeNota]="puedeGestionar()"
@@ -113,6 +115,11 @@ export class DetallePage {
     } catch (fallo) {
       this.error.set(mensaje(fallo));
     }
+  }
+
+  async refrescar(): Promise<void> {
+    const actual = this.ticket();
+    if (actual) this.ticket.set(await this.tickets.detalle(actual.id));
   }
 
   private async cargar(id: string): Promise<void> {

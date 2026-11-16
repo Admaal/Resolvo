@@ -39,6 +39,16 @@ cd frontend && npm install && npm start
 
 Tests: `powershell -NoProfile -File scripts/gates.ps1 full`. Más comandos en [AGENTS.md](AGENTS.md).
 
+### IA (fase 3, opcional)
+
+Sin clave la app funciona igual: las sugerencias y el reindexado responden `503` con `ia-no-configurada`. Para encenderla, una clave de Gemini (free tier) y el perfil `gemini`. El perfil exige la clave: sin ella el arranque falla diciendo qué variable falta; si quieres la IA apagada, no actives el perfil.
+
+```bash
+SPRING_PROFILES_ACTIVE=gemini RESOLVO_GEMINI_API_KEY=<tu-clave> RESOLVO_JWT_SECRET=... backend/gradlew -p backend bootRun
+```
+
+Al arrancar se indexan en segundo plano los artículos de ayuda y los tickets resueltos; un ADMIN puede forzarlo con `POST /api/conocimiento/reindexar`. La clave solo se lee de la variable de entorno.
+
 ## Despliegue (Neon + Render + Cloudflare Pages)
 
 1. **Neon:** proyecto y base de datos. Guarda dos cadenas: la _pooled_ (para la app) y la _directa_ (para migrar).
@@ -51,6 +61,7 @@ Tests: `powershell -NoProfile -File scripts/gates.ps1 full`. Más comandos en [A
    | `RESOLVO_DB_MIGRATION_URL` / `_USER` / `_PASSWORD` | lo mismo con la conexión directa (Flyway) |
    | `RESOLVO_JWT_SECRET` | secreto generado, al menos 32 bytes |
    | `RESOLVO_COOKIE_SECURE` | `true` |
+   | `SPRING_PROFILES_ACTIVE` / `RESOLVO_GEMINI_API_KEY` | `gemini` y la clave; sin ellas la IA queda apagada |
 
 3. **Cloudflare Pages:** proyecto desde este repo, directorio raíz `frontend`, comando `npm run build`, salida `dist/frontend/browser`. Variable `API_ORIGIN` = URL del servicio de Render (sin barra final).
 4. **Ping:** un único cron externo (por ejemplo cron-job.org) cada 5 minutos a `GET <URL de Render>/api/salud`. Ningún otro servicio en Render: 744 h/mes caben en las 750 h del plan.

@@ -120,3 +120,21 @@ button.secundario {
 .cuerpo { white-space: pre-wrap; font-size: var(--fs-regular); line-height: 24px; }
 .comentario { border-top: 1px solid var(--border-1); padding: var(--space-3) 0; }
 .ayuda { color: var(--text-3); font-size: var(--fs-mini); }
+.sugerencia {
+  margin: var(--space-4) 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-1);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.sugerencia > button { align-self: flex-start; }
+.sugerencia .marca-ia { --chip: var(--accent); align-self: flex-start; }
+.sugerencia .citas { margin: 0; padding-left: var(--space-4); }
+.sugerencia .articulo-citado {
+  background: var(--bg-2);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
