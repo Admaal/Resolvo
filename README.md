@@ -63,7 +63,7 @@ Al arrancar se indexan en segundo plano los artículos de ayuda y los tickets re
    | `RESOLVO_COOKIE_SECURE` | `true` |
    | `SPRING_PROFILES_ACTIVE` / `RESOLVO_GEMINI_API_KEY` | `gemini` y la clave; sin ellas la IA queda apagada |
 
-3. **Cloudflare Pages:** proyecto desde este repo, directorio raíz `frontend`, comando `npm run build`, salida `dist/frontend/browser`. Variable `API_ORIGIN` = URL del servicio de Render (sin barra final).
+3. **Cloudflare Pages:** proyecto `resolvo` de subida directa (no está conectado a Git). Se despliega a mano desde `frontend/`: `npm run build && npx wrangler pages deploy --project-name resolvo --branch main` (con `--branch main`, o sale como preview). Las Pages Functions de `frontend/functions` van en el mismo despliegue. Variable `API_ORIGIN` = URL del servicio de Render (sin barra final), ya definida en `wrangler.toml`.
 4. **Ping:** un único cron externo (por ejemplo cron-job.org) cada 5 minutos a `GET <URL de Render>/api/salud`. Ningún otro servicio en Render: 744 h/mes caben en las 750 h del plan.
 
 Los secretos viven solo en las variables de Render y Pages, nunca en el repositorio.
