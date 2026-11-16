@@ -380,6 +380,83 @@ class RedactorSpringAiTest {
     assertThatThrownBy(() -> redactor.comprobar()).isInstanceOf(IaNoDisponible.class);
   }
 
+  // --- Sondeo de modelos al arrancar ----------------------------------------------------------
+
+  @Test
+  void comprobarSondeaTodosLosModelosYPoneElMasRapidoPrimero() {
+    RedactorSpringAi tres =
+        new RedactorSpringAi(chat, new ObjectMapper(), List.of("a", "b", "c"), Duration.ofSeconds(5));
+    List<String> intentos = java.util.Collections.synchronizedList(new ArrayList<>());
+    when(chat.call(any(Prompt.class)))
+        .thenAnswer(
+            invocacion -> {
+              String modelo = modeloDe(invocacion.getArgument(0));
+              intentos.add(modelo);
+              if (modelo.equals("a")) {
+                throw new RuntimeException("404 retirado");
+              }
+              if (modelo.equals("b")) {
+                Thread.sleep(300);
+              }
+              return respuesta(json("ok"));
+            });
+
+    assertThat(tres.comprobar()).isEqualTo("c");
+    assertThat(intentos).containsExactlyInAnyOrder("a", "b", "c");
+
+    intentos.clear();
+    tres.redactar(ticket, List.of(fragmento));
+
+    assertThat(intentos).containsExactly("c");
+    assertThat(tres.modelo()).isEqualTo("c");
+  }
+
+  @Test
+  void losModelosQueFallaronEnElSondeoQuedanComoUltimoRecurso() {
+    RedactorSpringAi tres =
+        new RedactorSpringAi(chat, new ObjectMapper(), List.of("a", "b", "c"), Duration.ofSeconds(5));
+    when(chat.call(any(Prompt.class)))
+        .thenAnswer(
+            invocacion -> {
+              String modelo = modeloDe(invocacion.getArgument(0));
+              if (modelo.equals("c")) {
+                return respuesta(json("ok"));
+              }
+              throw new RuntimeException(modelo.equals("a") ? "404 retirado" : "503 saturado");
+            });
+    assertThat(tres.comprobar()).isEqualTo("c");
+
+    // Mas tarde "c" se satura y "a" vuelve: el orden es c, luego a y b (los que fallaron, en su orden).
+    List<String> intentos = java.util.Collections.synchronizedList(new ArrayList<>());
+    when(chat.call(any(Prompt.class)))
+        .thenAnswer(
+            invocacion -> {
+              String modelo = modeloDe(invocacion.getArgument(0));
+              intentos.add(modelo);
+              if (modelo.equals("a")) {
+                return respuesta(json("a ha vuelto"));
+              }
+              throw new RuntimeException("503 saturado");
+            });
+
+    assertThat(tres.redactar(ticket, List.of(fragmento)).texto()).isEqualTo("a ha vuelto");
+
+    assertThat(intentos).containsExactly("c", "a");
+  }
+
+  @Test
+  void unaPeticionNoProbaMasModelosQueElMaximoConfigurado() {
+    RedactorSpringAi dosIntentos =
+        new RedactorSpringAi(
+            chat, new ObjectMapper(), List.of("a", "b", "c", "d"), Duration.ofSeconds(5), 2);
+    when(chat.call(any(Prompt.class))).thenThrow(new RuntimeException("503 saturado"));
+
+    assertThatThrownBy(() -> dosIntentos.redactar(ticket, List.of(fragmento)))
+        .isInstanceOf(IaNoDisponible.class);
+
+    verify(chat, times(2)).call(any(Prompt.class));
+  }
+
   private static int count(String texto, String parte) {
     return texto.split(java.util.regex.Pattern.quote(parte), -1).length - 1;
   }

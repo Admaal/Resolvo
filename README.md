@@ -49,9 +49,9 @@ SPRING_PROFILES_ACTIVE=gemini RESOLVO_GEMINI_API_KEY=<tu-clave> RESOLVO_JWT_SECR
 
 Al arrancar se indexan en segundo plano los artículos de ayuda y los tickets resueltos; un ADMIN puede forzarlo con `POST /api/conocimiento/reindexar`. La clave solo se lee de la variable de entorno.
 
-**Modelos de redacción.** Google retira o satura modelos concretos, así que la app prueba una lista por orden y pasa al siguiente si uno da 404 (retirado), 503 (saturado), cuota agotada o no contesta en 20 s. Un 403 (clave o permisos) no se reintenta con otro modelo. La lista por defecto es `gemini-flash-latest,gemini-3.8-flash,gemini-3.5-flash,gemini-2.5-flash-lite` y se cambia con `RESOLVO_GEMINI_MODELOS` (separados por comas), sin tocar el código. Los embeddings van fijos con `gemini-embedding-001` a 768 dimensiones (ADR-0007).
+**Modelos de redacción.** Google retira o satura modelos concretos. Al arrancar, la app sondea todos los de la lista a la vez, anota en el log cuánto tarda cada uno y pone primero los que responden. En cada petición prueba hasta 3 por ese orden y pasa al siguiente si uno da 404 (retirado), 503 (saturado), cuota agotada o no contesta en 15 s. Un 403 (clave o permisos) no se reintenta con otro modelo. La lista por defecto es `gemini-flash-lite-latest,gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-flash-latest,gemini-3.5-flash,gemini-3.8-flash` y se cambia con `RESOLVO_GEMINI_MODELOS` (separados por comas), sin tocar el código. Los embeddings van fijos con `gemini-embedding-001` a 768 dimensiones (ADR-0007).
 
-Al arrancar, el log dice `IA lista: el modelo de redaccion X responde` o, si no, el motivo. Es la forma de comprobar la clave y los modelos sin iniciar sesión.
+El log de arranque dice qué modelos responden y en cuánto tiempo (`Gemini sondeo: X responde en N ms`) o, si ninguno, el motivo de cada uno. Es la forma de comprobar la clave y los modelos sin iniciar sesión.
 
 ## Despliegue (Neon + Render + Cloudflare Pages)
 

@@ -17,7 +17,7 @@ spring:
         api-key: ${RESOLVO_GEMINI_API_KEY:}
         chat:
           options:
-            model: gemini-flash-latest
+            model: gemini-flash-lite-latest
             temperature: 0.2
         embedding:
           api-key: ${RESOLVO_GEMINI_API_KEY:}
@@ -29,8 +29,11 @@ spring:
 
 resolvo:
   gemini:
-    # Modelos de redaccion en orden de preferencia. Si uno da 404 (retirado), 503 (saturado), cuota
-    # agotada o no contesta a tiempo, se prueba el siguiente. Se cambian con RESOLVO_GEMINI_MODELOS
-    # (separados por comas) sin tocar el codigo. gemini-flash-latest es un alias que apunta al flash vigente.
-    modelos: ${RESOLVO_GEMINI_MODELOS:gemini-flash-latest,gemini-3.8-flash,gemini-3.5-flash,gemini-2.5-flash-lite}
-    timeout-segundos: 20
+    # Modelos de redaccion. Al arrancar se sondean todos a la vez y se ordenan por lo rapido que
+    # responden; los que fallan quedan al final. En cada peticion se prueban por ese orden y, si uno
+    # da 404 (retirado), 503 (saturado), cuota agotada o no contesta a tiempo, se pasa al siguiente.
+    # Se cambian con RESOLVO_GEMINI_MODELOS (separados por comas) sin tocar el codigo. Los "latest"
+    # son alias que apuntan al modelo vigente; los lite son los mas rapidos y los menos saturados.
+    modelos: ${RESOLVO_GEMINI_MODELOS:gemini-flash-lite-latest,gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-flash-latest,gemini-3.5-flash,gemini-3.8-flash}
+    timeout-segundos: 15
+    max-intentos: 3

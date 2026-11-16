@@ -46,7 +46,8 @@ public class ConfiguracionGemini {
       ChatModel chat,
       ObjectMapper json,
       @Value("${resolvo.gemini.modelos}") List<String> modelos,
-      @Value("${resolvo.gemini.timeout-segundos:20}") int segundos) {
-    return new RedactorSpringAi(chat, json, modelos, Duration.ofSeconds(segundos));
+      @Value("${resolvo.gemini.timeout-segundos:15}") int segundos,
+      @Value("${resolvo.gemini.max-intentos:3}") int maxIntentos) {
+    return new RedactorSpringAi(chat, json, modelos, Duration.ofSeconds(segundos), maxIntentos);
   }
 }

@@ -24,7 +24,7 @@ class ComprobacionDeIaAlArrancarTest {
       new RedactorSpringAi(chat, new ObjectMapper(), List.of("a", "b"), Duration.ofSeconds(5));
 
   @Test
-  void conIaDisponibleHaceUnaLlamadaMinimaYNoFalla() {
+  void conIaDisponibleSondeaCadaModeloConUnaLlamadaMinimaYNoFalla() {
     AtomicInteger llamadas = new AtomicInteger();
     when(chat.call(any(Prompt.class)))
         .thenAnswer(
@@ -35,8 +35,8 @@ class ComprobacionDeIaAlArrancarTest {
 
     new ComprobacionDeIaAlArrancar(redactor, Runnable::run, true).comprobar();
 
-    assertThat(llamadas.get()).isEqualTo(1);
-    assertThat(redactor.modelo()).isEqualTo("a");
+    assertThat(llamadas.get()).isEqualTo(2);
+    assertThat(redactor.modelo()).isIn("a", "b");
   }
 
   @Test
