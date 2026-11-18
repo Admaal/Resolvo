@@ -61,7 +61,7 @@ Fuera de la fase 1:
 
 - Versión exacta de Spring Boot 3.5.x y de Spring AI: Spring Boot queda fijado en 3.5.16 al crear el esqueleto; la versión de Spring AI se fija al añadir el primer adapter de LLM.
 - Cuotas reales de Gemini y del free tier de Neon y Render: se anotan con fecha antes de la fase 2.
-- Latencia de las llamadas a Gemini: el p95 de los evals oscila entre 8,6 y 12,7 s frente a un umbral de 8 s (ADR-0011). Decidir si se baja o se sube el umbral.
+- Latencia de las llamadas a Gemini: el p95 de los evals oscila entre 8,6 y 12,7 s; el umbral se relajó de 8 a 15 s (ADR-0011). Falta bajarla de verdad si molesta en la demo.
 
 ## Demostración local
 
