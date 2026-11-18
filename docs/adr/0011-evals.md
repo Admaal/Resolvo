@@ -23,13 +23,13 @@ Los datasets y los umbrales viven en `backend/src/test/resources/evals/` (`clasi
 
 - Calidad: respuestas válidas ≥ 95 %, acierto de categoría ≥ 90 %, prioridad exacta ≥ 70 %, recall@5 del artículo esperado ≥ 80 %, consultas sin respuesta que devuelven sin fuentes ≥ 80 %, borrador que cita la fuente esperada ≥ 90 % (el plan pedía una «precisión de citas» ≥ 90 %; se mide como «el borrador cita el artículo esperado», que es la versión que se puede etiquetar a mano).
 - Coste: tokens medios por llamada ≤ 3000. Sin cálculo en euros: no hay tabla de precios versionada y no se inventa; el free tier cuesta 0 €.
-- Latencia: p95 por llamada ≤ 8 s.
+- Latencia: p95 por llamada ≤ 15 s. El plan decía 8 s, una estimación; tres corridas reales dieron 10,2, 8,6 y 12,7 s (2026-11-18) y se relajó a 15 s con esa evidencia, a petición del propietario (2026-11-18). Es una decisión sobre el listón, no una mejora: el p95 sigue siendo alto y una llamada mínima ya tarda unos 6 s desde Render.
 
 `UmbralesTest` fija el suelo de cada una de estas cifras. Bajar un umbral para que el eval pase cuenta como debilitar un test (AGENTS.md): se cambia con un cambio de este ADR, no en silencio.
 
 ## Consecuencias
 
-- Las cifras de calidad se mantuvieron tras la primera corrida real (2026-11-18): hizo falta ajustar el prompt de clasificación y fijar la distancia del RAG, no rebajar umbrales. La latencia (p95 de 8,6 a 12,7 s en tres corridas) no cumple el umbral de 8 s y queda abierta; subirlo exige cambiar este ADR y `UmbralesTest`.
+- Las cifras de calidad se mantuvieron tras la primera corrida real (2026-11-18): hizo falta ajustar el prompt de clasificación y fijar la distancia del RAG, no rebajar umbrales. Solo la latencia se relajó (de 8 a 15 s, ver arriba), con las tres corridas como evidencia; subirla otra vez exige cambiar este ADR y `UmbralesTest`.
 - El eval imprime el umbral de distancia que separa las consultas con y sin respuesta; con él se fijó `resolvo.rag.distancia-maxima` en 0,29 tras la primera corrida real (2026-11-18). Es un margen estrecho sobre 16 consultas con respuesta y 6 sin ella, solo de artículos; hay que recalibrarlo con más casos y con los tickets resueltos como fuentes.
 - Cada llamada del eval espera `resolvo.evals.pausa-ms` (4,5 s) para no pasar la cuota por minuto: unas 90 llamadas tardan varios minutos.
 - `LlamadorGemini.observar` expone tokens y duración de cada llamada; la fase 5 puede reutilizarlo para las métricas de producción.
