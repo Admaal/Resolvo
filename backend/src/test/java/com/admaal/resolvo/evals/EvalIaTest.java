@@ -116,6 +116,7 @@ class EvalIaTest {
     int categoriaOk = 0;
     int prioridadOk = 0;
     Set<String> errores = new LinkedHashSet<>();
+    List<String> desaciertos = new ArrayList<>();
     for (CasoClasificacion caso : casos) {
       try {
         ClasificacionPropuesta propuesta =
@@ -127,6 +128,10 @@ class EvalIaTest {
         }
         if (propuesta.prioridad() == caso.prioridad()) {
           prioridadOk++;
+        } else {
+          desaciertos.add(
+              "%s: esperada %s, propuso %s (%s)"
+                  .formatted(caso.id(), caso.prioridad(), propuesta.prioridad(), propuesta.motivo()));
         }
       } catch (IaNoDisponible fallo) {
         errores.add(caso.id() + ": " + fallo.getMessage());
@@ -156,6 +161,7 @@ class EvalIaTest {
             "%"));
     notas.add("Clasificacion: %d casos, categorias %s".formatted(casos.size(), porNombre.keySet()));
     errores.stream().limit(10).forEach(error -> notas.add("Error de clasificacion " + error));
+    desaciertos.forEach(desacierto -> notas.add("Prioridad distinta " + desacierto));
   }
 
   private void evaluarRag(Umbrales umbrales, List<ResultadoEval> resultados)
@@ -277,7 +283,15 @@ class EvalIaTest {
       return fragmentos.stream()
           .anyMatch(f -> citados.contains(f.id()) && f.fuenteId().equals(esperado));
     } catch (IaNoDisponible fallo) {
-      notas.add("Error al redactar " + ticket.codigo() + ": " + fallo.getMessage());
+      Throwable causa = fallo.getCause();
+      notas.add(
+          "Error al redactar %s: %s (%s)"
+              .formatted(
+                  ticket.codigo(),
+                  fallo.getMessage(),
+                  causa == null
+                      ? "sin excepcion de origen: la respuesta del modelo no era un JSON util"
+                      : causa.getClass().getSimpleName() + ": " + causa.getMessage()));
       return false;
     }
   }

@@ -35,9 +35,10 @@ resolvo:
     indexar-al-arrancar: ${RESOLVO_IA_INDEXAR_AL_ARRANCAR:true}
     sincrona: ${RESOLVO_IA_SINCRONA:false}
   rag:
-    # Distancia coseno maxima (0 identico, 2 opuesto) para citar un fragmento. 2.0 no descarta nada:
-    # se fija con el eval de recuperacion (ADR-0011) cuando haya una corrida real que la calibre.
-    distancia-maxima: ${RESOLVO_RAG_DISTANCIA_MAXIMA:2.0}
+    # Distancia coseno maxima (0 identico, 2 opuesto) para citar un fragmento; 2.0 no descartaria nada.
+    # 0,29 sale de la primera corrida real de los evals (2026-11-18, ADR-0011): las consultas con
+    # respuesta quedaron por debajo de 0,24 y las que no la tienen por encima de 0,34.
+    distancia-maxima: ${RESOLVO_RAG_DISTANCIA_MAXIMA:0.29}
 
 ---
 # IA apagada salvo con el perfil "gemini": sin RESOLVO_GEMINI_API_KEY la app arranca y los
