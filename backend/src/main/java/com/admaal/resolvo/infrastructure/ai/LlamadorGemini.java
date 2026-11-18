@@ -223,6 +223,10 @@ public class LlamadorGemini {
    * Spring AI devuelve una Generation por cada parte de la respuesta de Gemini, y getResult() es
    * solo la primera: un modelo que reparte el JSON en varias partes llegaba cortado y se tomaba por
    * una respuesta no interpretable. Se une el texto de todas las partes.
+   *
+   * <p>No filtra partes de razonamiento: Spring AI 1.1.8 no marca cuales lo son y hoy no se pide
+   * {@code includeThoughts}. Si algun dia se activa, su texto se mezclaria con el JSON y habria que
+   * filtrarlas aqui.
    */
   private static String textoDe(ChatResponse respuesta) {
     StringBuilder texto = new StringBuilder();
