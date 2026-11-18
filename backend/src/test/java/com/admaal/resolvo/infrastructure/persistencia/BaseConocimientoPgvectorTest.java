@@ -99,6 +99,28 @@ class BaseConocimientoPgvectorTest {
   }
 
   @Test
+  void descartaFragmentosMasLejanosQueElUmbral() {
+    guardar(ACME, "cercano", eje(0, 5, 0.1f));
+    guardar(ACME, "lejano", eje(1, 5, 0.1f));
+
+    assertThat(base.buscar(ACME, eje(0, 5, 0f), 5, UUID.randomUUID(), 0.5))
+        .extracting(Fragmento::titulo)
+        .containsExactly("cercano");
+    assertThat(base.buscar(ACME, eje(0, 5, 0f), 5, UUID.randomUUID(), 1.5))
+        .extracting(Fragmento::titulo)
+        .containsExactly("cercano", "lejano");
+    assertThat(base.buscar(ACME, eje(0, 5, 0f), 5, UUID.randomUUID(), 0.0001)).isEmpty();
+  }
+
+  @Test
+  void elUmbralNoSeSaltaElFiltroDeOrganizacion() {
+    OrganizacionId otra = otraOrganizacion();
+    guardar(otra, "ajeno-identico", eje(0, 5, 0f));
+
+    assertThat(base.buscar(ACME, eje(0, 5, 0f), 5, UUID.randomUUID(), 2.0)).isEmpty();
+  }
+
+  @Test
   void devuelveElFragmentoCompletoConSusIds() {
     UUID fuente = guardar(ACME, "uno", eje(0, 5, 0f));
 

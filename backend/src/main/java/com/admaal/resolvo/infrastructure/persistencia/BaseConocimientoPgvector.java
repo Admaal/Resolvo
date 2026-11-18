@@ -101,12 +101,18 @@ public class BaseConocimientoPgvector implements BaseConocimiento {
    */
   @Override
   public List<Fragmento> buscar(
-      OrganizacionId organizacionId, Embedding consulta, int k, UUID excluirFuenteId) {
+      OrganizacionId organizacionId,
+      Embedding consulta,
+      int k,
+      UUID excluirFuenteId,
+      double distanciaMaxima) {
+    String vector = literal(consulta);
     return jdbc.query(
         """
         select id, organizacion_id, fuente, fuente_id, titulo, texto
         from fragmento
         where organizacion_id = ? and fuente_id <> ?
+          and (embedding <=> ?::vector) + 0 <= ?
         order by (embedding <=> ?::vector) + 0
         limit ?
         """,
@@ -120,7 +126,9 @@ public class BaseConocimientoPgvector implements BaseConocimiento {
                 fila.getString("texto")),
         organizacionId.valor(),
         excluirFuenteId,
-        literal(consulta),
+        vector,
+        distanciaMaxima,
+        vector,
         k);
   }
 
