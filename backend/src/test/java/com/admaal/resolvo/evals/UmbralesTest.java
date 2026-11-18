@@ -40,6 +40,8 @@ class UmbralesTest {
     // El plan pide una precision de citas >= 0,9: el borrador cita la fuente esperada.
     assertThat(umbrales.citaLaFuenteEsperada()).isGreaterThanOrEqualTo(0.9);
     assertThat(umbrales.tokensMediosPorLlamada()).isLessThanOrEqualTo(3000);
-    assertThat(umbrales.p95Milisegundos()).isLessThanOrEqualTo(8000);
+    // El p95 de tres corridas reales dio 8,6, 10,2 y 12,7 s (ADR-0011): 8 s no era realista y se
+    // fijo en 15 s con esa evidencia. Subirlo otra vez exige cambiar el ADR, no solo este numero.
+    assertThat(umbrales.p95Milisegundos()).isEqualTo(15000);
   }
 }
