@@ -56,3 +56,4 @@
 2026-11-16T19:29:11 fast 84084409e02318b32a3bd3f4dbd5bfe97cea02fb RED backend/src/test/java/com/admaal/resolvo/evals/UmbralesTest.java exit=1
 2026-11-16T19:29:44 fast 84084409e02318b32a3bd3f4dbd5bfe97cea02fb RED backend/src/test/java/com/admaal/resolvo/application/AplicarClasificacionTest.java exit=1
 2026-11-16T19:32:55 fast 84084409e02318b32a3bd3f4dbd5bfe97cea02fb RED backend/src/test/java/com/admaal/resolvo/evals/InformeEvalTest.java exit=1
+2026-11-18T17:08:44 fast 05cdb71ead51e71de5bc27c1bb955b987fcc14a8 RED backend/src/test/java/com/admaal/resolvo/infrastructure/ConfiguracionRagTest.java exit=1
