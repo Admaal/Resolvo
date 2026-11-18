@@ -135,6 +135,9 @@ class EvalIaTest {
         }
       } catch (IaNoDisponible fallo) {
         errores.add(caso.id() + ": " + fallo.getMessage());
+        if (fallo.getCause() == null) {
+          errores.add(caso.id() + " respuesta cruda del modelo: " + ultimaRespuesta());
+        }
       }
       Thread.sleep(pausaMs);
     }
@@ -292,8 +295,38 @@ class EvalIaTest {
                   causa == null
                       ? "sin excepcion de origen: la respuesta del modelo no era un JSON util"
                       : causa.getClass().getSimpleName() + ": " + causa.getMessage()));
+      if (causa == null) {
+        notas.add("Respuesta cruda del modelo para " + ticket.codigo() + ": " + ultimaRespuesta());
+      }
       return false;
     }
+  }
+
+  /**
+   * La ultima respuesta que sirvio un modelo: cuando el redactor o el clasificador no pueden
+   * interpretarla, es la que fallo. Solo longitud, inicio y final, para ver si viene envuelta,
+   * truncada o con otra forma; el informe tacha la clave del proveedor igualmente.
+   */
+  private String ultimaRespuesta() {
+    List<LlamadorGemini.Respuesta> vistas = List.copyOf(llamadas);
+    if (vistas.isEmpty()) {
+      return "(ninguna llamada observada)";
+    }
+    LlamadorGemini.Respuesta ultima = vistas.get(vistas.size() - 1);
+    String texto = ultima.texto();
+    if (texto == null) {
+      return "(texto nulo, modelo " + ultima.modelo() + ")";
+    }
+    String plano = texto.replace("\n", "\\n");
+    String inicio = plano.length() > 400 ? plano.substring(0, 400) + "..." : plano;
+    String fin = plano.length() > 400 ? plano.substring(plano.length() - 150) : "";
+    return "modelo=%s, longitud=%d, tokens de salida=%d, inicio=[%s]%s"
+        .formatted(
+            ultima.modelo(),
+            texto.length(),
+            ultima.tokensSalida(),
+            inicio,
+            fin.isEmpty() ? "" : ", fin=[" + fin + "]");
   }
 
   /** Distancia coseno de los K fragmentos mas cercanos, de menor a mayor. */
