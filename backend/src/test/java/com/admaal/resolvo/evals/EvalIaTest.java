@@ -76,7 +76,7 @@ class EvalIaTest {
   @Autowired LlamadorGemini llamador;
   @Autowired JdbcTemplate jdbc;
 
-  @Value("${resolvo.rag.distancia-maxima:2.0}")
+  @Value("${resolvo.rag.distancia-maxima}")
   double distanciaMaxima;
 
   @Value("${resolvo.evals.pausa-ms:4500}")
