@@ -19,7 +19,7 @@ public class ClasificadorSpringAi implements ClasificadorTickets {
   private static final int MAXIMO_MOTIVO = 500;
 
   private static final PlantillaDePrompt PLANTILLA =
-      PlantillaDePrompt.cargar("prompts/clasificar-ticket-v1.txt");
+      PlantillaDePrompt.cargar("prompts/clasificar-ticket-v2.txt");
 
   private final LlamadorGemini llamador;
   private final ObjectMapper json;
