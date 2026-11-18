@@ -460,4 +460,21 @@ class RedactorSpringAiTest {
   private static int count(String texto, String parte) {
     return texto.split(java.util.regex.Pattern.quote(parte), -1).length - 1;
   }
+
+  @Test
+  void unBorradorRepartidoEnVariasPartesDeLaRespuestaSeInterpretaEntero() {
+    when(chat.call(any(Prompt.class)))
+        .thenReturn(
+            new ChatResponse(
+                List.of(
+                    new Generation(new AssistantMessage("{\"respuesta\": \"Pulsa ")),
+                    new Generation(
+                        new AssistantMessage(
+                            "reset.\", \"citas\": [\"" + fragmento.id().valor() + "\"]}")))));
+
+    BorradorConCitas borrador = redactor.redactar(ticket, List.of(fragmento));
+
+    assertThat(borrador.texto()).isEqualTo("Pulsa reset.");
+    assertThat(borrador.citas()).containsExactly(fragmento.id());
+  }
 }

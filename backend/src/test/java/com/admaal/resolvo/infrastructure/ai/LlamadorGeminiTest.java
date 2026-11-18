@@ -141,4 +141,34 @@ class LlamadorGeminiTest {
 
     assertThat(vistas).isEmpty();
   }
+
+  @Test
+  void unaRespuestaRepartidaEnVariasPartesSeLeeEntera() {
+    // Spring AI da una Generation por parte: si el modelo parte el JSON, getResult() solo trae la
+    // primera y la respuesta llegaba cortada.
+    ChatResponse enTrozos =
+        new ChatResponse(
+            List.of(
+                new Generation(new AssistantMessage("{\"")),
+                new Generation(new AssistantMessage("respuesta\": \"Hola")),
+                new Generation(new AssistantMessage(" mundo\"}"))));
+    when(chat.call(any(Prompt.class))).thenReturn(enTrozos);
+
+    LlamadorGemini.Respuesta respuesta = llamador("modelo-x").llamar("di hola");
+
+    assertThat(respuesta.texto()).isEqualTo("{\"respuesta\": \"Hola mundo\"}");
+  }
+
+  @Test
+  void laspartesSinTextoNoRompenLaRespuesta() {
+    ChatResponse conHuecos =
+        new ChatResponse(
+            List.of(
+                new Generation(new AssistantMessage(null)),
+                new Generation(new AssistantMessage("hola")),
+                new Generation(new AssistantMessage(null))));
+    when(chat.call(any(Prompt.class))).thenReturn(conHuecos);
+
+    assertThat(llamador("modelo-x").llamar("di hola").texto()).isEqualTo("hola");
+  }
 }

@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
 
@@ -215,7 +216,23 @@ public class LlamadorGemini {
     }
     Usage uso = respuesta.getMetadata() == null ? null : respuesta.getMetadata().getUsage();
     return new Llamada(
-        respuesta.getResult().getOutput().getText(), tokens(uso, true), tokens(uso, false));
+        textoDe(respuesta), tokens(uso, true), tokens(uso, false));
+  }
+
+  /**
+   * Spring AI devuelve una Generation por cada parte de la respuesta de Gemini, y getResult() es
+   * solo la primera: un modelo que reparte el JSON en varias partes llegaba cortado y se tomaba por
+   * una respuesta no interpretable. Se une el texto de todas las partes.
+   */
+  private static String textoDe(ChatResponse respuesta) {
+    StringBuilder texto = new StringBuilder();
+    for (Generation parte : respuesta.getResults()) {
+      String trozo = parte.getOutput() == null ? null : parte.getOutput().getText();
+      if (trozo != null) {
+        texto.append(trozo);
+      }
+    }
+    return texto.toString();
   }
 
   private static int tokens(Usage uso, boolean entrada) {
