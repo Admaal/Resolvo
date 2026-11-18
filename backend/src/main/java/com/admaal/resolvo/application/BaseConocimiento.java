@@ -9,6 +9,9 @@ import java.util.UUID;
 
 public interface BaseConocimiento {
 
+  /** La distancia coseno va de 0 (identico) a 2 (opuesto): con 2 no se descarta nada. */
+  double SIN_LIMITE = 2.0;
+
   boolean estaIndexada(
       OrganizacionId organizacionId,
       FuenteConocimiento fuente,
@@ -24,6 +27,16 @@ public interface BaseConocimiento {
       String modelo,
       List<FragmentoIndexado> fragmentos);
 
+  default List<Fragmento> buscar(
+      OrganizacionId organizacionId, Embedding consulta, int k, UUID excluirFuenteId) {
+    return buscar(organizacionId, consulta, k, excluirFuenteId, SIN_LIMITE);
+  }
+
+  /** Los {@code k} fragmentos mas cercanos cuya distancia coseno no supera {@code distanciaMaxima}. */
   List<Fragmento> buscar(
-      OrganizacionId organizacionId, Embedding consulta, int k, UUID excluirFuenteId);
+      OrganizacionId organizacionId,
+      Embedding consulta,
+      int k,
+      UUID excluirFuenteId,
+      double distanciaMaxima);
 }

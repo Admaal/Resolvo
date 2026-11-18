@@ -1,9 +1,12 @@
 package com.admaal.resolvo.infrastructure.ai;
 
 import com.admaal.resolvo.application.BorradorConCitas;
+import com.admaal.resolvo.application.ClasificacionPropuesta;
+import com.admaal.resolvo.application.ClasificadorTickets;
 import com.admaal.resolvo.application.Embebedor;
 import com.admaal.resolvo.application.IaNoDisponible;
 import com.admaal.resolvo.application.RedactorRespuestas;
+import com.admaal.resolvo.domain.Categoria;
 import com.admaal.resolvo.domain.Embedding;
 import com.admaal.resolvo.domain.Fragmento;
 import com.admaal.resolvo.domain.Ticket;
@@ -14,7 +17,7 @@ import org.springframework.stereotype.Component;
 /** Sin el perfil "gemini" no hay proveedor: las operaciones de IA fallan con un motivo claro. */
 @Component
 @Profile("!gemini")
-public class IaDesactivada implements Embebedor, RedactorRespuestas {
+public class IaDesactivada implements Embebedor, RedactorRespuestas, ClasificadorTickets {
 
   @Override
   public String modelo() {
@@ -28,6 +31,11 @@ public class IaDesactivada implements Embebedor, RedactorRespuestas {
 
   @Override
   public BorradorConCitas redactar(Ticket ticket, List<Fragmento> fragmentos) {
+    throw new IaNoDisponible("ia-no-configurada");
+  }
+
+  @Override
+  public ClasificacionPropuesta clasificar(Ticket ticket, List<Categoria> categorias) {
     throw new IaNoDisponible("ia-no-configurada");
   }
 }

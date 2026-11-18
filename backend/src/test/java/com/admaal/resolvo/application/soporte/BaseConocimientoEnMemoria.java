@@ -13,9 +13,11 @@ import java.util.UUID;
 
 public final class BaseConocimientoEnMemoria implements BaseConocimiento {
 
-  private record Entrada(UUID fuenteId, String hashFuente, String modelo, Fragmento fragmento) {}
+  private record Entrada(
+      UUID fuenteId, String hashFuente, String modelo, Fragmento fragmento, double distancia) {}
 
   private final List<Entrada> entradas = new ArrayList<>();
+  private double ultimaDistanciaMaxima = -1;
 
   @Override
   public boolean estaIndexada(
@@ -48,26 +50,42 @@ public final class BaseConocimientoEnMemoria implements BaseConocimiento {
                 && e.fuenteId().equals(fuenteId)
                 && e.fragmento().fuente() == fuente);
     for (FragmentoIndexado indexado : fragmentos) {
-      entradas.add(new Entrada(fuenteId, hashFuente, modelo, indexado.fragmento()));
+      entradas.add(new Entrada(fuenteId, hashFuente, modelo, indexado.fragmento(), 0.0));
     }
   }
 
   @Override
   public List<Fragmento> buscar(
-      OrganizacionId organizacionId, Embedding consulta, int k, UUID excluirFuenteId) {
+      OrganizacionId organizacionId,
+      Embedding consulta,
+      int k,
+      UUID excluirFuenteId,
+      double distanciaMaxima) {
+    ultimaDistanciaMaxima = distanciaMaxima;
     return entradas.stream()
+        .filter(e -> e.fragmento().organizacionId().equals(organizacionId))
+        .filter(e -> !e.fragmento().fuenteId().equals(excluirFuenteId))
+        .filter(e -> e.distancia() <= distanciaMaxima)
         .map(Entrada::fragmento)
-        .filter(f -> f.organizacionId().equals(organizacionId))
-        .filter(f -> !f.fuenteId().equals(excluirFuenteId))
         .limit(k)
         .toList();
   }
 
+  public double ultimaDistanciaMaxima() {
+    return ultimaDistanciaMaxima;
+  }
+
   public Fragmento sembrar(OrganizacionId organizacion, UUID fuenteId, String titulo, String texto) {
+    return sembrar(organizacion, fuenteId, titulo, texto, 0.0);
+  }
+
+  /** La distancia es la que tendria a la consulta: el umbral descarta los que la superan. */
+  public Fragmento sembrar(
+      OrganizacionId organizacion, UUID fuenteId, String titulo, String texto, double distancia) {
     Fragmento fragmento =
         new Fragmento(
             FragmentoId.nuevo(), organizacion, FuenteConocimiento.ARTICULO, fuenteId, titulo, texto);
-    entradas.add(new Entrada(fuenteId, Fragmento.hashDe(texto), "falso-768", fragmento));
+    entradas.add(new Entrada(fuenteId, Fragmento.hashDe(texto), "falso-768", fragmento, distancia));
     return fragmento;
   }
 

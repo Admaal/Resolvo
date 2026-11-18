@@ -9,13 +9,13 @@ public final class Ticket {
   private final TicketId id;
   private final OrganizacionId organizacionId;
   private final UsuarioId autorId;
-  private final CategoriaId categoriaId;
-  private final Prioridad prioridad;
+  private CategoriaId categoriaId;
+  private Prioridad prioridad;
   private final String codigo;
   private final String asunto;
   private final String cuerpo;
   private final Instant abiertoEn;
-  private final Instant venceEl;
+  private Instant venceEl;
   private EstadoTicket estado;
   private UsuarioId asignadoId;
   private final List<Comentario> comentarios = new ArrayList<>();
@@ -108,6 +108,27 @@ public final class Ticket {
       throw new TransicionNoPermitida();
     }
     estado = destino;
+  }
+
+  public void reclasificar(
+      Categoria categoria, Prioridad nuevaPrioridad, Rol rol, PoliticaSla politica) {
+    if (rol == Rol.CLIENTE) {
+      throw new Prohibido();
+    }
+    if (!categoria.organizacionId().equals(organizacionId)) {
+      throw new NoEncontrado();
+    }
+    if (!reclasificable()) {
+      throw new TransicionNoPermitida();
+    }
+    categoriaId = categoria.id();
+    prioridad = nuevaPrioridad;
+    venceEl = abiertoEn.plus(politica.primeraRespuesta(categoria.nombre(), nuevaPrioridad));
+  }
+
+  /** Un ticket resuelto o cerrado ya no cambia de categoria ni de prioridad. */
+  public boolean reclasificable() {
+    return estado == EstadoTicket.ABIERTO || estado == EstadoTicket.PENDIENTE;
   }
 
   public void asignar(UsuarioId agente, Rol rol) {

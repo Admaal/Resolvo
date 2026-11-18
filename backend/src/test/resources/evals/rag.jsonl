@@ -1,0 +1,22 @@
+{"id":"r01","asunto":"No recuerdo mi clave","cuerpo":"He olvidado la clave y no se como pedir una nueva para entrar.","articulo":"Como restablecer tu contrasena"}
+{"id":"r02","asunto":"El enlace de recuperacion no llega","cuerpo":"Pedi cambiar la contrasena y el correo con el enlace no aparece en mi bandeja.","articulo":"Como restablecer tu contrasena"}
+{"id":"r03","asunto":"Error al entrar al panel","cuerpo":"Me sale un error al iniciar sesion y ya lo he intentado varias veces.","articulo":"Errores al iniciar sesion en el panel"}
+{"id":"r04","asunto":"Cuenta bloqueada tras varios intentos","cuerpo":"Falle la contrasena cinco veces seguidas y ahora no me deja ni probar de nuevo.","articulo":"Errores al iniciar sesion en el panel"}
+{"id":"r05","asunto":"El informe no se exporta","cuerpo":"Al exportar el informe grande a CSV me devuelve un error 500.","articulo":"Exportar informes a CSV"}
+{"id":"r06","asunto":"Limite de filas en CSV","cuerpo":"Cuantas filas puedo descargar de golpe en un informe?","articulo":"Exportar informes a CSV"}
+{"id":"r07","asunto":"Quiero invitar a un companero","cuerpo":"Como anado a otra persona al equipo y que rol le pongo?","articulo":"Anadir usuarios a tu equipo"}
+{"id":"r08","asunto":"Solo yo puedo invitar?","cuerpo":"Mi agente no ve el boton de invitar usuarios, es normal?","articulo":"Anadir usuarios a tu equipo"}
+{"id":"r09","asunto":"Necesito cambiar el nombre fiscal de una factura","cuerpo":"Nos hemos fusionado y la factura sale con la razon social antigua.","articulo":"Cambiar los datos de facturacion"}
+{"id":"r10","asunto":"Factura con NIF incorrecto","cuerpo":"Nos emitieron la factura con un NIF equivocado, como se corrige?","articulo":"Cambiar los datos de facturacion"}
+{"id":"r11","asunto":"Me llegan los avisos dos veces","cuerpo":"Cada notificacion por correo se repite, siempre por duplicado.","articulo":"Notificaciones por correo duplicadas"}
+{"id":"r12","asunto":"Correos repetidos del equipo","cuerpo":"Todos los mensajes del sistema llegan duplicados a mi buzon.","articulo":"Notificaciones por correo duplicadas"}
+{"id":"r13","asunto":"El listado sale vacio","cuerpo":"Busco un ticket y no aparece ningun resultado aunque se que existe.","articulo":"La busqueda no devuelve resultados"}
+{"id":"r14","asunto":"No encuentro tickets al buscar por parte de la palabra","cuerpo":"Escribo la mitad del nombre y la busqueda no devuelve nada.","articulo":"La busqueda no devuelve resultados"}
+{"id":"r15","asunto":"En cuanto tiempo me responden?","cuerpo":"Cual es el plazo de primera respuesta para una incidencia urgente?","articulo":"Plazos de primera respuesta"}
+{"id":"r16","asunto":"Cuando vence mi ticket","cuerpo":"Donde veo el vencimiento y como se calcula segun la prioridad?","articulo":"Plazos de primera respuesta"}
+{"id":"r17","asunto":"Quiero integrar con mi CRM por API","cuerpo":"Teneis una API publica y documentacion para integrarla con Salesforce?","articulo":null}
+{"id":"r18","asunto":"Cuanto cuesta el plan para 200 agentes","cuerpo":"Necesito un presupuesto del plan anual para 200 agentes.","articulo":null}
+{"id":"r19","asunto":"Podeis dar formacion presencial","cuerpo":"Queremos formar a nuestro equipo en nuestras oficinas de Valencia.","articulo":null}
+{"id":"r20","asunto":"Existe aplicacion movil nativa","cuerpo":"Hay aplicacion para iOS y Android o solo la web?","articulo":null}
+{"id":"r21","asunto":"Receta de paella","cuerpo":"Como se hace una buena paella valenciana?","articulo":null}
+{"id":"r22","asunto":"Donde se alojan nuestros datos","cuerpo":"Necesito saber en que pais se almacenan los datos para el departamento legal.","articulo":null}

@@ -3,20 +3,22 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
-import { TicketDetalle, UsuarioResumen } from './ticket.model';
+import { Categoria, TicketDetalle, UsuarioResumen } from './ticket.model';
+import { ClasificacionPanel } from './clasificacion-panel';
 import { SugerenciaPanel } from './sugerencia-panel';
 import { TicketThread } from './ticket-thread';
 import { TicketsService } from './tickets.service';
 
 @Component({
   selector: 'app-detalle',
-  imports: [FormsModule, SugerenciaPanel, TicketThread],
+  imports: [FormsModule, ClasificacionPanel, SugerenciaPanel, TicketThread],
   template: `
     @if (ticket(); as actual) {
       <p class="codigo">{{ actual.codigo }}</p>
       <h1>{{ actual.asunto }}</h1>
       <p>
         <span class="chip" [class]="claseEstado(actual.estado)">{{ actual.estado }}</span>
+        <span class="chip prioridad">{{ actual.prioridad }}</span>
         <span class="chip" [class]="claseSla(actual)">{{ textoSla(actual) }}</span>
       </p>
       <p class="cuerpo">{{ actual.cuerpo }}</p>
@@ -36,6 +38,7 @@ import { TicketsService } from './tickets.service';
         </label>
         <button class="secundario" type="button" (click)="asignar()">Asignar</button>
       }
+      <app-clasificacion-panel [ticketId]="actual.id" [categorias]="categorias()" (aplicada)="refrescar()" />
       <app-sugerencia-panel [ticketId]="actual.id" (aprobada)="refrescar()" />
       <app-ticket-thread
         [comentarios]="actual.comentarios"
@@ -51,6 +54,7 @@ export class DetallePage {
   private readonly route = inject(ActivatedRoute);
   readonly ticket = signal<TicketDetalle | null>(null);
   readonly agentes = signal<UsuarioResumen[]>([]);
+  readonly categorias = signal<Categoria[]>([]);
   readonly error = signal('');
   readonly estados = ['ABIERTO', 'PENDIENTE', 'RESUELTO', 'CERRADO'];
   agente = '';
@@ -59,6 +63,7 @@ export class DetallePage {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
     void this.cargar(id);
     if (this.puedeGestionar()) {
+      void this.tickets.categorias().then((categorias) => this.categorias.set(categorias));
       void this.tickets.usuarios().then((usuarios) => {
         const agentes = usuarios.filter((usuario) => usuario.rol === 'AGENTE' || usuario.rol === 'ADMIN');
         this.agentes.set(agentes);
