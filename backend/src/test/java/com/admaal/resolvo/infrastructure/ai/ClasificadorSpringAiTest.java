@@ -153,4 +153,19 @@ class ClasificadorSpringAiTest {
     assertThat(prompt.split("<ticket>", -1)).hasSize(3);
     assertThat(prompt.split("</ticket>", -1)).hasSize(3);
   }
+
+  @Test
+  void laRubricaDePrioridadDistingueLaFechaLimiteInminenteDeLaDudaSinPrisa() {
+    clasificarCon("{\"categoria\":\"Consulta\",\"prioridad\":\"MEDIA\",\"motivo\":\"m\"}");
+
+    String prompt = promptEnviado();
+
+    // Una peticion con fecha limite inminente sube de nivel; con consecuencia grave y vencimiento
+    // hoy es URGENTE; la duda general sin necesidad ni prisa es BAJA.
+    assertThat(prompt)
+        .contains("plazo que vence hoy")
+        .contains("fecha limite")
+        .contains("dia concreto")
+        .contains("curiosidad");
+  }
 }

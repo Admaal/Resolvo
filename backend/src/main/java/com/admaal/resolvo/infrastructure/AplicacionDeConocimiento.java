@@ -63,7 +63,7 @@ public class AplicacionDeConocimiento {
       BaseConocimiento base,
       RedactorRespuestas redactor,
       @Qualifier("indexadorEjecutor") Executor indexador,
-      @Value("${resolvo.rag.distancia-maxima:2.0}") double distanciaMaxima) {
+      @Value("${resolvo.rag.distancia-maxima}") double distanciaMaxima) {
     this.reloj = reloj;
     this.tickets = tickets;
     this.sugerencias = sugerencias;

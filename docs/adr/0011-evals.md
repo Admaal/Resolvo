@@ -30,7 +30,7 @@ Los datasets y los umbrales viven en `backend/src/test/resources/evals/` (`clasi
 ## Consecuencias
 
 - Las cifras son las del plan, no medidas: la primera corrida real puede mostrar que alguna es irreal en un sentido u otro y se corrige aquí, con fecha.
-- El eval imprime el umbral de distancia que separa las consultas con y sin respuesta; con él se fija `resolvo.rag.distancia-maxima` (por defecto 2.0, que no descarta nada).
+- El eval imprime el umbral de distancia que separa las consultas con y sin respuesta; con él se fijó `resolvo.rag.distancia-maxima` en 0,29 tras la primera corrida real (2026-11-18). Es un margen estrecho sobre 16 consultas con respuesta y 6 sin ella, solo de artículos; hay que recalibrarlo con más casos y con los tickets resueltos como fuentes.
 - Cada llamada del eval espera `resolvo.evals.pausa-ms` (4,5 s) para no pasar la cuota por minuto: unas 90 llamadas tardan varios minutos.
 - `LlamadorGemini.observar` expone tokens y duración de cada llamada; la fase 5 puede reutilizarlo para las métricas de producción.
 
