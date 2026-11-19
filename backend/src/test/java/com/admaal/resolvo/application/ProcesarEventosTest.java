@@ -250,7 +250,7 @@ class ProcesarEventosTest {
     EventoTicket evento = EventoTicket.nuevo(TipoEvento.TICKET_REABIERTO, acme, ticket.id(), AHORA);
     bandeja.agregar(evento);
 
-    procesador(new DesindexarTicketReabierto(base)).ejecutar();
+    procesador(new DesindexarTicketReabierto(base, tickets)).ejecutar();
 
     assertThat(base.fragmentosDe(ticket.id().valor())).isEmpty();
     assertThat(base.fragmentosDe(otro.id().valor())).hasSize(1);
@@ -271,7 +271,7 @@ class ProcesarEventosTest {
             AHORA);
     bandeja.agregar(evento);
 
-    procesador(new DesindexarTicketReabierto(base)).ejecutar();
+    procesador(new DesindexarTicketReabierto(base, new RepositorioEnMemoria())).ejecutar();
 
     assertThat(base.fragmentosDe(ticketId)).hasSize(1);
   }
@@ -302,13 +302,35 @@ class ProcesarEventosTest {
   }
 
   @Test
+  void elReintentoDeUnaReaperturaNoBorraUnTicketQueYaSeVolvioAResolver() {
+    RepositorioEnMemoria tickets = new RepositorioEnMemoria();
+    BaseConocimientoEnMemoria base = new BaseConocimientoEnMemoria();
+    IndexarConocimiento indexar =
+        new IndexarConocimiento(new EmbebedorFalso(), base, new ArticulosEnMemoria(), tickets);
+    Ticket ticket = Banco.abrir(tickets, acme, autor, Prioridad.ALTA, AHORA);
+    ticket.transicionar(EstadoTicket.RESUELTO, Rol.AGENTE);
+    ticket.transicionar(EstadoTicket.ABIERTO, Rol.AGENTE);
+    // la reapertura falla al borrar y, antes de su reintento, el ticket se vuelve a resolver
+    ticket.transicionar(EstadoTicket.RESUELTO, Rol.AGENTE);
+    indexar.ticket(ticket);
+    EventoTicket reapertura =
+        EventoTicket.nuevo(TipoEvento.TICKET_REABIERTO, acme, ticket.id(), AHORA);
+    bandeja.agregar(reapertura);
+
+    procesador(new DesindexarTicketReabierto(base, tickets)).ejecutar();
+
+    assertThat(base.fragmentosDe(ticket.id().valor())).hasSize(1);
+    assertThat(bandeja.estadoDe(reapertura.id())).isEqualTo(Estado.HECHO);
+  }
+
+  @Test
   void losConsumidoresDeIndexadoTienenNombreYTipoPropios() {
     RepositorioEnMemoria tickets = new RepositorioEnMemoria();
     BaseConocimientoEnMemoria base = new BaseConocimientoEnMemoria();
     IndexarConocimiento indexar =
         new IndexarConocimiento(new EmbebedorFalso(), base, new ArticulosEnMemoria(), tickets);
     IndexarTicketResuelto indexa = new IndexarTicketResuelto(indexar, tickets);
-    DesindexarTicketReabierto desindexa = new DesindexarTicketReabierto(base);
+    DesindexarTicketReabierto desindexa = new DesindexarTicketReabierto(base, tickets);
 
     assertThat(indexa.nombre()).isEqualTo("indexar-ticket");
     assertThat(indexa.admite(TipoEvento.TICKET_RESUELTO)).isTrue();

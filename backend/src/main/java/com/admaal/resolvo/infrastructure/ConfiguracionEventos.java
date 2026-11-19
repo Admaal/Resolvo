@@ -39,7 +39,7 @@ public class ConfiguracionEventos {
       TicketRepositorio tickets,
       @Value("${resolvo.eventos.max-intentos:" + MAX_INTENTOS + "}") int maxIntentos) {
     List<ConsumidorEventos> consumidores = new ArrayList<>();
-    consumidores.add(new DesindexarTicketReabierto(base));
+    consumidores.add(new DesindexarTicketReabierto(base, tickets));
     if (!(embebedor instanceof IaDesactivada)) {
       consumidores.add(
           new IndexarTicketResuelto(
