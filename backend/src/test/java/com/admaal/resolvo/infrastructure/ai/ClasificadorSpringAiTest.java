@@ -36,10 +36,26 @@ class ClasificadorSpringAiTest {
           new Categoria(new CategoriaId(UUID.randomUUID()), org, "Incidencia"),
           new Categoria(new CategoriaId(UUID.randomUUID()), org, "Consulta"));
   private final ChatModel chat = mock(ChatModel.class);
+  private final LlamadorGemini llamador =
+      new LlamadorGemini(chat, List.of("modelo-x"), Duration.ofSeconds(5), 1);
   private final ClasificadorSpringAi clasificador =
-      new ClasificadorSpringAi(
-          new LlamadorGemini(chat, List.of("modelo-x"), Duration.ofSeconds(5), 1),
-          new ObjectMapper());
+      new ClasificadorSpringAi(llamador, new ObjectMapper());
+
+  @Test
+  void anotaLaLlamadaComoClasificarDeLaOrganizacionDelTicket() {
+    java.util.List<LlamadorGemini.Observacion> vistas = new java.util.ArrayList<>();
+    llamador.observarLlamadas(vistas::add);
+
+    clasificarCon("{\"categoria\":\"Consulta\",\"prioridad\":\"BAJA\",\"motivo\":\"m\"}");
+
+    assertThat(vistas)
+        .singleElement()
+        .satisfies(
+            vista -> {
+              assertThat(vista.contexto().operacion()).isEqualTo("clasificar");
+              assertThat(vista.contexto().organizacionId()).isEqualTo(org.valor());
+            });
+  }
 
   private Ticket ticket(String asunto, String cuerpo) {
     return Banco.abrirConTexto(new RepositorioEnMemoria(), org, asunto, cuerpo);

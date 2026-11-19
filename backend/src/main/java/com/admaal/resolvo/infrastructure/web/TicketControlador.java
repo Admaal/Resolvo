@@ -88,7 +88,6 @@ public class TicketControlador {
     Actor actor = Actor.actual();
     Ticket ticket =
         aplicacion.transicionar(actor.organizacionId(), new TicketId(id), cuerpo.estado(), actor.rol());
-    conocimiento.indexarTicketEnSegundoPlano(actor.organizacionId(), ticket.id());
     return TicketRespuesta.de(ticket, aplicacion.comentarios(actor.organizacionId(), ticket.id(), actor.rol()));
   }
 

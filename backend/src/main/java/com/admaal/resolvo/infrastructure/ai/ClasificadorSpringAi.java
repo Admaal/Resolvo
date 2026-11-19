@@ -36,7 +36,9 @@ public class ClasificadorSpringAi implements ClasificadorTickets {
 
   @Override
   public ClasificacionPropuesta clasificar(Ticket ticket, List<Categoria> categorias) {
-    return interpretar(llamador.llamar(prompt(ticket, categorias)).texto());
+    LlamadorGemini.Contexto contexto =
+        new LlamadorGemini.Contexto("clasificar", ticket.organizacionId().valor());
+    return interpretar(llamador.llamar(contexto, prompt(ticket, categorias)).texto());
   }
 
   private ClasificacionPropuesta interpretar(String respuesta) {

@@ -55,6 +55,23 @@ public final class BaseConocimientoEnMemoria implements BaseConocimiento {
   }
 
   @Override
+  public void borrar(OrganizacionId organizacionId, FuenteConocimiento fuente, UUID fuenteId) {
+    entradas.removeIf(
+        e ->
+            e.fragmento().organizacionId().equals(organizacionId)
+                && e.fuenteId().equals(fuenteId)
+                && e.fragmento().fuente() == fuente);
+  }
+
+  /** Un fragmento de un ticket resuelto ya indexado, para comprobar el aislamiento por organizacion. */
+  public void sembrarTicket(OrganizacionId organizacion, UUID ticketId, String titulo, String texto) {
+    Fragmento fragmento =
+        new Fragmento(
+            FragmentoId.nuevo(), organizacion, FuenteConocimiento.TICKET, ticketId, titulo, texto);
+    entradas.add(new Entrada(ticketId, Fragmento.hashDe(texto), "falso-768", fragmento, 0.0));
+  }
+
+  @Override
   public List<Fragmento> buscar(
       OrganizacionId organizacionId,
       Embedding consulta,

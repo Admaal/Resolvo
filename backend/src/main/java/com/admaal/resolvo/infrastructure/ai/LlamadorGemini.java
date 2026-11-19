@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -36,6 +37,20 @@ public class LlamadorGemini {
   public record Respuesta(
       String texto, String modelo, int tokensEntrada, int tokensSalida, long milisegundos) {}
 
+  /** De que operacion y de que organizacion es una llamada; la organizacion puede faltar. */
+  public record Contexto(String operacion, UUID organizacionId) {
+    public static final Contexto SIN_CONTEXTO = new Contexto("sin-contexto", null);
+  }
+
+  /** Lo que se sabe de una peticion al terminar: con exito o sin el. */
+  public record Observacion(
+      Contexto contexto,
+      String modelo,
+      int tokensEntrada,
+      int tokensSalida,
+      long milisegundos,
+      boolean exito) {}
+
   private record Sondeo(String modelo, boolean responde, long milisegundos, IaNoDisponible fallo) {}
 
   private record Llamada(String texto, int tokensEntrada, int tokensSalida) {}
@@ -52,6 +67,7 @@ public class LlamadorGemini {
             return hilo;
           });
   private final List<Consumer<Respuesta>> observadores = new CopyOnWriteArrayList<>();
+  private final List<Consumer<Observacion>> observacionesDeLlamadas = new CopyOnWriteArrayList<>();
   private volatile List<String> orden;
   private volatile String modeloUsado;
 
@@ -82,13 +98,30 @@ public class LlamadorGemini {
     observadores.add(observador);
   }
 
+  /**
+   * Como {@link #observar}, pero tambien avisa de las peticiones que fallan y dice de que operacion
+   * y organizacion son. Una peticion deja una sola observacion, con el modelo que la sirvio o, si
+   * ninguno pudo, el ultimo que se probo; su duracion es lo que esperaron las personas. Lo usa el
+   * registro de metricas.
+   */
+  public void observarLlamadas(Consumer<Observacion> observador) {
+    observacionesDeLlamadas.add(observador);
+  }
+
   public Respuesta llamar(String prompt) {
+    return llamar(Contexto.SIN_CONTEXTO, prompt);
+  }
+
+  public Respuesta llamar(Contexto contexto, String prompt) {
     IaNoDisponible ultimo = null;
+    String ultimoModelo = orden.get(0);
     int intentos = 0;
+    long inicioPeticion = System.nanoTime();
     for (String modelo : orden) {
       if (intentos++ >= maxIntentos) {
         break;
       }
+      ultimoModelo = modelo;
       long inicio = System.nanoTime();
       try {
         Llamada llamada = llamar(modelo, prompt);
@@ -98,12 +131,21 @@ public class LlamadorGemini {
             new Respuesta(
                 llamada.texto(), modelo, llamada.tokensEntrada(), llamada.tokensSalida(), ms);
         avisar(respuesta);
+        avisarObservacion(
+            new Observacion(
+                contexto,
+                modelo,
+                llamada.tokensEntrada(),
+                llamada.tokensSalida(),
+                TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - inicioPeticion),
+                true));
         return respuesta;
       } catch (RuntimeException error) {
         ultimo = FalloDelProveedor.de(error);
         if (!FalloDelProveedor.sePuedeProbarOtroModelo(error)) {
           LOG.warn(
               "Gemini: el modelo {} falla sin remedio: {}", modelo, FalloDelProveedor.resumen(error));
+          avisarFallo(contexto, modelo, inicioPeticion);
           throw ultimo;
         }
         LOG.warn(
@@ -113,7 +155,29 @@ public class LlamadorGemini {
       }
     }
     LOG.warn("Gemini: ningun modelo respondio ({})", orden);
+    avisarFallo(contexto, ultimoModelo, inicioPeticion);
     throw ultimo;
+  }
+
+  private void avisarFallo(Contexto contexto, String modelo, long inicioPeticion) {
+    avisarObservacion(
+        new Observacion(
+            contexto,
+            modelo,
+            0,
+            0,
+            TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - inicioPeticion),
+            false));
+  }
+
+  private void avisarObservacion(Observacion observacion) {
+    for (Consumer<Observacion> observador : observacionesDeLlamadas) {
+      try {
+        observador.accept(observacion);
+      } catch (RuntimeException error) {
+        LOG.warn("Un observador de llamadas de Gemini fallo: {}", error.getMessage());
+      }
+    }
   }
 
   private void avisar(Respuesta respuesta) {

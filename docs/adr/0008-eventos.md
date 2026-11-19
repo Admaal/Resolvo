@@ -22,3 +22,13 @@ Patrón outbox: la misma transacción inserta el ticket y su evento; un poller p
 - Los tests de eventos cubren que el mismo evento procesado dos veces no genera dos sugerencias.
 - La fase 1 no usa eventos: la columna y la tabla llegan con la migración de la fase 5, cuando hay algo que consumir.
 - El puerto `PublicadorEventos` no depende de `spring-kafka`, que solo se activa con el perfil `kafka`.
+
+## Enmienda de la fase 5 (2026-11-19)
+
+Se implementó **solo el adapter Postgres**. El adapter Kafka contra Redpanda queda fuera: la demo no lo usa y mantener dos implementaciones del puerto no enseña nada que no enseñe la primera. Si se retoma, `PublicadorEventos` y `BandejaEventos` son los puertos a implementar.
+
+- Hay dos eventos, los que tienen consumidor: `TICKET_RESUELTO` (se publica al pasar a RESUELTO o CERRADO, para indexar el ticket con sus últimos comentarios) y `TICKET_REABIERTO` (al salir de RESUELTO, para borrar sus fragmentos). La clasificación y la sugerencia siguen siendo bajo demanda (ADR-0011), así que no hay evento de ticket abierto.
+- El evento se inserta en `evento_outbox` en la misma transacción que el cambio del ticket. El reclamo usa `FOR UPDATE SKIP LOCKED` y un vencimiento de 2 minutos: un procesador que cae no pierde el evento y dos no se pisan.
+- Idempotencia por consumidor: `evento_procesado (consumidor, evento_id)` se anota al terminar, así que un fallo del segundo consumidor no repite el primero. A los 5 intentos el evento queda `FALLIDO` con su último error.
+- **No hay poller continuo**: una consulta cada pocos segundos mantendría Neon despierto las 24 horas. El procesador se despierta al confirmarse la transacción que publicó, al arrancar y, cada minuto, solo si el último pase dejó algo pendiente (un reintento con espera de 30 s, o un evento reclamado por un proceso que murió, cuyo reclamo de 2 minutos vence después del arranque). Si el proceso cae antes de reclamar el evento, se atiende al arrancar; si cae con el evento reclamado, cuando vence su reclamo.
+- Sin proveedor de IA no hay consumidor de indexado: el evento se da por atendido y el arranque con IA reindexa lo que falte. Desindexar no necesita IA y va siempre.

@@ -60,3 +60,14 @@
 2026-11-18T17:40:15 fast 84d3116484f7f613d88e050c7dcbba8e56e39ce8 RED backend/src/test/java/com/admaal/resolvo/infrastructure/ai/ClasificadorSpringAiTest.java exit=1
 2026-11-18T18:44:15 fast 0c5e0ced2b7dbccf8698ee2034de4cca76d6e698 RED backend/src/test/java/com/admaal/resolvo/evals/UmbralesTest.java exit=1
 2026-11-18T19:30:41 fast 49b43313546361b99936a0a5ee20bdcf70c92828 RED backend/src/test/java/com/admaal/resolvo/infrastructure/ai/LlamadorGeminiTest.java exit=1
+2026-11-19T17:28:09 fast 28ede33af60acc2c67241180654428e321824c89 RED backend/src/test/java/com/admaal/resolvo/application/ProcesarEventosTest.java exit=1
+2026-11-19T17:28:09 fast 28ede33af60acc2c67241180654428e321824c89 RED backend/src/test/java/com/admaal/resolvo/application/TransicionarTicketTest.java exit=1
+2026-11-19T17:39:31 fast 28ede33af60acc2c67241180654428e321824c89 RED backend/src/test/java/com/admaal/resolvo/infrastructure/ai/LlamadorGeminiTest.java exit=1
+2026-11-19T17:39:31 fast 28ede33af60acc2c67241180654428e321824c89 RED backend/src/test/java/com/admaal/resolvo/infrastructure/ai/RedactorSpringAiTest.java exit=1
+2026-11-19T17:39:31 fast 28ede33af60acc2c67241180654428e321824c89 RED backend/src/test/java/com/admaal/resolvo/infrastructure/ai/ClasificadorSpringAiTest.java exit=1
+2026-11-19T17:39:35 fast 28ede33af60acc2c67241180654428e321824c89 RED backend/src/test/java/com/admaal/resolvo/domain/ResumenLlamadasTest.java exit=1
+2026-11-19T17:39:35 fast 28ede33af60acc2c67241180654428e321824c89 RED backend/src/test/java/com/admaal/resolvo/domain/TarifaTest.java exit=1
+2026-11-19T17:39:35 fast 28ede33af60acc2c67241180654428e321824c89 RED backend/src/test/java/com/admaal/resolvo/application/ConsultarMetricasIaTest.java exit=1
+2026-11-19T18:17:39 fast 76e5241449fc8f7f9ddb4d8d41b271fb74a3f930 RED backend/src/test/java/com/admaal/resolvo/infrastructure/ProcesadorDeEventosTest.java exit=1
+2026-11-19T18:17:39 fast 76e5241449fc8f7f9ddb4d8d41b271fb74a3f930 RED backend/src/test/java/com/admaal/resolvo/infrastructure/ai/ConfiguracionGeminiTest.java exit=1
+2026-11-19T18:29:11 fast 7225134c3d00432d57246c5cbcc7f09ca18a935b RED backend/src/test/java/com/admaal/resolvo/application/ProcesarEventosTest.java exit=1
