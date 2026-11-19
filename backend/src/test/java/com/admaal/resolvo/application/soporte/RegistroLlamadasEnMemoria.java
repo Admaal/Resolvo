@@ -16,6 +16,10 @@ public final class RegistroLlamadasEnMemoria implements RegistroLlamadas {
     llamadas.add(llamada);
   }
 
+  public List<LlamadaIa> todas() {
+    return List.copyOf(llamadas);
+  }
+
   @Override
   public List<LlamadaIa> deLaOrganizacion(OrganizacionId organizacionId, Instant desde, Instant hasta) {
     return llamadas.stream()

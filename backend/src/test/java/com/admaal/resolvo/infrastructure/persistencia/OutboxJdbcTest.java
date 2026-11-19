@@ -174,6 +174,24 @@ class OutboxJdbcTest {
   }
 
   @Test
+  void unFalloNoDefinitivoAcortaElReclamoParaQueElSiguienteBarridoLoReintente() {
+    EventoTicket evento = evento(Instant.now());
+    outbox.publicar(evento);
+    outbox.reclamar(10);
+
+    outbox.fallar(evento.id(), "boom", false);
+
+    // el barrido corre cada minuto: el reintento tiene que quedar antes que el siguiente barrido
+    assertThat(
+            jdbc.queryForObject(
+                "select reclamado_hasta < now() + interval '40 seconds' from evento_outbox where id = ?",
+                Boolean.class,
+                evento.id()))
+        .isTrue();
+    assertThat(outbox.pendientes()).isEqualTo(1);
+  }
+
+  @Test
   void registrarUnConsumidorDosVecesEsInofensivoYSeDistinguePorConsumidor() {
     UUID id = UUID.randomUUID();
     assertThat(outbox.yaProcesado("indexar-ticket", id)).isFalse();

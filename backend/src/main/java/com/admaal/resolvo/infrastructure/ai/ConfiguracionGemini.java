@@ -57,6 +57,12 @@ public class ConfiguracionGemini {
       Reloj reloj) {
     LlamadorGemini llamador =
         new LlamadorGemini(chat, modelos, Duration.ofSeconds(segundos), maxIntentos);
+    anotarLlamadas(llamador, registro, reloj);
+    return llamador;
+  }
+
+  /** Cada peticion a Gemini, con exito o sin el, deja una fila de metricas. */
+  static void anotarLlamadas(LlamadorGemini llamador, RegistroLlamadas registro, Reloj reloj) {
     llamador.observarLlamadas(
         observacion ->
             registro.registrar(
@@ -72,7 +78,6 @@ public class ConfiguracionGemini {
                     observacion.milisegundos(),
                     observacion.exito(),
                     reloj.ahora())));
-    return llamador;
   }
 
   /** Devuelve el tipo concreto para que la comprobacion de arranque pueda inyectarlo. */

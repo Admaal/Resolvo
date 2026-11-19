@@ -16,6 +16,9 @@ public interface BandejaEventos {
    */
   List<Reclamado> reclamar(int maximo);
 
+  /** Eventos que aun no terminan, incluidos los reclamados por un procesador que quiza murio. */
+  int pendientes();
+
   void marcarHecho(UUID eventoId);
 
   /** Anota el fallo. Si es definitivo el evento deja de reintentarse; si no, vuelve al vencer el reclamo. */

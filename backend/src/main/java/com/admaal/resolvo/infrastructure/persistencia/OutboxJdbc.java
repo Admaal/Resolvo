@@ -33,6 +33,9 @@ public class OutboxJdbc implements PublicadorEventos, BandejaEventos, EventosPro
   /** Segundos que un procesador conserva un evento reclamado antes de que otro pueda tomarlo. */
   static final int SEGUNDOS_DE_RECLAMO = 120;
 
+  /** Espera antes de reintentar un evento cuyo consumidor fallo; menos que el barrido de un minuto. */
+  static final int SEGUNDOS_DE_REINTENTO = 30;
+
   private final JdbcTemplate jdbc;
   private final TransactionTemplate propia;
   private final ApplicationEventPublisher avisos;
@@ -102,14 +105,21 @@ public class OutboxJdbc implements PublicadorEventos, BandejaEventos, EventosPro
   @Override
   public void fallar(UUID eventoId, String error, boolean definitivo) {
     String recortado = error == null ? null : error.substring(0, Math.min(error.length(), 500));
+    // Un fallo reintentable acorta el reclamo: tiene que vencer antes del siguiente barrido (cada
+    // minuto) o el barrido no encontraria nada que reintentar.
     jdbc.update(
         """
         update evento_outbox
-        set ultimo_error = ?, estado = case when ? then 'FALLIDO' else estado end
+        set ultimo_error = ?,
+            estado = case when ? then 'FALLIDO' else estado end,
+            reclamado_hasta = case when ? then reclamado_hasta
+                                   else now() + make_interval(secs => ?) end
         where id = ?
         """,
         recortado,
         definitivo,
+        definitivo,
+        SEGUNDOS_DE_REINTENTO,
         eventoId);
   }
 
@@ -136,7 +146,7 @@ public class OutboxJdbc implements PublicadorEventos, BandejaEventos, EventosPro
         Timestamp.from(Instant.now()));
   }
 
-  /** Cuantos eventos esperan procesarse; lo usan los tests y el diagnostico. */
+  @Override
   public int pendientes() {
     Integer filas =
         jdbc.queryForObject(
