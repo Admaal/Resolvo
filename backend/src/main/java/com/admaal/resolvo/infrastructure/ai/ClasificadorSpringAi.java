@@ -90,12 +90,12 @@ public class ClasificadorSpringAi implements ClasificadorTickets {
   private static String prompt(Ticket ticket, List<Categoria> categorias) {
     StringBuilder lista = new StringBuilder();
     for (Categoria categoria : categorias) {
-      lista.append("- ").append(PlantillaDePrompt.sinDelimitadores(categoria.nombre())).append('\n');
+      lista.append("- ").append(PlantillaDePrompt.limpiar(categoria.nombre())).append('\n');
     }
     return PLANTILLA.rellenar(
         Map.of(
             "categorias", lista.toString().strip(),
-            "asunto", PlantillaDePrompt.sinDelimitadores(ticket.asunto()),
-            "cuerpo", PlantillaDePrompt.sinDelimitadores(ticket.cuerpo())));
+            "asunto", PlantillaDePrompt.limpiar(ticket.asunto()),
+            "cuerpo", PlantillaDePrompt.limpiar(ticket.cuerpo())));
   }
 }

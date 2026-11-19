@@ -53,4 +53,15 @@ class EmbebedorSpringAiTest {
         .isInstanceOf(IaNoDisponible.class)
         .hasMessage("ia-no-disponible");
   }
+
+  @Test
+  void loQueSeEmbebeVaEnmascarado() {
+    when(modelo.embed("Escribe a [EMAIL] o llama al [TELEFONO]")).thenReturn(new float[Embedding.DIMENSION]);
+
+    embebedor.embeber("Escribe a ana@cliente.example o llama al 612 345 678");
+
+    org.mockito.Mockito.verify(modelo).embed("Escribe a [EMAIL] o llama al [TELEFONO]");
+    org.mockito.Mockito.verify(modelo, org.mockito.Mockito.never())
+        .embed("Escribe a ana@cliente.example o llama al 612 345 678");
+  }
 }

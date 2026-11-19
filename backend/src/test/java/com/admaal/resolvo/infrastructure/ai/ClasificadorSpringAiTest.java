@@ -184,4 +184,27 @@ class ClasificadorSpringAiTest {
         .contains("dia concreto")
         .contains("curiosidad");
   }
+
+  @Test
+  void elPromptNoLlevaDatosPersonales() {
+    when(chat.call(any(Prompt.class)))
+        .thenReturn(
+            new ChatResponse(
+                List.of(
+                    new Generation(
+                        new AssistantMessage(
+                            "{\"categoria\":\"Consulta\",\"prioridad\":\"BAJA\",\"motivo\":\"m\"}")))));
+
+    clasificador.clasificar(
+        ticket("Soy ana@cliente.example", "Mi tarjeta 4111 1111 1111 1111 y el movil 612345678"),
+        categorias);
+
+    assertThat(promptEnviado())
+        .doesNotContain("ana@cliente.example")
+        .doesNotContain("4111 1111 1111 1111")
+        .doesNotContain("612345678")
+        .contains("[EMAIL]")
+        .contains("[TARJETA]")
+        .contains("[TELEFONO]");
+  }
 }

@@ -3,6 +3,7 @@ package com.admaal.resolvo.infrastructure.ai;
 import com.admaal.resolvo.application.Embebedor;
 import com.admaal.resolvo.application.IaNoDisponible;
 import com.admaal.resolvo.domain.Embedding;
+import com.admaal.resolvo.domain.EnmascaradorPii;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -27,7 +28,7 @@ public class EmbebedorSpringAi implements Embebedor {
   @Override
   public Embedding embeber(String texto) {
     try {
-      return new Embedding(modelo.embed(texto));
+      return new Embedding(modelo.embed(EnmascaradorPii.enmascarar(texto)));
     } catch (RuntimeException error) {
       LOG.warn("Gemini embeddings: {}", FalloDelProveedor.resumen(error));
       throw FalloDelProveedor.de(error);

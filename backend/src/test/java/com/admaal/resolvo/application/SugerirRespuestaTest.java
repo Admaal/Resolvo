@@ -1,5 +1,6 @@
 package com.admaal.resolvo.application;
 
+import com.admaal.resolvo.application.soporte.PresupuestoFalso;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -201,5 +202,83 @@ class SugerirRespuestaTest {
     casoConUmbral(0.5).ejecutar(acme, ticket.id(), agente, Rol.AGENTE);
 
     assertThat(redactor.recibidos()).containsExactly(cercano);
+  }
+
+  // --- Presupuesto diario ---------------------------------------------------------------------
+
+  private SugerirRespuesta casoConPresupuesto(PresupuestoFalso presupuesto) {
+    return new SugerirRespuesta(
+        tickets,
+        sugerencias,
+        embebedor,
+        base,
+        redactor,
+        new RelojManual(AHORA),
+        BaseConocimiento.SIN_LIMITE,
+        presupuesto);
+  }
+
+  @Test
+  void conElPresupuestoAgotadoNoLlamaAlModelo() {
+    base.sembrar(acme, UUID.randomUUID(), "A", "texto");
+    PresupuestoFalso presupuesto = new PresupuestoFalso();
+    presupuesto.agotar();
+
+    assertThatThrownBy(
+            () -> casoConPresupuesto(presupuesto).ejecutar(acme, ticket.id(), agente, Rol.AGENTE))
+        .isInstanceOf(PresupuestoAgotado.class);
+
+    assertThat(embebedor.llamadas()).isZero();
+    assertThat(redactor.llamadas()).isZero();
+    assertThat(sugerencias.total()).isZero();
+  }
+
+  @Test
+  void unaPendienteSeDevuelveAunqueElPresupuestoEsteAgotado() {
+    base.sembrar(acme, UUID.randomUUID(), "A", "texto");
+    PresupuestoFalso presupuesto = new PresupuestoFalso();
+    Sugerencia primera =
+        casoConPresupuesto(presupuesto).ejecutar(acme, ticket.id(), agente, Rol.AGENTE);
+    presupuesto.agotar();
+
+    Sugerencia segunda =
+        casoConPresupuesto(presupuesto).ejecutar(acme, ticket.id(), agente, Rol.AGENTE);
+
+    assertThat(segunda.id()).isEqualTo(primera.id());
+    assertThat(presupuesto.reservas()).isEqualTo(1);
+  }
+
+  @Test
+  void laReservaSeLiberaAlTerminar() {
+    base.sembrar(acme, UUID.randomUUID(), "A", "texto");
+    PresupuestoFalso presupuesto = new PresupuestoFalso();
+
+    casoConPresupuesto(presupuesto).ejecutar(acme, ticket.id(), agente, Rol.AGENTE);
+
+    assertThat(presupuesto.reservas()).isEqualTo(1);
+    assertThat(presupuesto.abiertas()).isZero();
+  }
+
+  @Test
+  void laReservaSeLiberaTambienSiLaLlamadaFalla() {
+    PresupuestoFalso presupuesto = new PresupuestoFalso();
+
+    assertThatThrownBy(
+            () -> casoConPresupuesto(presupuesto).ejecutar(acme, ticket.id(), agente, Rol.AGENTE))
+        .isInstanceOf(SinFuentes.class);
+
+    assertThat(presupuesto.reservas()).isEqualTo(1);
+    assertThat(presupuesto.abiertas()).isZero();
+  }
+
+  @Test
+  void unClienteNoGastaPresupuesto() {
+    PresupuestoFalso presupuesto = new PresupuestoFalso();
+
+    assertThatThrownBy(
+            () -> casoConPresupuesto(presupuesto).ejecutar(acme, ticket.id(), agente, Rol.CLIENTE))
+        .isInstanceOf(Prohibido.class);
+
+    assertThat(presupuesto.reservas()).isZero();
   }
 }

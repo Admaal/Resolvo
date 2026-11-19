@@ -6,6 +6,7 @@ import com.admaal.resolvo.application.DescartarSugerencia;
 import com.admaal.resolvo.application.AprobarSugerencia;
 import com.admaal.resolvo.application.Embebedor;
 import com.admaal.resolvo.application.IndexarConocimiento;
+import com.admaal.resolvo.application.Presupuesto;
 import com.admaal.resolvo.application.RedactorRespuestas;
 import com.admaal.resolvo.application.Reloj;
 import com.admaal.resolvo.application.SugerirRespuesta;
@@ -45,6 +46,7 @@ public class AplicacionDeConocimiento {
   public record SugerenciaVista(Sugerencia sugerencia, List<CitaDetalle> citas, boolean creada) {}
 
   private final Reloj reloj;
+  private final Presupuesto presupuesto;
   private final TicketRepositorio tickets;
   private final SugerenciasJdbc sugerencias;
   private final Articulos articulos;
@@ -61,8 +63,10 @@ public class AplicacionDeConocimiento {
       Embebedor embebedor,
       BaseConocimiento base,
       RedactorRespuestas redactor,
-      @Value("${resolvo.rag.distancia-maxima}") double distanciaMaxima) {
+      @Value("${resolvo.rag.distancia-maxima}") double distanciaMaxima,
+      Presupuesto presupuesto) {
     this.reloj = reloj;
+    this.presupuesto = presupuesto;
     this.tickets = tickets;
     this.sugerencias = sugerencias;
     this.articulos = articulos;
@@ -78,7 +82,7 @@ public class AplicacionDeConocimiento {
     try {
       Sugerencia sugerencia =
           new SugerirRespuesta(
-                  tickets, sugerencias, embebedor, base, redactor, reloj, distanciaMaxima)
+                  tickets, sugerencias, embebedor, base, redactor, reloj, distanciaMaxima, presupuesto)
               .ejecutar(organizacionId, ticketId, actor, rol);
       return vista(sugerencia, !existia);
     } catch (DuplicateKeyException carrera) {

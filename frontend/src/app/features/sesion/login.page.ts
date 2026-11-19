@@ -31,7 +31,18 @@ export class LoginPage {
       await this.auth.entrar(this.email, this.contrasena);
       await this.router.navigateByUrl('/tickets');
     } catch (fallo) {
-      this.error.set(fallo instanceof Error ? fallo.message : 'no-autorizado');
+      this.error.set(textoDeError(fallo));
     }
+  }
+}
+
+function textoDeError(fallo: unknown): string {
+  switch (fallo instanceof Error ? fallo.message : '') {
+    case 'demasiados-intentos':
+      return 'Demasiados intentos fallidos. Espera unos minutos e inténtalo de nuevo.';
+    case 'no-autorizado':
+      return 'Email o contraseña incorrectos.';
+    default:
+      return 'No se pudo entrar, inténtalo de nuevo.';
   }
 }
