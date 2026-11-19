@@ -56,6 +56,7 @@ Fuera de la fase 1:
 - [ADR-0009](adr/0009-hosting.md): Neon Free, Render Free y Cloudflare Pages.
 - [ADR-0010](adr/0010-tests-y-valla.md): JUnit 5, Testcontainers, ArchUnit, PIT en dominio al 80 % y Playwright.
 - [ADR-0011](adr/0011-evals.md): evals de IA contra Gemini real, en un job aparte y fuera del gate obligatorio.
+- [ADR-0012](adr/0012-metricas-ia.md): métricas de la IA en Postgres, endpoint para ADMIN y coste a precio de lista con tarifas citadas.
 
 ## Preguntas abiertas
 
@@ -97,3 +98,10 @@ Categorías de semilla, sin CRUD: Incidencia (1 h / 4 h / 8 h / 24 h) y Consulta
 - La clasificación se pide bajo demanda (AGENTE o ADMIN), no al abrir el ticket: la demo es pública y cada clasificación gasta cuota. Una pendiente por ticket; la persona puede corregirla antes de aplicarla y aplicar recalcula el SLA.
 - Los evals miden calidad, coste en tokens y latencia contra Gemini real, en un job que no bloquea el merge (ADR-0011).
 - El umbral de similitud del RAG existe pero queda desactivado (2.0) hasta calibrarlo con la primera corrida real de los evals.
+
+## Preguntas cerradas en la fase 5
+
+- Eventos: solo el adapter Postgres del outbox; Redpanda queda fuera (ADR-0008, enmendada). Dos eventos, los que tienen consumidor: ticket resuelto y ticket reabierto.
+- Sin poller continuo: Neon se suspende y una consulta periódica lo mantendría despierto. El procesador se despierta al publicar, al arrancar y, si hubo fallos, cada minuto.
+- Métricas: una fila por llamada a la IA y un endpoint de resumen solo para ADMIN, sin pantalla en la SPA (ADR-0012).
+- Coste: USD a precio de lista, con tarifas citadas; sin tarifa, el coste queda desconocido y no cero. No se convierte a euros.

@@ -93,6 +93,15 @@ public class BaseConocimientoPgvector implements BaseConocimiento {
     }
   }
 
+  @Override
+  public void borrar(OrganizacionId organizacionId, FuenteConocimiento fuente, UUID fuenteId) {
+    jdbc.update(
+        "delete from fragmento where organizacion_id = ? and fuente = ? and fuente_id = ?",
+        organizacionId.valor(),
+        fuente.name(),
+        fuenteId);
+  }
+
   /**
    * Busqueda exacta dentro de la organizacion. Ordenar por la expresion pelada usaria el indice
    * HNSW, que filtra por organizacion despues de elegir los vecinos: con otra organizacion mucho

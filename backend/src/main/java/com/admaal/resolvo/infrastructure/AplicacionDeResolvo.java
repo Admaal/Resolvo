@@ -13,6 +13,7 @@ import com.admaal.resolvo.application.EmisorDeTokens;
 import com.admaal.resolvo.application.IniciarSesion;
 import com.admaal.resolvo.application.ListarTickets;
 import com.admaal.resolvo.application.Pagina;
+import com.admaal.resolvo.application.PublicadorEventos;
 import com.admaal.resolvo.application.RefrescarSesion;
 import com.admaal.resolvo.application.Reloj;
 import com.admaal.resolvo.application.SesionIniciada;
@@ -52,6 +53,7 @@ public class AplicacionDeResolvo {
   private final Categorias categorias;
   private final CategoriaJpa categoriaJpa;
   private final UsuarioJpa usuarioJpa;
+  private final PublicadorEventos eventos;
 
   public AplicacionDeResolvo(
       Reloj reloj,
@@ -63,7 +65,9 @@ public class AplicacionDeResolvo {
       TicketRepositorio tickets,
       Categorias categorias,
       CategoriaJpa categoriaJpa,
-      UsuarioJpa usuarioJpa) {
+      UsuarioJpa usuarioJpa,
+      PublicadorEventos eventos) {
+    this.eventos = eventos;
     this.reloj = reloj;
     this.usuarios = usuarios;
     this.verificador = verificador;
@@ -114,7 +118,7 @@ public class AplicacionDeResolvo {
   @Transactional
   public Ticket transicionar(
       OrganizacionId organizacionId, TicketId ticketId, EstadoTicket destino, Rol rol) {
-    return new TransicionarTicket(tickets).ejecutar(organizacionId, ticketId, destino, rol);
+    return new TransicionarTicket(tickets, eventos, reloj).ejecutar(organizacionId, ticketId, destino, rol);
   }
 
   @Transactional
