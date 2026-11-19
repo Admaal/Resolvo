@@ -7,6 +7,7 @@ export async function reenviar(
   entrada: Request,
   apiOrigin: string | undefined,
   fetchImpl: typeof fetch = fetch,
+  secreto?: string,
 ): Promise<Response> {
   if (!apiOrigin) {
     return Response.json({ error: 'api-origin-no-configurado' }, { status: 500 });
@@ -18,6 +19,17 @@ export async function reenviar(
 
   const headers = new Headers(entrada.headers);
   headers.delete('host');
+
+  // Entre zonas de Cloudflare, CF-Connecting-IP llega a la API como la IP del Worker, la misma para
+  // todos. La IP real viaja en X-Cliente-Ip, firmada con un secreto que solo conocen este proxy y la
+  // API; lo que mande el navegador en esas dos cabeceras se descarta.
+  headers.delete('x-cliente-ip');
+  headers.delete('x-resolvo-proxy');
+  const ipDelCliente = entrada.headers.get('cf-connecting-ip');
+  if (secreto && ipDelCliente) {
+    headers.set('x-cliente-ip', ipDelCliente);
+    headers.set('x-resolvo-proxy', secreto);
+  }
 
   const conCuerpo = entrada.method !== 'GET' && entrada.method !== 'HEAD';
   const peticion = new Request(destino, {
