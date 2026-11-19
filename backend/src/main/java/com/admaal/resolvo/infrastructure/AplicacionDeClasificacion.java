@@ -6,6 +6,7 @@ import com.admaal.resolvo.application.Categorias;
 import com.admaal.resolvo.application.Clasificaciones;
 import com.admaal.resolvo.application.ClasificadorTickets;
 import com.admaal.resolvo.application.DescartarClasificacion;
+import com.admaal.resolvo.application.Presupuesto;
 import com.admaal.resolvo.application.Reloj;
 import com.admaal.resolvo.application.SugerirClasificacion;
 import com.admaal.resolvo.application.TicketRepositorio;
@@ -49,6 +50,7 @@ public class AplicacionDeClasificacion {
 
   private final Map<UUID, Cerrojo> cerrojos = new HashMap<>();
   private final Reloj reloj;
+  private final Presupuesto presupuesto;
   private final TicketRepositorio tickets;
   private final Clasificaciones clasificaciones;
   private final CatalogoDeCategorias catalogo;
@@ -61,8 +63,10 @@ public class AplicacionDeClasificacion {
       Clasificaciones clasificaciones,
       CatalogoDeCategorias catalogo,
       Categorias categorias,
-      ClasificadorTickets clasificador) {
+      ClasificadorTickets clasificador,
+      Presupuesto presupuesto) {
     this.reloj = reloj;
+    this.presupuesto = presupuesto;
     this.tickets = tickets;
     this.clasificaciones = clasificaciones;
     this.catalogo = catalogo;
@@ -83,7 +87,8 @@ public class AplicacionDeClasificacion {
       boolean existia = clasificaciones.pendienteDe(organizacionId, ticketId).isPresent();
       try {
         Clasificacion clasificacion =
-            new SugerirClasificacion(tickets, clasificaciones, catalogo, clasificador, reloj)
+            new SugerirClasificacion(
+                tickets, clasificaciones, catalogo, clasificador, reloj, presupuesto)
                 .ejecutar(organizacionId, ticketId, actor, rol);
         return new ClasificacionVista(clasificacion, !existia);
       } catch (DuplicateKeyException carrera) {

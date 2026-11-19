@@ -24,6 +24,7 @@ public final class SugerirClasificacion {
   private final CatalogoDeCategorias catalogo;
   private final ClasificadorTickets clasificador;
   private final Reloj reloj;
+  private final Presupuesto presupuesto;
 
   public SugerirClasificacion(
       TicketRepositorio tickets,
@@ -31,11 +32,23 @@ public final class SugerirClasificacion {
       CatalogoDeCategorias catalogo,
       ClasificadorTickets clasificador,
       Reloj reloj) {
+    this(tickets, clasificaciones, catalogo, clasificador, reloj, Presupuesto.SIN_LIMITE);
+  }
+
+  /** Cada clasificacion nueva reserva una llamada del presupuesto diario de la organizacion. */
+  public SugerirClasificacion(
+      TicketRepositorio tickets,
+      Clasificaciones clasificaciones,
+      CatalogoDeCategorias catalogo,
+      ClasificadorTickets clasificador,
+      Reloj reloj,
+      Presupuesto presupuesto) {
     this.tickets = tickets;
     this.clasificaciones = clasificaciones;
     this.catalogo = catalogo;
     this.clasificador = clasificador;
     this.reloj = reloj;
+    this.presupuesto = presupuesto;
   }
 
   public Clasificacion ejecutar(
@@ -51,29 +64,31 @@ public final class SugerirClasificacion {
     if (existente.isPresent()) {
       return existente.get();
     }
-    List<Categoria> categorias = catalogo.deLaOrganizacion(organizacionId);
-    ClasificacionPropuesta propuesta = clasificador.clasificar(ticket, categorias);
-    if (propuesta.prioridad() == null) {
-      throw new IaNoDisponible(INVALIDA);
+    try (Presupuesto.Reserva reserva = presupuesto.reservar(organizacionId)) {
+      List<Categoria> categorias = catalogo.deLaOrganizacion(organizacionId);
+      ClasificacionPropuesta propuesta = clasificador.clasificar(ticket, categorias);
+      if (propuesta.prioridad() == null) {
+        throw new IaNoDisponible(INVALIDA);
+      }
+      Categoria categoria = categoriaNombrada(categorias, propuesta.categoria());
+      Clasificacion clasificacion;
+      try {
+        clasificacion =
+            Clasificacion.proponer(
+                ClasificacionId.nuevo(),
+                organizacionId,
+                ticketId,
+                categoria.id(),
+                propuesta.prioridad(),
+                propuesta.motivo(),
+                clasificador.modelo(),
+                reloj.ahora());
+      } catch (TextoInvalido invalido) {
+        throw new IaNoDisponible(INVALIDA, invalido);
+      }
+      clasificaciones.guardar(clasificacion);
+      return clasificacion;
     }
-    Categoria categoria = categoriaNombrada(categorias, propuesta.categoria());
-    Clasificacion clasificacion;
-    try {
-      clasificacion =
-          Clasificacion.proponer(
-              ClasificacionId.nuevo(),
-              organizacionId,
-              ticketId,
-              categoria.id(),
-              propuesta.prioridad(),
-              propuesta.motivo(),
-              clasificador.modelo(),
-              reloj.ahora());
-    } catch (TextoInvalido invalido) {
-      throw new IaNoDisponible(INVALIDA, invalido);
-    }
-    clasificaciones.guardar(clasificacion);
-    return clasificacion;
   }
 
   private static Categoria categoriaNombrada(List<Categoria> categorias, String nombre) {

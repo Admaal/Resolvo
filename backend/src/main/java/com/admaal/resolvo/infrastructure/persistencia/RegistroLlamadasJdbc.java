@@ -1,6 +1,7 @@
 package com.admaal.resolvo.infrastructure.persistencia;
 
 import com.admaal.resolvo.application.RegistroLlamadas;
+import com.admaal.resolvo.domain.Consumo;
 import com.admaal.resolvo.domain.LlamadaIa;
 import com.admaal.resolvo.domain.OrganizacionId;
 import java.sql.Timestamp;
@@ -67,5 +68,20 @@ public class RegistroLlamadasJdbc implements RegistroLlamadas {
         Timestamp.from(desde),
         Timestamp.from(hasta),
         MAXIMO_DE_FILAS);
+  }
+
+  @Override
+  public Consumo consumoDe(OrganizacionId organizacionId, Instant desde, Instant hasta) {
+    return jdbc.queryForObject(
+        """
+        select count(*) as llamadas,
+               coalesce(sum(tokens_entrada + tokens_salida), 0) as tokens
+        from llamada_ia
+        where organizacion_id = ? and ocurrida_en >= ? and ocurrida_en < ?
+        """,
+        (fila, numero) -> new Consumo(fila.getInt("llamadas"), fila.getLong("tokens")),
+        organizacionId.valor(),
+        Timestamp.from(desde),
+        Timestamp.from(hasta));
   }
 }

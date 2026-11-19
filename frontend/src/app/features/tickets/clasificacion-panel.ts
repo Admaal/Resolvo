@@ -137,6 +137,10 @@ function textoDeAviso(fallo: unknown): string {
       return 'La IA no está disponible en este entorno.';
     case 'ia-cuota-agotada':
       return 'Cuota de IA agotada, inténtalo más tarde.';
+    case 'demasiadas-peticiones':
+      return 'Demasiadas peticiones, espera un minuto e inténtalo de nuevo.';
+    case 'ia-presupuesto-agotado':
+      return 'Se alcanzó el límite de IA de hoy; se renueva a medianoche (UTC).';
     case 'ia-no-disponible':
       return 'La IA no responde, inténtalo más tarde.';
     case 'clasificacion-invalida':
