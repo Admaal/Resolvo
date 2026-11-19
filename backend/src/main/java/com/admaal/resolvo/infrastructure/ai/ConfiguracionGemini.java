@@ -2,6 +2,11 @@ package com.admaal.resolvo.infrastructure.ai;
 
 import com.admaal.resolvo.application.ClasificadorTickets;
 import com.admaal.resolvo.application.Embebedor;
+import com.admaal.resolvo.application.RegistroLlamadas;
+import com.admaal.resolvo.application.Reloj;
+import com.admaal.resolvo.domain.LlamadaIa;
+import com.admaal.resolvo.domain.OrganizacionId;
+import java.util.UUID;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.util.List;
@@ -47,8 +52,27 @@ public class ConfiguracionGemini {
       ChatModel chat,
       @Value("${resolvo.gemini.modelos}") List<String> modelos,
       @Value("${resolvo.gemini.timeout-segundos:15}") int segundos,
-      @Value("${resolvo.gemini.max-intentos:3}") int maxIntentos) {
-    return new LlamadorGemini(chat, modelos, Duration.ofSeconds(segundos), maxIntentos);
+      @Value("${resolvo.gemini.max-intentos:3}") int maxIntentos,
+      RegistroLlamadas registro,
+      Reloj reloj) {
+    LlamadorGemini llamador =
+        new LlamadorGemini(chat, modelos, Duration.ofSeconds(segundos), maxIntentos);
+    llamador.observarLlamadas(
+        observacion ->
+            registro.registrar(
+                new LlamadaIa(
+                    UUID.randomUUID(),
+                    observacion.contexto().organizacionId() == null
+                        ? null
+                        : new OrganizacionId(observacion.contexto().organizacionId()),
+                    observacion.contexto().operacion(),
+                    observacion.modelo(),
+                    observacion.tokensEntrada(),
+                    observacion.tokensSalida(),
+                    observacion.milisegundos(),
+                    observacion.exito(),
+                    reloj.ahora())));
+    return llamador;
   }
 
   /** Devuelve el tipo concreto para que la comprobacion de arranque pueda inyectarlo. */

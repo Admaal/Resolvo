@@ -477,4 +477,22 @@ class RedactorSpringAiTest {
     assertThat(borrador.texto()).isEqualTo("Pulsa reset.");
     assertThat(borrador.citas()).containsExactly(fragmento.id());
   }
+
+  @Test
+  void anotaLaLlamadaComoSugerirDeLaOrganizacionDelTicket() {
+    LlamadorGemini llamador = new LlamadorGemini(chat, List.of("modelo-x"), Duration.ofSeconds(5), 1);
+    List<LlamadorGemini.Observacion> vistas = new ArrayList<>();
+    llamador.observarLlamadas(vistas::add);
+    chatResponde(json("Pulsa reset."));
+
+    new RedactorSpringAi(llamador, new ObjectMapper()).redactar(ticket, List.of(fragmento));
+
+    assertThat(vistas)
+        .singleElement()
+        .satisfies(
+            vista -> {
+              assertThat(vista.contexto().operacion()).isEqualTo("sugerir");
+              assertThat(vista.contexto().organizacionId()).isEqualTo(org.valor());
+            });
+  }
 }

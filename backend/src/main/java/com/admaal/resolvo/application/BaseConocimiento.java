@@ -27,6 +27,9 @@ public interface BaseConocimiento {
       String modelo,
       List<FragmentoIndexado> fragmentos);
 
+  /** Quita los fragmentos de una fuente, por ejemplo los de un ticket que se reabre. */
+  void borrar(OrganizacionId organizacionId, FuenteConocimiento fuente, UUID fuenteId);
+
   default List<Fragmento> buscar(
       OrganizacionId organizacionId, Embedding consulta, int k, UUID excluirFuenteId) {
     return buscar(organizacionId, consulta, k, excluirFuenteId, SIN_LIMITE);

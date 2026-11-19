@@ -3,6 +3,7 @@ package com.admaal.resolvo.application;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.admaal.resolvo.application.soporte.Banco;
+import com.admaal.resolvo.application.soporte.PublicadorEnMemoria;
 import com.admaal.resolvo.application.soporte.RepositorioEnMemoria;
 import com.admaal.resolvo.application.soporte.UsuariosEnMemoria;
 import com.admaal.resolvo.domain.EstadoTicket;
@@ -36,7 +37,7 @@ class ListarTicketsTest {
     new AsignarTicket(tickets, usuarios).ejecutar(organizacion, alta.id(), agente.id(), Rol.AGENTE);
     new AsignarTicket(tickets, usuarios)
         .ejecutar(organizacion, resuelto.id(), agente.id(), Rol.AGENTE);
-    new TransicionarTicket(tickets)
+    new TransicionarTicket(tickets, new PublicadorEnMemoria(), () -> ahora)
         .ejecutar(organizacion, resuelto.id(), EstadoTicket.RESUELTO, Rol.AGENTE);
 
     Pagina<Ticket> pagina =

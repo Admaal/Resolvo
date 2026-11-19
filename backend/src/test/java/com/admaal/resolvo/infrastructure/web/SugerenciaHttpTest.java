@@ -46,6 +46,7 @@ class SugerenciaHttpTest {
   @Autowired JdbcTemplate jdbc;
   @Autowired EmbebedorFalso embebedor;
   @Autowired RedactorFalso redactor;
+  @Autowired com.admaal.resolvo.infrastructure.ProcesadorDeEventos procesador;
 
   private String agente;
   private String cliente;
@@ -281,6 +282,7 @@ class SugerenciaHttpTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"estado\":\"RESUELTO\"}"))
         .andExpect(status().isOk());
+    procesador.procesar();
 
     assertThat(
             jdbc.queryForObject(

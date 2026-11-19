@@ -56,7 +56,9 @@ public class RedactorSpringAi implements RedactorRespuestas {
 
   @Override
   public BorradorConCitas redactar(Ticket ticket, List<Fragmento> fragmentos) {
-    return interpretar(llamador.llamar(prompt(ticket, fragmentos)).texto());
+    LlamadorGemini.Contexto contexto =
+        new LlamadorGemini.Contexto("sugerir", ticket.organizacionId().valor());
+    return interpretar(llamador.llamar(contexto, prompt(ticket, fragmentos)).texto());
   }
 
   private BorradorConCitas interpretar(String respuesta) {
