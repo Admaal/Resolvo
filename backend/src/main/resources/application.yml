@@ -30,6 +30,10 @@ resolvo:
     secure: false
   jwt:
     secret: ${RESOLVO_JWT_SECRET}
+  # Clave compartida con la Pages Function de /api: con ella, la API acepta la IP real del cliente
+  # que el proxy manda en X-Cliente-Ip. Vacia = nunca se confia en esa cabecera.
+  proxy:
+    clave-compartida: ${RESOLVO_PROXY_CLAVE:}
   # Limites de uso en memoria (una sola instancia). Login: fallos por (email, cliente) y ventana.
   # IA: peticiones por usuario y minuto a sugerencias, clasificaciones y reindexado.
   limites:

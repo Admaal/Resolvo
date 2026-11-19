@@ -19,7 +19,8 @@ import org.springframework.mock.web.MockHttpServletRequest;
 class LimiteDeLoginTest {
 
   private final RelojManual reloj = new RelojManual(Instant.parse("2026-11-19T10:00:00Z"));
-  private final LimiteDeLogin limite = new LimiteDeLogin(reloj, 5, 15);
+  private static final String SECRETO = "secreto-de-prueba";
+  private final LimiteDeLogin limite = new LimiteDeLogin(reloj, 5, 15, SECRETO);
 
   private static MockHttpServletRequest desde(String cabecera, String remota) {
     MockHttpServletRequest peticion = new MockHttpServletRequest();
@@ -120,5 +121,55 @@ class LimiteDeLoginTest {
     pool.shutdown();
 
     assertThat(pasan.get()).isEqualTo(5);
+  }
+
+  private static MockHttpServletRequest firmada(String secreto, String ip) {
+    MockHttpServletRequest peticion = desde("2a06:98c0:3600::103", "10.0.0.1");
+    peticion.addHeader("X-Resolvo-Proxy", secreto);
+    peticion.addHeader("X-Cliente-Ip", ip);
+    return peticion;
+  }
+
+  @Test
+  void conElSecretoCorrectoLaClaveUsaLaIpFirmadaDelProxy() {
+    assertThat(limite.clave("a@b.test", firmada(SECRETO, "203.0.113.9")))
+        .isEqualTo("a@b.test|203.0.113.9");
+  }
+
+  @Test
+  void conUnSecretoIncorrectoSeIgnoraLaIpDeLaCabecera() {
+    assertThat(limite.clave("a@b.test", firmada("adivinado", "203.0.113.9")))
+        .isEqualTo("a@b.test|2a06:98c0:3600::103");
+  }
+
+  @Test
+  void sinSecretoConfiguradoNuncaSeConfiaEnLaCabeceraAunqueVengaVacia() {
+    LimiteDeLogin sinSecreto = new LimiteDeLogin(reloj, 5, 15, "");
+
+    assertThat(sinSecreto.clave("a@b.test", firmada("", "203.0.113.9")))
+        .isEqualTo("a@b.test|2a06:98c0:3600::103");
+    assertThat(sinSecreto.clave("a@b.test", firmada("cualquiera", "203.0.113.9")))
+        .isEqualTo("a@b.test|2a06:98c0:3600::103");
+  }
+
+  @Test
+  void conSecretoCorrectoPeroSinIpCaeEnLaCabeceraDeCloudflare() {
+    MockHttpServletRequest peticion = desde("198.51.100.4", "10.0.0.1");
+    peticion.addHeader("X-Resolvo-Proxy", SECRETO);
+
+    assertThat(limite.clave("a@b.test", peticion)).isEqualTo("a@b.test|198.51.100.4");
+  }
+
+  @Test
+  void laIpFirmadaSeRecortaParaNoAgrandarLaMemoria() {
+    String clave = limite.clave("a@b.test", firmada(SECRETO, "9".repeat(500)));
+
+    assertThat(clave).hasSize("a@b.test|".length() + LimiteDeLogin.MAXIMO_DE_LA_IP);
+  }
+
+  @Test
+  void clientesDistintosDetrasDelMismoProxyTienenClavesDistintas() {
+    assertThat(limite.clave("a@b.test", firmada(SECRETO, "203.0.113.9")))
+        .isNotEqualTo(limite.clave("a@b.test", firmada(SECRETO, "203.0.113.10")));
   }
 }

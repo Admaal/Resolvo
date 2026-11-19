@@ -78,4 +78,72 @@ describe('reenviar (proxy de /api hacia la API)', () => {
     expect(salida.status).toBe(500);
     expect(await salida.json()).toEqual({ error: 'api-origin-no-configurado' });
   });
+
+  describe('IP del cliente firmada', () => {
+    const entradaDesde = (cabeceras: Record<string, string>) =>
+      new Request('https://resolvo.pages.dev/api/sesion', { method: 'POST', body: '{}', headers: cabeceras });
+
+    it('con secreto envia la IP real en X-Cliente-Ip y el secreto en X-Resolvo-Proxy', async () => {
+      const captura: Captura = {};
+
+      await reenviar(
+        entradaDesde({ 'cf-connecting-ip': '203.0.113.9' }),
+        'https://api.onrender.com',
+        falsoFetch(captura, new Response('{}')),
+        'secreto-de-prueba',
+      );
+
+      expect(captura.peticion!.headers.get('x-cliente-ip')).toBe('203.0.113.9');
+      expect(captura.peticion!.headers.get('x-resolvo-proxy')).toBe('secreto-de-prueba');
+    });
+
+    it('descarta lo que el navegador mande en X-Cliente-Ip y X-Resolvo-Proxy', async () => {
+      const captura: Captura = {};
+
+      await reenviar(
+        entradaDesde({
+          'cf-connecting-ip': '203.0.113.9',
+          'x-cliente-ip': '1.2.3.4',
+          'x-resolvo-proxy': 'adivinado',
+        }),
+        'https://api.onrender.com',
+        falsoFetch(captura, new Response('{}')),
+        'secreto-de-prueba',
+      );
+
+      expect(captura.peticion!.headers.get('x-cliente-ip')).toBe('203.0.113.9');
+      expect(captura.peticion!.headers.get('x-resolvo-proxy')).toBe('secreto-de-prueba');
+    });
+
+    it('sin secreto configurado no firma nada y borra las cabeceras que vengan de fuera', async () => {
+      const captura: Captura = {};
+
+      await reenviar(
+        entradaDesde({
+          'cf-connecting-ip': '203.0.113.9',
+          'x-cliente-ip': '1.2.3.4',
+          'x-resolvo-proxy': 'adivinado',
+        }),
+        'https://api.onrender.com',
+        falsoFetch(captura, new Response('{}')),
+      );
+
+      expect(captura.peticion!.headers.has('x-cliente-ip')).toBe(false);
+      expect(captura.peticion!.headers.has('x-resolvo-proxy')).toBe(false);
+    });
+
+    it('sin CF-Connecting-IP no envia X-Cliente-Ip ni el secreto', async () => {
+      const captura: Captura = {};
+
+      await reenviar(
+        entradaDesde({ 'x-cliente-ip': '1.2.3.4' }),
+        'https://api.onrender.com',
+        falsoFetch(captura, new Response('{}')),
+        'secreto-de-prueba',
+      );
+
+      expect(captura.peticion!.headers.has('x-cliente-ip')).toBe(false);
+      expect(captura.peticion!.headers.has('x-resolvo-proxy')).toBe(false);
+    });
+  });
 });

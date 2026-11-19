@@ -25,7 +25,7 @@ import org.springframework.test.web.servlet.ResultActions;
 @Tag("full")
 @SpringBootTest(
     classes = ResolvoApplication.class,
-    properties = "resolvo.limites.ia-por-minuto=10")
+    properties = {"resolvo.limites.ia-por-minuto=10", "resolvo.proxy.clave-compartida=secreto-de-prueba"})
 @AutoConfigureMockMvc
 @Import(IaDeMentira.class)
 class LimitesHttpTest {
@@ -151,5 +151,39 @@ class LimitesHttpTest {
             post("/api/tickets/%s/sugerencias".formatted(UUID.randomUUID()))
                 .header("Authorization", "Bearer " + agente))
         .andExpect(status().isNotFound());
+  }
+
+  private ResultActions entrarFirmado(String email, String ip, String secreto) throws Exception {
+    return mvc.perform(
+        post("/api/sesion")
+            .header("CF-Connecting-IP", "2a06:98c0:3600::103")
+            .header("X-Resolvo-Proxy", secreto)
+            .header("X-Cliente-Ip", ip)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"email\":\"%s\",\"contrasena\":\"mala\"}".formatted(email)));
+  }
+
+  @Test
+  void detrasDelProxyFirmadoCadaClienteTieneSuPropioLimite() throws Exception {
+    for (int intento = 0; intento < 5; intento++) {
+      entrarFirmado("agente@acme.test", "203.0.113.50", "secreto-de-prueba")
+          .andExpect(status().isUnauthorized());
+    }
+    entrarFirmado("agente@acme.test", "203.0.113.50", "secreto-de-prueba")
+        .andExpect(status().isTooManyRequests());
+
+    entrarFirmado("agente@acme.test", "203.0.113.51", "secreto-de-prueba")
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void conUnSecretoFalsoLaIpAjenaNoSirveParaEvitarElLimite() throws Exception {
+    for (int intento = 0; intento < 5; intento++) {
+      entrarFirmado("agente@acme.test", "203.0.113.60", "falso").andExpect(status().isUnauthorized());
+    }
+
+    // Cambiar X-Cliente-Ip sin el secreto correcto no da otro cupo: la clave sigue siendo la misma.
+    entrarFirmado("agente@acme.test", "203.0.113.61", "falso")
+        .andExpect(status().isTooManyRequests());
   }
 }
