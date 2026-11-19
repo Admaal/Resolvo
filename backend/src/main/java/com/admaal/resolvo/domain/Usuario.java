@@ -1,6 +1,5 @@
 package com.admaal.resolvo.domain;
 
-import java.time.Duration;
 import java.time.Instant;
 
 public final class Usuario {
@@ -10,8 +9,8 @@ public final class Usuario {
   private final String email;
   private final Rol rol;
   private final String hashContrasena;
-  private int fallosSeguidos;
-  private Instant bloqueadoHasta;
+  private final int fallosSeguidos;
+  private final Instant bloqueadoHasta;
 
   public Usuario(
       UsuarioId id,
@@ -33,22 +32,6 @@ public final class Usuario {
   public static Usuario nuevo(
       UsuarioId id, OrganizacionId organizacionId, String email, Rol rol, String hashContrasena) {
     return new Usuario(id, organizacionId, email, rol, hashContrasena, 0, null);
-  }
-
-  public boolean estaBloqueado(Instant ahora) {
-    return bloqueadoHasta != null && ahora.isBefore(bloqueadoHasta);
-  }
-
-  public void registrarFallo(Instant ahora) {
-    fallosSeguidos = fallosSeguidos + 1;
-    if (fallosSeguidos >= 5) {
-      bloqueadoHasta = ahora.plus(Duration.ofMinutes(15));
-    }
-  }
-
-  public void reiniciarFallos() {
-    fallosSeguidos = 0;
-    bloqueadoHasta = null;
   }
 
   public UsuarioId id() {

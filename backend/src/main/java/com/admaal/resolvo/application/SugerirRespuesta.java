@@ -28,6 +28,7 @@ public final class SugerirRespuesta {
   private final RedactorRespuestas redactor;
   private final Reloj reloj;
   private final double distanciaMaxima;
+  private final Presupuesto presupuesto;
 
   public SugerirRespuesta(
       TicketRepositorio tickets,
@@ -48,6 +49,19 @@ public final class SugerirRespuesta {
       RedactorRespuestas redactor,
       Reloj reloj,
       double distanciaMaxima) {
+    this(tickets, sugerencias, embebedor, base, redactor, reloj, distanciaMaxima, Presupuesto.SIN_LIMITE);
+  }
+
+  /** Cada sugerencia nueva reserva una llamada del presupuesto diario de la organizacion. */
+  public SugerirRespuesta(
+      TicketRepositorio tickets,
+      Sugerencias sugerencias,
+      Embebedor embebedor,
+      BaseConocimiento base,
+      RedactorRespuestas redactor,
+      Reloj reloj,
+      double distanciaMaxima,
+      Presupuesto presupuesto) {
     this.tickets = tickets;
     this.sugerencias = sugerencias;
     this.embebedor = embebedor;
@@ -55,6 +69,7 @@ public final class SugerirRespuesta {
     this.redactor = redactor;
     this.reloj = reloj;
     this.distanciaMaxima = distanciaMaxima;
+    this.presupuesto = presupuesto;
   }
 
   public Sugerencia ejecutar(
@@ -67,32 +82,34 @@ public final class SugerirRespuesta {
     if (existente.isPresent()) {
       return existente.get();
     }
-    List<Fragmento> fragmentos =
-        base.buscar(
-            organizacionId,
-            embebedor.embeber(ticket.asunto() + "\n" + ticket.cuerpo()),
-            FRAGMENTOS,
-            ticket.id().valor(),
-            distanciaMaxima);
-    if (fragmentos.isEmpty()) {
-      throw new SinFuentes();
+    try (Presupuesto.Reserva reserva = presupuesto.reservar(organizacionId)) {
+      List<Fragmento> fragmentos =
+          base.buscar(
+              organizacionId,
+              embebedor.embeber(ticket.asunto() + "\n" + ticket.cuerpo()),
+              FRAGMENTOS,
+              ticket.id().valor(),
+              distanciaMaxima);
+      if (fragmentos.isEmpty()) {
+        throw new SinFuentes();
+      }
+      BorradorConCitas borrador = redactor.redactar(ticket, fragmentos);
+      Set<FragmentoId> recuperados = new HashSet<>();
+      for (Fragmento fragmento : fragmentos) {
+        recuperados.add(fragmento.id());
+      }
+      Sugerencia sugerencia =
+          Sugerencia.crear(
+              SugerenciaId.nuevo(),
+              organizacionId,
+              ticketId,
+              borrador.texto(),
+              redactor.modelo(),
+              reloj.ahora(),
+              borrador.citas(),
+              recuperados);
+      sugerencias.guardar(sugerencia);
+      return sugerencia;
     }
-    BorradorConCitas borrador = redactor.redactar(ticket, fragmentos);
-    Set<FragmentoId> recuperados = new HashSet<>();
-    for (Fragmento fragmento : fragmentos) {
-      recuperados.add(fragmento.id());
-    }
-    Sugerencia sugerencia =
-        Sugerencia.crear(
-            SugerenciaId.nuevo(),
-            organizacionId,
-            ticketId,
-            borrador.texto(),
-            redactor.modelo(),
-            reloj.ahora(),
-            borrador.citas(),
-            recuperados);
-    sugerencias.guardar(sugerencia);
-    return sugerencia;
   }
 }

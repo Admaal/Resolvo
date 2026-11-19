@@ -57,6 +57,7 @@ Fuera de la fase 1:
 - [ADR-0010](adr/0010-tests-y-valla.md): JUnit 5, Testcontainers, ArchUnit, PIT en dominio al 80 % y Playwright.
 - [ADR-0011](adr/0011-evals.md): evals de IA contra Gemini real, en un job aparte y fuera del gate obligatorio.
 - [ADR-0012](adr/0012-metricas-ia.md): métricas de la IA en Postgres, endpoint para ADMIN y coste a precio de lista con tarifas citadas.
+- [ADR-0013](adr/0013-seguridad-ia.md): seguridad de la IA (inyección, PII), límites de uso y presupuesto diario por organización.
 
 ## Preguntas abiertas
 

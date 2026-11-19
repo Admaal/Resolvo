@@ -7,7 +7,6 @@ import com.admaal.resolvo.application.soporte.RelojManual;
 import com.admaal.resolvo.application.soporte.SesionesEnMemoria;
 import com.admaal.resolvo.application.soporte.UsuariosEnMemoria;
 import com.admaal.resolvo.domain.CredencialesInvalidas;
-import com.admaal.resolvo.domain.CuentaBloqueada;
 import com.admaal.resolvo.domain.OrganizacionId;
 import com.admaal.resolvo.domain.Rol;
 import com.admaal.resolvo.domain.Usuario;
@@ -37,34 +36,20 @@ class IniciarSesionTest {
   }
 
   @Test
-  void bloqueaElEmailTrasCincoFallos() {
+  void unFalloYaNoBloqueaLaCuenta() {
     RelojManual reloj = new RelojManual(ahora);
     UsuariosEnMemoria usuarios = usuariosCon("cliente@acme.test");
     IniciarSesion caso = caso(reloj, usuarios, new SesionesEnMemoria());
 
-    for (int intento = 0; intento < 4; intento++) {
+    for (int intento = 0; intento < 10; intento++) {
       assertThatThrownBy(() -> caso.ejecutar("cliente@acme.test", "mala"))
           .isInstanceOf(CredencialesInvalidas.class);
     }
-    assertThatThrownBy(() -> caso.ejecutar("cliente@acme.test", "mala"))
-        .isInstanceOf(CuentaBloqueada.class);
-    assertThatThrownBy(() -> caso.ejecutar("cliente@acme.test", "demo-resolvo"))
-        .isInstanceOf(CuentaBloqueada.class);
 
-    reloj.avanzar(Duration.ofMinutes(14));
-    assertThatThrownBy(() -> caso.ejecutar("cliente@acme.test", "demo-resolvo"))
-        .isInstanceOf(CuentaBloqueada.class);
-
-    reloj.avanzar(Duration.ofMinutes(1));
     SesionIniciada sesion = caso.ejecutar("cliente@acme.test", "demo-resolvo");
     assertThat(sesion.access()).isEqualTo("access");
     assertThat(sesion.refresh()).isEqualTo("refresh-1");
     assertThat(vence.get()).isEqualTo(reloj.ahora().plus(Duration.ofMinutes(15)));
-
-    for (int intento = 0; intento < 4; intento++) {
-      assertThatThrownBy(() -> caso.ejecutar("cliente@acme.test", "mala"))
-          .isInstanceOf(CredencialesInvalidas.class);
-    }
   }
 
   private IniciarSesion caso(Reloj reloj, Usuarios usuarios, SesionesRefresh sesiones) {

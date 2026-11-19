@@ -207,6 +207,24 @@ describe('SugerenciaPanel', () => {
     }
   });
 
+  it('con429MuestraElLimiteDeUsoSegunElMotivo', async () => {
+    const casos: [string, string][] = [
+      ['demasiadas-peticiones', 'Demasiadas peticiones'],
+      ['ia-presupuesto-agotado', 'límite de IA de hoy'],
+    ];
+    for (const [motivo, texto] of casos) {
+      TestBed.resetTestingModule();
+      servicio.sugerir.mockRejectedValue(fallo(429, motivo));
+      const fixture = montar('AGENTE');
+      await asentar(fixture);
+
+      pulsar(fixture, '.sugerir');
+      await asentar(fixture);
+
+      expect(el(fixture, '.aviso')?.textContent).toContain(texto);
+    }
+  });
+
   it('un conflicto al aprobar avisa y recarga el estado', async () => {
     servicio.actual.mockResolvedValueOnce(borrador).mockResolvedValueOnce(null);
     servicio.aprobar.mockRejectedValue(fallo(409, 'conflicto'));

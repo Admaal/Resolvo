@@ -2,6 +2,7 @@ package com.admaal.resolvo.infrastructure.web;
 
 import com.admaal.resolvo.infrastructure.AplicacionDeResolvo;
 import com.admaal.resolvo.infrastructure.seguridad.SeguridadConfig.CookiePropiedades;
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -21,16 +22,24 @@ public class SesionControlador {
 
   private final AplicacionDeResolvo aplicacion;
   private final CookiePropiedades cookies;
+  private final LimiteDeLogin limiteDeLogin;
 
-  public SesionControlador(AplicacionDeResolvo aplicacion, CookiePropiedades cookies) {
+  public SesionControlador(
+      AplicacionDeResolvo aplicacion, CookiePropiedades cookies, LimiteDeLogin limiteDeLogin) {
     this.aplicacion = aplicacion;
     this.cookies = cookies;
+    this.limiteDeLogin = limiteDeLogin;
   }
 
   @PostMapping
-  ResponseEntity<Access> entrar(@RequestBody Credenciales cuerpo) {
+  ResponseEntity<Access> entrar(@RequestBody Credenciales cuerpo, HttpServletRequest peticion) {
+    String clave = limiteDeLogin.clave(cuerpo.email(), peticion);
+    limiteDeLogin.intentar(clave);
     var sesion = aplicacion.entrar(cuerpo.email(), cuerpo.contrasena());
-    return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie(sesion.refresh()).toString()).body(new Access(sesion.access()));
+    limiteDeLogin.correcto(clave);
+    return ResponseEntity.ok()
+        .header(HttpHeaders.SET_COOKIE, cookie(sesion.refresh()).toString())
+        .body(new Access(sesion.access()));
   }
 
   @PostMapping("/refresh")

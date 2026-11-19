@@ -30,10 +30,21 @@ resolvo:
     secure: false
   jwt:
     secret: ${RESOLVO_JWT_SECRET}
+  # Limites de uso en memoria (una sola instancia). Login: fallos por (email, cliente) y ventana.
+  # IA: peticiones por usuario y minuto a sugerencias, clasificaciones y reindexado.
+  limites:
+    login-fallos: ${RESOLVO_LIMITE_LOGIN_FALLOS:5}
+    login-ventana-minutos: ${RESOLVO_LIMITE_LOGIN_MINUTOS:15}
+    ia-por-minuto: ${RESOLVO_LIMITE_IA_POR_MINUTO:10}
   # RESOLVO_IA_SINCRONA: solo para tests; indexa en el hilo de la peticion en vez de en segundo plano.
   ia:
     indexar-al-arrancar: ${RESOLVO_IA_INDEXAR_AL_ARRANCAR:true}
     sincrona: ${RESOLVO_IA_SINCRONA:false}
+    # Presupuesto de IA por organizacion y dia UTC. Las llamadas son un tope estricto; los tokens,
+    # blando (se conocen al terminar cada llamada). Al superarlo: 429 ia-presupuesto-agotado.
+    presupuesto-diario:
+      llamadas: ${RESOLVO_IA_LLAMADAS_DIA:200}
+      tokens: ${RESOLVO_IA_TOKENS_DIA:300000}
     # Precios de lista en USD por millon de tokens, nivel de pago estandar, de la pagina oficial de
     # precios de Gemini (fuente y fecha en cada entrada). Con el nivel gratuito la factura real es 0:
     # esto es lo que costaria a precio de lista. Los alias "latest" y los modelos sin precio publicado

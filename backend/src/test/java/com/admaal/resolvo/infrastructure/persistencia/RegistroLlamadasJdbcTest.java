@@ -3,6 +3,7 @@ package com.admaal.resolvo.infrastructure.persistencia;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.admaal.resolvo.bootstrap.ResolvoApplication;
+import com.admaal.resolvo.domain.Consumo;
 import com.admaal.resolvo.domain.LlamadaIa;
 import com.admaal.resolvo.domain.OrganizacionId;
 import com.admaal.resolvo.infrastructure.PostgresDePrueba;
@@ -82,5 +83,27 @@ class RegistroLlamadasJdbcTest {
 
     assertThat(jdbc.queryForObject("select count(*) from llamada_ia", Integer.class)).isEqualTo(1);
     assertThat(registro.deLaOrganizacion(ACME, T0.minusSeconds(1), T0.plusSeconds(1))).isEmpty();
+  }
+
+  @Test
+  void elConsumoEsDeLaOrganizacionYDelRangoYCuentaTambienLosFallos() {
+    OrganizacionId otra = otraOrganizacion();
+    registro.registrar(llamada(ACME, "sugerir", 100, true, T0));
+    registro.registrar(llamada(ACME, "clasificar", 0, false, T0.plusSeconds(5)));
+    registro.registrar(llamada(ACME, "sugerir", 7, true, T0.minusSeconds(1)));
+    registro.registrar(llamada(ACME, "sugerir", 7, true, T0.plusSeconds(60)));
+    registro.registrar(llamada(otra, "sugerir", 1_000, true, T0.plusSeconds(5)));
+
+    Consumo acme = registro.consumoDe(ACME, T0, T0.plusSeconds(60));
+    Consumo deOtra = registro.consumoDe(otra, T0, T0.plusSeconds(60));
+
+    // Cada llamada del helper gasta 3 tokens de salida: 100+3 y 0+3.
+    assertThat(acme).isEqualTo(new Consumo(2, 106));
+    assertThat(deOtra).isEqualTo(new Consumo(1, 1_003));
+  }
+
+  @Test
+  void sinLlamadasElConsumoEsCero() {
+    assertThat(registro.consumoDe(ACME, T0, T0.plusSeconds(60))).isEqualTo(new Consumo(0, 0));
   }
 }
