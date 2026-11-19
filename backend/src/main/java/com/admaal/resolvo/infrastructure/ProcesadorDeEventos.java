@@ -1,5 +1,6 @@
 package com.admaal.resolvo.infrastructure;
 
+import com.admaal.resolvo.application.BandejaEventos;
 import com.admaal.resolvo.application.ProcesarEventos;
 import com.admaal.resolvo.infrastructure.persistencia.OutboxJdbc.EventoPublicado;
 import java.util.concurrent.Executor;
@@ -17,8 +18,9 @@ import org.springframework.transaction.event.TransactionalEventListener;
 /**
  * Despierta al procesador de eventos sin un poller continuo: una consulta cada pocos segundos
  * mantendria Neon despierto las 24 horas. Se procesa al confirmarse la transaccion que publico, al
- * arrancar (por si quedaron eventos de antes) y, cada minuto, solo si el ultimo pase dejo fallos por
- * reintentar. En segundo plano y con un solo hilo: no retrasa la peticion ni se pisa consigo mismo.
+ * arrancar (por si quedaron eventos de antes) y, cada minuto, solo si el ultimo pase dejo algo
+ * pendiente (un reintento con espera o un evento reclamado por un proceso que murio: su reclamo
+ * vence despues del arranque). En segundo plano y con un solo hilo: no retrasa la peticion ni se pisa consigo mismo.
  * Con {@code resolvo.ia.sincrona} (tests) no se dispara solo: el test llama a {@link #procesar()}.
  */
 @Component
@@ -27,15 +29,20 @@ public class ProcesadorDeEventos {
   private static final Logger LOG = LoggerFactory.getLogger(ProcesadorDeEventos.class);
 
   private final ProcesarEventos proceso;
+  private final BandejaEventos bandeja;
   private final Executor ejecutor;
   private final boolean automatico;
-  private final AtomicBoolean hayReintentos = new AtomicBoolean(false);
+  // Verdadero mientras quede algo pendiente: reintentos con espera o eventos reclamados por un
+  // proceso que murio. Empieza en verdadero para que el primer barrido tras arrancar mire la bandeja.
+  private final AtomicBoolean hayPendientes = new AtomicBoolean(true);
 
   public ProcesadorDeEventos(
       ProcesarEventos proceso,
+      BandejaEventos bandeja,
       @Qualifier("indexadorEjecutor") Executor ejecutor,
       @Value("${resolvo.ia.sincrona:false}") boolean sincrona) {
     this.proceso = proceso;
+    this.bandeja = bandeja;
     this.ejecutor = ejecutor;
     this.automatico = !sincrona;
   }
@@ -52,7 +59,7 @@ public class ProcesadorDeEventos {
 
   @Scheduled(fixedDelay = 60_000, initialDelay = 60_000)
   void barrer() {
-    if (hayReintentos.get()) {
+    if (hayPendientes.get()) {
       despertar();
     }
   }
@@ -67,13 +74,13 @@ public class ProcesadorDeEventos {
   public synchronized ProcesarEventos.Resultado procesar() {
     try {
       ProcesarEventos.Resultado resultado = proceso.ejecutar();
-      hayReintentos.set(resultado.reintentables() > 0);
+      hayPendientes.set(bandeja.pendientes() > 0);
       if (resultado.fallidos() > 0) {
         LOG.warn("{} eventos agotaron sus intentos; ver evento_outbox", resultado.fallidos());
       }
       return resultado;
     } catch (RuntimeException error) {
-      hayReintentos.set(true);
+      hayPendientes.set(true);
       LOG.warn("No se pudo procesar la bandeja de eventos: {}", error.getMessage());
       return new ProcesarEventos.Resultado(0, 0, 0);
     }

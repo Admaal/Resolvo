@@ -76,6 +76,11 @@ public final class BandejaEnMemoria implements BandejaEventos {
   }
 
   @Override
+  public int pendientes() {
+    return (int) filas.values().stream().filter(fila -> fila.estado == Estado.PENDIENTE).count();
+  }
+
+  @Override
   public void marcarHecho(UUID eventoId) {
     filas.get(eventoId).estado = Estado.HECHO;
   }

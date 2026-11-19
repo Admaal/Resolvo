@@ -93,8 +93,12 @@ public class BaseConocimientoPgvector implements BaseConocimiento {
     }
   }
 
+  /** Con el mismo cerrojo que {@link #reemplazar}: un borrado y un indexado de la fuente no se mezclan. */
   @Override
+  @Transactional
   public void borrar(OrganizacionId organizacionId, FuenteConocimiento fuente, UUID fuenteId) {
+    jdbc.queryForList(
+        "select pg_advisory_xact_lock(hashtextextended(?, 0))", fuente.name() + ":" + fuenteId);
     jdbc.update(
         "delete from fragmento where organizacion_id = ? and fuente = ? and fuente_id = ?",
         organizacionId.valor(),

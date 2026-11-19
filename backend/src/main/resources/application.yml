@@ -55,6 +55,11 @@ resolvo:
         salida-usd-por-millon: 3.75
         fuente: https://aistudio.google.com/docs/pricing
         fecha: 2026-11-19
+      - modelo: gemini-3.6-flash
+        entrada-usd-por-millon: 0.75
+        salida-usd-por-millon: 3.75
+        fuente: https://aistudio.google.com/docs/pricing
+        fecha: 2026-11-19
       - modelo: gemini-2.5-flash-lite
         entrada-usd-por-millon: 0.10
         salida-usd-por-millon: 0.40

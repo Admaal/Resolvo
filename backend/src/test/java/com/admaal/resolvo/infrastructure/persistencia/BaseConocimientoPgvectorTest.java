@@ -210,6 +210,66 @@ class BaseConocimientoPgvectorTest {
         .containsExactly("de-acme");
   }
 
+  private UUID guardarTicket(OrganizacionId org, UUID ticket) {
+    base.reemplazar(
+        org,
+        FuenteConocimiento.TICKET,
+        ticket,
+        "h",
+        "m",
+        List.of(
+            new FragmentoIndexado(
+                new Fragmento(
+                    FragmentoId.nuevo(), org, FuenteConocimiento.TICKET, ticket, "t", "texto"),
+                eje(0, 5, 0f))));
+    return ticket;
+  }
+
+  private int fragmentosDe(UUID fuente) {
+    return jdbc.queryForObject(
+        "select count(*) from fragmento where fuente_id = ?", Integer.class, fuente);
+  }
+
+  @Test
+  void borrarQuitaLosFragmentosDeLaFuenteDeSuOrganizacionYNoLosDeOtrasFuentes() {
+    OrganizacionId otra = otraOrganizacion();
+    UUID ticket = guardarTicket(ACME, UUID.randomUUID());
+    UUID otroTicket = guardarTicket(ACME, UUID.randomUUID());
+    UUID ajeno = guardarTicket(otra, UUID.randomUUID());
+
+    base.borrar(ACME, FuenteConocimiento.TICKET, ticket);
+
+    assertThat(fragmentosDe(ticket)).isZero();
+    assertThat(fragmentosDe(otroTicket)).isEqualTo(1);
+    assertThat(fragmentosDe(ajeno)).isEqualTo(1);
+  }
+
+  @Test
+  void borrarConLaOrganizacionAjenaNoTocaNada() {
+    OrganizacionId otra = otraOrganizacion();
+    UUID ticket = guardarTicket(ACME, UUID.randomUUID());
+
+    base.borrar(otra, FuenteConocimiento.TICKET, ticket);
+
+    assertThat(fragmentosDe(ticket)).isEqualTo(1);
+  }
+
+  @Test
+  void borrarUnTicketNoQuitaUnArticuloQueTengaOtroTipo() {
+    UUID articulo = guardar(ACME, "articulo", eje(0, 5, 0f));
+
+    base.borrar(ACME, FuenteConocimiento.TICKET, articulo);
+
+    assertThat(fragmentosDe(articulo)).isEqualTo(1);
+  }
+
+  @Test
+  void borrarUnaFuenteSinFragmentosNoHaceNada() {
+    base.borrar(ACME, FuenteConocimiento.TICKET, UUID.randomUUID());
+
+    assertThat(jdbc.queryForObject("select count(*) from fragmento", Integer.class)).isZero();
+  }
+
   @Test
   void estaIndexadaFiltraPorOrganizacion() {
     UUID fuente = guardar(ACME, "x", eje(0, 5, 0f));

@@ -68,3 +68,5 @@
 2026-11-19T17:39:35 fast 28ede33af60acc2c67241180654428e321824c89 RED backend/src/test/java/com/admaal/resolvo/domain/ResumenLlamadasTest.java exit=1
 2026-11-19T17:39:35 fast 28ede33af60acc2c67241180654428e321824c89 RED backend/src/test/java/com/admaal/resolvo/domain/TarifaTest.java exit=1
 2026-11-19T17:39:35 fast 28ede33af60acc2c67241180654428e321824c89 RED backend/src/test/java/com/admaal/resolvo/application/ConsultarMetricasIaTest.java exit=1
+2026-11-19T18:17:39 fast 76e5241449fc8f7f9ddb4d8d41b271fb74a3f930 RED backend/src/test/java/com/admaal/resolvo/infrastructure/ProcesadorDeEventosTest.java exit=1
+2026-11-19T18:17:39 fast 76e5241449fc8f7f9ddb4d8d41b271fb74a3f930 RED backend/src/test/java/com/admaal/resolvo/infrastructure/ai/ConfiguracionGeminiTest.java exit=1
