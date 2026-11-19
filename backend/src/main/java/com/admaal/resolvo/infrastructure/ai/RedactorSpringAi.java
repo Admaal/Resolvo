@@ -19,7 +19,10 @@ import org.springframework.ai.chat.model.ChatModel;
 public class RedactorSpringAi implements RedactorRespuestas {
 
   private static final PlantillaDePrompt PLANTILLA =
-      PlantillaDePrompt.cargar("prompts/redactar-respuesta-v1.txt");
+      PlantillaDePrompt.cargar("prompts/redactar-respuesta-v2.txt");
+
+  /** Tope del borrador que se acepta del modelo; la columna admite 8000. */
+  private static final int MAXIMO_DEL_BORRADOR = 4000;
 
   private final LlamadorGemini llamador;
   private final ObjectMapper json;
@@ -78,7 +81,11 @@ public class RedactorSpringAi implements RedactorRespuestas {
         }
       }
     }
-    return new BorradorConCitas(texto.asText(), citas);
+    String borrador = texto.asText();
+    if (borrador.length() > MAXIMO_DEL_BORRADOR) {
+      borrador = borrador.substring(0, MAXIMO_DEL_BORRADOR);
+    }
+    return new BorradorConCitas(borrador, citas);
   }
 
   private JsonNode leer(String respuesta) {
@@ -101,18 +108,18 @@ public class RedactorSpringAi implements RedactorRespuestas {
     StringBuilder bloque = new StringBuilder();
     for (Fragmento fragmento : fragmentos) {
       bloque
-          .append("[id: ")
+          .append("<fuente id=\"")
           .append(fragmento.id().valor())
-          .append(" | ")
-          .append(fragmento.titulo())
-          .append("]\n")
-          .append(fragmento.texto())
-          .append("\n\n");
+          .append("\">\nTitulo: ")
+          .append(PlantillaDePrompt.limpiar(fragmento.titulo()))
+          .append('\n')
+          .append(PlantillaDePrompt.limpiar(fragmento.texto()))
+          .append("\n</fuente>\n\n");
     }
     return PLANTILLA.rellenar(
         Map.of(
             "fragmentos", bloque.toString().strip(),
-            "asunto", PlantillaDePrompt.sinDelimitadores(ticket.asunto()),
-            "cuerpo", PlantillaDePrompt.sinDelimitadores(ticket.cuerpo())));
+            "asunto", PlantillaDePrompt.limpiar(ticket.asunto()),
+            "cuerpo", PlantillaDePrompt.limpiar(ticket.cuerpo())));
   }
 }

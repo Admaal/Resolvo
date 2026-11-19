@@ -1,0 +1,124 @@
+package com.admaal.resolvo.infrastructure.web;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import com.admaal.resolvo.application.soporte.RelojManual;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
+
+class LimiteDeLoginTest {
+
+  private final RelojManual reloj = new RelojManual(Instant.parse("2026-11-19T10:00:00Z"));
+  private final LimiteDeLogin limite = new LimiteDeLogin(reloj, 5, 15);
+
+  private static MockHttpServletRequest desde(String cabecera, String remota) {
+    MockHttpServletRequest peticion = new MockHttpServletRequest();
+    peticion.setRemoteAddr(remota);
+    if (cabecera != null) {
+      peticion.addHeader("CF-Connecting-IP", cabecera);
+    }
+    return peticion;
+  }
+
+  @Test
+  void laClaveUsaLaCabeceraDeCloudflareSiViene() {
+    assertThat(limite.clave("Ana@Acme.test ", desde(" 203.0.113.9 ", "10.0.0.1")))
+        .isEqualTo("ana@acme.test|203.0.113.9");
+  }
+
+  @Test
+  void sinCabeceraOConCabeceraEnBlancoUsaLaDireccionRemota() {
+    assertThat(limite.clave("a@b.test", desde(null, "10.0.0.1"))).isEqualTo("a@b.test|10.0.0.1");
+    assertThat(limite.clave("a@b.test", desde("  ", "10.0.0.1"))).isEqualTo("a@b.test|10.0.0.1");
+  }
+
+  @Test
+  void unEmailNuloNoRompeLaClave() {
+    assertThat(limite.clave(null, desde(null, "10.0.0.1"))).isEqualTo("|10.0.0.1");
+  }
+
+  @Test
+  void unEmailLargoSeRecortaParaNoAgrandarLaMemoria() {
+    String clave = limite.clave("x".repeat(5000) + "@b.test", desde(null, "10.0.0.1"));
+
+    assertThat(clave).hasSizeLessThanOrEqualTo(LimiteDeLogin.MAXIMO_DEL_EMAIL + "|10.0.0.1".length());
+  }
+
+  @Test
+  void elQuintoIntentoPasaYElSextoSeRechazaConSuReintento() {
+    for (int i = 0; i < 5; i++) {
+      limite.intentar("a|1");
+    }
+
+    assertThatThrownBy(() -> limite.intentar("a|1"))
+        .isInstanceOfSatisfying(
+            DemasiadasPeticiones.class,
+            error -> {
+              assertThat(error.getMessage()).isEqualTo("demasiados-intentos");
+              assertThat(error.segundosParaReintentar()).isEqualTo(900);
+            });
+  }
+
+  @Test
+  void unLoginCorrectoReiniciaLaCuenta() {
+    for (int i = 0; i < 4; i++) {
+      limite.intentar("a|1");
+    }
+    limite.correcto("a|1");
+
+    for (int i = 0; i < 5; i++) {
+      limite.intentar("a|1");
+    }
+    assertThatThrownBy(() -> limite.intentar("a|1")).isInstanceOf(DemasiadasPeticiones.class);
+  }
+
+  @Test
+  void despuesDeLaVentanaVuelveAEntrar() {
+    for (int i = 0; i < 5; i++) {
+      limite.intentar("a|1");
+    }
+    reloj.avanzar(Duration.ofMinutes(15));
+
+    limite.intentar("a|1");
+  }
+
+  @Test
+  void intentosEnParaleloNoPasanDelMaximoAunqueLaContrasenaTarde() throws Exception {
+    int hilos = 40;
+    ExecutorService pool = Executors.newFixedThreadPool(hilos);
+    CountDownLatch salida = new CountDownLatch(1);
+    AtomicInteger pasan = new AtomicInteger();
+    List<Future<?>> trabajos = new ArrayList<>();
+    for (int i = 0; i < hilos; i++) {
+      trabajos.add(
+          pool.submit(
+              () -> {
+                salida.await();
+                try {
+                  limite.intentar("a|1");
+                  pasan.incrementAndGet();
+                } catch (DemasiadasPeticiones rechazado) {
+                  // Esperado para todos menos cinco.
+                }
+                return null;
+              }));
+    }
+    salida.countDown();
+    for (Future<?> trabajo : trabajos) {
+      trabajo.get();
+    }
+    pool.shutdown();
+
+    assertThat(pasan.get()).isEqualTo(5);
+  }
+}

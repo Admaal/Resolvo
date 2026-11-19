@@ -1,8 +1,39 @@
 # Resolvo
 
-Helpdesk B2B multi-tenant para equipos de soporte. Proyecto de portfolio: la demo pública usa datos ficticios. Producto en [docs/producto.md](docs/producto.md), decisiones en [docs/adr/](docs/adr/).
+Helpdesk B2B multi-tenant para equipos de soporte, hecho en solitario como proyecto de portfolio: la demo pública usa datos ficticios. El producto está en [docs/producto.md](docs/producto.md) y las decisiones técnicas en [docs/adr/](docs/adr/).
 
 **Demo:** https://resolvo-6lc.pages.dev
+
+## Qué hace
+
+Un cliente abre un ticket; el equipo lo gestiona con SLA, estados y comentarios (públicos o internos). Cada organización solo ve lo suyo: pedir un recurso ajeno da 404, sin delatar que existe. La IA ayuda, pero nunca decide sola:
+
+- **Sugerencia de respuesta con citas (RAG).** Busca en los artículos de ayuda y los tickets resueltos de la propia organización (pgvector, búsqueda exacta) y redacta un borrador que cita sus fuentes. Un agente lo edita y lo aprueba; hasta entonces no sale nada al cliente.
+- **Clasificación sugerida.** Propone categoría y prioridad; la persona la corrige y la aplica (recalcula el SLA) o la descarta.
+- **Evals contra el modelo real en CI.** Un workflow aparte mide acierto de prioridad y categoría, recall del RAG, citas, tokens y latencia con umbrales versionados ([ADR-0011](docs/adr/0011-evals.md)). Última corrida registrada: prioridad exacta 96,9 %, categoría 100 %, recall@5 100 %.
+- **Outbox y métricas.** Resolver o reabrir un ticket escribe un evento en la misma transacción y un procesador idempotente indexa o borra sus fragmentos ([ADR-0008](docs/adr/0008-eventos.md)). `GET /api/metricas/ia` (ADMIN) resume llamadas, tokens, p50/p95 y coste a precio de lista ([ADR-0012](docs/adr/0012-metricas-ia.md)).
+
+## Seguridad de la IA (fase 6)
+
+Todo lo que llega al modelo viene de un tercero, así que se trata como dato hostil ([ADR-0013](docs/adr/0013-seguridad-ia.md)):
+
+- **Prompt injection.** El texto del cliente y cada fuente del RAG van entre delimitadores (`<ticket>`, `<fuente id="…">`) que el propio texto no puede cerrar ni reabrir; el prompt dice que lo de dentro son datos, no órdenes. Además, el modelo solo puede citar fuentes que el servidor recuperó, la categoría debe existir en el catálogo y el borrador se recorta a 4000 caracteres.
+- **Datos personales.** Emails, teléfonos, DNI/NIE (con su letra de control), IBAN y tarjetas (con Luhn) se sustituyen por marcadores antes de enviar nada a Gemini, tanto al redactar y clasificar como al calcular embeddings.
+- **Límites de uso.** Máximo 10 peticiones de IA por usuario y minuto, y 5 intentos de login por (email, cliente) en 15 minutos, con `429` y `Retry-After`. El bloqueo de cuenta se retiró porque, con cuentas de demo públicas, cualquiera podía dejar a todos fuera; el límite depende de que llegue la IP real del cliente (`CF-Connecting-IP`), algo aún sin comprobar en producción.
+- **Presupuesto diario.** Cada organización tiene un tope de llamadas y de tokens por día UTC (200 y 300 000 por defecto) comprobado en el servidor y que cuenta las llamadas de chat (sugerir y clasificar), no los embeddings; al superarlo, `429 ia-presupuesto-agotado`. Los límites viven en memoria porque Render Free corre una sola instancia.
+
+## Cómo se construye
+
+Monolito modular hexagonal (Java 21, Spring Boot 3.5): `domain` y `application` no importan Spring ni JPA y lo comprueba ArchUnit en el gate ([ADR-0002](docs/adr/0002-arquitectura.md)). Cada clase nueva de esas capas nace con un test en rojo y PIT exige un 80 % de mutantes muertos; hooks y CI llaman al mismo script ([ADR-0010](docs/adr/0010-tests-y-valla.md), [AGENTS.md](AGENTS.md)). El historial de fases está en [docs/fases.md](docs/fases.md).
+
+```mermaid
+flowchart LR
+  N[Navegador] --> P[Cloudflare Pages<br/>Angular estático]
+  P -->|/api/*, mismo origen| F[Pages Function<br/>proxy]
+  F --> R[Render Free<br/>API Spring Boot, Docker]
+  R --> D[(Neon Postgres<br/>+ pgvector)]
+  R -->|perfil gemini| G[Gemini<br/>chat y embeddings]
+```
 
 ## Entrar a la demo
 
@@ -18,12 +49,7 @@ Organización Acme. Contraseña de los tres usuarios: `demo-resolvo`.
 
 La API corre en el plan gratuito de Render, que la apaga tras 15 minutos sin tráfico. Un único ping cada 5 minutos la mantiene despierta, pero si falla, la primera visita espera mientras la JVM arranca (hasta un minuto). La interfaz lo avisa con «Despertando servidor…» en vez de esconderlo. La base de datos (Neon) se apaga sola y despierta con la siguiente consulta, sin ping.
 
-## Arquitectura de despliegue
-
-```
-Navegador ──► Cloudflare Pages (Angular estático)
-                 └─ /api/*  ──► Pages Function (proxy, mismo origen) ──► Render (API Spring Boot, Docker) ──► Neon (Postgres)
-```
+## Despliegue: proxy de mismo origen
 
 La SPA y la API comparten origen gracias al proxy: no hay CORS y la cookie de refresh sigue siendo `HttpOnly`, `SameSite=Lax` y `Path=/api/sesion`.
 
@@ -39,7 +65,7 @@ cd frontend && npm install && npm start
 
 Tests: `powershell -NoProfile -File scripts/gates.ps1 full`. Más comandos en [AGENTS.md](AGENTS.md).
 
-### IA (fase 3, opcional)
+### IA (opcional)
 
 Sin clave la app funciona igual: las sugerencias y el reindexado responden `503` con `ia-no-configurada`. Para encenderla, una clave de Gemini (free tier) y el perfil `gemini`. El perfil exige la clave: sin ella el arranque falla diciendo qué variable falta; si quieres la IA apagada, no actives el perfil.
 
@@ -66,8 +92,10 @@ El log de arranque dice qué modelos responden y en cuánto tiempo (`Gemini sond
    | `RESOLVO_JWT_SECRET` | secreto generado, al menos 32 bytes |
    | `RESOLVO_COOKIE_SECURE` | `true` |
    | `SPRING_PROFILES_ACTIVE` / `RESOLVO_GEMINI_API_KEY` | `gemini` y la clave; sin ellas la IA queda apagada |
+   | `RESOLVO_IA_LLAMADAS_DIA` / `RESOLVO_IA_TOKENS_DIA` | opcionales: presupuesto diario de IA por organización (200 y 300000) |
+   | `RESOLVO_LIMITE_IA_POR_MINUTO` / `RESOLVO_LIMITE_LOGIN_FALLOS` | opcionales: peticiones de IA por usuario y minuto (10) y fallos de login por 15 min (5) |
 
 3. **Cloudflare Pages:** proyecto `resolvo` de subida directa (no está conectado a Git). Se despliega a mano desde `frontend/`: `npm run build && npx wrangler pages deploy --project-name resolvo --branch main` (con `--branch main`, o sale como preview). Las Pages Functions de `frontend/functions` van en el mismo despliegue. Variable `API_ORIGIN` = URL del servicio de Render (sin barra final), ya definida en `wrangler.toml`.
-4. **Ping:** un único cron externo (por ejemplo cron-job.org) cada 5 minutos a `GET <URL de Render>/api/salud`. Ningún otro servicio en Render: 744 h/mes caben en las 750 h del plan.
+4. **Ping:** el workflow [ping.yml](.github/workflows/ping.yml) de GitHub Actions llama cada 5 minutos a `GET <URL de Render>/api/salud`. Ningún otro servicio en Render: 744 h/mes caben en las 750 h del plan.
 
 Los secretos viven solo en las variables de Render y Pages, nunca en el repositorio.

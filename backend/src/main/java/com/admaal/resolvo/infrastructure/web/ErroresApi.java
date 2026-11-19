@@ -1,8 +1,8 @@
 package com.admaal.resolvo.infrastructure.web;
 
 import com.admaal.resolvo.application.IaNoDisponible;
+import com.admaal.resolvo.application.PresupuestoAgotado;
 import com.admaal.resolvo.domain.CredencialesInvalidas;
-import com.admaal.resolvo.domain.CuentaBloqueada;
 import com.admaal.resolvo.domain.NoEncontrado;
 import com.admaal.resolvo.domain.Prohibido;
 import com.admaal.resolvo.domain.SinFuentes;
@@ -48,9 +48,16 @@ public class ErroresApi {
     return ResponseEntity.status(401).body(Map.of("error", error.getMessage()));
   }
 
-  @ExceptionHandler(CuentaBloqueada.class)
-  ResponseEntity<Map<String, String>> bloqueado(CuentaBloqueada error) {
-    return ResponseEntity.status(401).body(Map.of("error", error.getMessage()));
+  @ExceptionHandler(DemasiadasPeticiones.class)
+  ResponseEntity<Map<String, String>> demasiadasPeticiones(DemasiadasPeticiones error) {
+    return ResponseEntity.status(429)
+        .header("Retry-After", Long.toString(error.segundosParaReintentar()))
+        .body(Map.of("error", error.getMessage()));
+  }
+
+  @ExceptionHandler(PresupuestoAgotado.class)
+  ResponseEntity<Map<String, String>> presupuestoAgotado(PresupuestoAgotado error) {
+    return ResponseEntity.status(429).body(Map.of("error", error.getMessage()));
   }
 
   @ExceptionHandler(SinFuentes.class)

@@ -25,7 +25,6 @@ import com.admaal.resolvo.application.VerificadorContrasena;
 import com.admaal.resolvo.domain.Categoria;
 import com.admaal.resolvo.domain.Comentario;
 import com.admaal.resolvo.domain.CredencialesInvalidas;
-import com.admaal.resolvo.domain.CuentaBloqueada;
 import com.admaal.resolvo.domain.EstadoTicket;
 import com.admaal.resolvo.domain.OrganizacionId;
 import com.admaal.resolvo.domain.Rol;
@@ -80,7 +79,7 @@ public class AplicacionDeResolvo {
     this.usuarioJpa = usuarioJpa;
   }
 
-  @Transactional(noRollbackFor = {CredencialesInvalidas.class, CuentaBloqueada.class})
+  @Transactional(noRollbackFor = CredencialesInvalidas.class)
   public SesionIniciada entrar(String email, String contrasena) {
     return new IniciarSesion(reloj, usuarios, verificador, tokens, sesiones).ejecutar(email, contrasena);
   }

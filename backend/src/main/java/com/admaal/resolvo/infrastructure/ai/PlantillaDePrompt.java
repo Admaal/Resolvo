@@ -1,5 +1,6 @@
 package com.admaal.resolvo.infrastructure.ai;
 
+import com.admaal.resolvo.domain.EnmascaradorPii;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -12,7 +13,7 @@ import org.springframework.core.io.ClassPathResource;
 final class PlantillaDePrompt {
 
   private static final Pattern DELIMITADOR =
-      Pattern.compile("<\\s*/?\\s*ticket\\s*>", Pattern.CASE_INSENSITIVE);
+      Pattern.compile("<\\s*/?\\s*(?:ticket\\s*|fuente\\b[^>]*)>", Pattern.CASE_INSENSITIVE);
   private static final Pattern MARCADOR = Pattern.compile("\\{\\{(\\w+)}}");
 
   private final String plantilla;
@@ -39,6 +40,11 @@ final class PlantillaDePrompt {
     }
     marcador.appendTail(prompt);
     return prompt.toString();
+  }
+
+  /** Texto de un tercero listo para el prompt: sin delimitadores y sin datos personales. */
+  static String limpiar(String texto) {
+    return EnmascaradorPii.enmascarar(sinDelimitadores(texto));
   }
 
   /** Quita los delimitadores que cerrarian el bloque de datos del cliente y abririan instrucciones. */

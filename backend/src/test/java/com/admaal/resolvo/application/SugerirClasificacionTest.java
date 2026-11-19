@@ -1,5 +1,6 @@
 package com.admaal.resolvo.application;
 
+import com.admaal.resolvo.application.soporte.PresupuestoFalso;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -159,5 +160,78 @@ class SugerirClasificacionTest {
 
     assertThatThrownBy(this::sugerir).isInstanceOf(TransicionNoPermitida.class);
     assertThat(clasificador.llamadas()).isZero();
+  }
+
+  // --- Presupuesto diario ---------------------------------------------------------------------
+
+  private SugerirClasificacion casoConPresupuesto(PresupuestoFalso presupuesto) {
+    return new SugerirClasificacion(
+        tickets,
+        clasificaciones,
+        organizacion -> organizacion.equals(acme) ? List.of(incidencia, consulta) : List.of(),
+        clasificador,
+        new RelojManual(AHORA),
+        presupuesto);
+  }
+
+  @Test
+  void conElPresupuestoAgotadoNoLlamaAlModelo() {
+    PresupuestoFalso presupuesto = new PresupuestoFalso();
+    presupuesto.agotar();
+
+    assertThatThrownBy(
+            () -> casoConPresupuesto(presupuesto).ejecutar(acme, ticket.id(), agente, Rol.AGENTE))
+        .isInstanceOf(PresupuestoAgotado.class);
+
+    assertThat(clasificador.llamadas()).isZero();
+    assertThat(clasificaciones.total()).isZero();
+  }
+
+  @Test
+  void unaPendienteSeDevuelveAunqueElPresupuestoEsteAgotado() {
+    PresupuestoFalso presupuesto = new PresupuestoFalso();
+    Clasificacion primera =
+        casoConPresupuesto(presupuesto).ejecutar(acme, ticket.id(), agente, Rol.AGENTE);
+    presupuesto.agotar();
+
+    Clasificacion segunda =
+        casoConPresupuesto(presupuesto).ejecutar(acme, ticket.id(), agente, Rol.AGENTE);
+
+    assertThat(segunda).isSameAs(primera);
+    assertThat(presupuesto.reservas()).isEqualTo(1);
+  }
+
+  @Test
+  void laReservaSeLiberaAlTerminar() {
+    PresupuestoFalso presupuesto = new PresupuestoFalso();
+
+    casoConPresupuesto(presupuesto).ejecutar(acme, ticket.id(), agente, Rol.AGENTE);
+
+    assertThat(presupuesto.reservas()).isEqualTo(1);
+    assertThat(presupuesto.abiertas()).isZero();
+  }
+
+  @Test
+  void laReservaSeLiberaTambienSiLaLlamadaFalla() {
+    clasificador.respondiendo("Facturacion", Prioridad.ALTA, "motivo");
+    PresupuestoFalso presupuesto = new PresupuestoFalso();
+
+    assertThatThrownBy(
+            () -> casoConPresupuesto(presupuesto).ejecutar(acme, ticket.id(), agente, Rol.AGENTE))
+        .isInstanceOf(IaNoDisponible.class);
+
+    assertThat(presupuesto.reservas()).isEqualTo(1);
+    assertThat(presupuesto.abiertas()).isZero();
+  }
+
+  @Test
+  void unClienteNoGastaPresupuesto() {
+    PresupuestoFalso presupuesto = new PresupuestoFalso();
+
+    assertThatThrownBy(
+            () -> casoConPresupuesto(presupuesto).ejecutar(acme, ticket.id(), agente, Rol.CLIENTE))
+        .isInstanceOf(Prohibido.class);
+
+    assertThat(presupuesto.reservas()).isZero();
   }
 }

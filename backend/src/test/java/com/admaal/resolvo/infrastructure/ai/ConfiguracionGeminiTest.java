@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import com.admaal.resolvo.application.IaNoDisponible;
 import com.admaal.resolvo.application.RegistroLlamadas;
 import com.admaal.resolvo.application.soporte.RegistroLlamadasEnMemoria;
+import com.admaal.resolvo.domain.Consumo;
 import com.admaal.resolvo.domain.LlamadaIa;
 import com.admaal.resolvo.domain.OrganizacionId;
 import java.time.Duration;
@@ -97,6 +98,11 @@ class ConfiguracionGeminiTest {
           @Override
           public List<LlamadaIa> deLaOrganizacion(OrganizacionId o, Instant d, Instant h) {
             return List.of();
+          }
+
+          @Override
+          public Consumo consumoDe(OrganizacionId o, Instant d, Instant h) {
+            return new Consumo(0, 0);
           }
         },
         () -> AHORA);
