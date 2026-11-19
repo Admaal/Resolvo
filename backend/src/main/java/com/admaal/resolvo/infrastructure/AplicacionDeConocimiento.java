@@ -51,7 +51,6 @@ public class AplicacionDeConocimiento {
   private final Embebedor embebedor;
   private final BaseConocimiento base;
   private final RedactorRespuestas redactor;
-  private final Executor indexador;
   private final double distanciaMaxima;
 
   public AplicacionDeConocimiento(
@@ -62,7 +61,6 @@ public class AplicacionDeConocimiento {
       Embebedor embebedor,
       BaseConocimiento base,
       RedactorRespuestas redactor,
-      @Qualifier("indexadorEjecutor") Executor indexador,
       @Value("${resolvo.rag.distancia-maxima}") double distanciaMaxima) {
     this.reloj = reloj;
     this.tickets = tickets;
@@ -71,7 +69,6 @@ public class AplicacionDeConocimiento {
     this.embebedor = embebedor;
     this.base = base;
     this.redactor = redactor;
-    this.indexador = indexador;
     this.distanciaMaxima = distanciaMaxima;
   }
 
@@ -126,18 +123,6 @@ public class AplicacionDeConocimiento {
       throw new Prohibido();
     }
     indexar().organizacion(organizacionId);
-  }
-
-  /** Indexa un ticket recien resuelto sin retrasar la respuesta ni romperla si falla. */
-  public void indexarTicketEnSegundoPlano(OrganizacionId organizacionId, TicketId ticketId) {
-    indexador.execute(
-        () -> {
-          try {
-            tickets.porId(organizacionId, ticketId).ifPresent(indexar()::ticket);
-          } catch (RuntimeException error) {
-            LOG.warn("No se pudo indexar el ticket {}: {}", ticketId.valor(), error.getMessage());
-          }
-        });
   }
 
   IndexarConocimiento indexar() {

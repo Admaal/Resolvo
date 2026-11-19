@@ -10,6 +10,7 @@ import com.admaal.resolvo.application.IaNoDisponible;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.metadata.ChatResponseMetadata;
@@ -170,5 +171,122 @@ class LlamadorGeminiTest {
     when(chat.call(any(Prompt.class))).thenReturn(conHuecos);
 
     assertThat(llamador("modelo-x").llamar("di hola").texto()).isEqualTo("hola");
+  }
+
+  private final UUID organizacion = UUID.randomUUID();
+
+  @Test
+  void avisaConLaOperacionYLaOrganizacionDeCadaLlamada() {
+    when(chat.call(any(Prompt.class))).thenReturn(conUso("hola", 12, 7));
+    LlamadorGemini llamador = llamador("modelo-x");
+    List<LlamadorGemini.Observacion> vistas = new ArrayList<>();
+    llamador.observarLlamadas(vistas::add);
+
+    llamador.llamar(new LlamadorGemini.Contexto("sugerir", organizacion), "di hola");
+
+    assertThat(vistas)
+        .singleElement()
+        .satisfies(
+            vista -> {
+              assertThat(vista.contexto().operacion()).isEqualTo("sugerir");
+              assertThat(vista.contexto().organizacionId()).isEqualTo(organizacion);
+              assertThat(vista.modelo()).isEqualTo("modelo-x");
+              assertThat(vista.tokensEntrada()).isEqualTo(12);
+              assertThat(vista.tokensSalida()).isEqualTo(7);
+              assertThat(vista.exito()).isTrue();
+              assertThat(vista.milisegundos()).isBetween(0L, 5_000L);
+            });
+  }
+
+  @Test
+  void unaLlamadaSinContextoSeAnotaComoSinContexto() {
+    when(chat.call(any(Prompt.class))).thenReturn(conUso("hola", 1, 1));
+    LlamadorGemini llamador = llamador("modelo-x");
+    List<LlamadorGemini.Observacion> vistas = new ArrayList<>();
+    llamador.observarLlamadas(vistas::add);
+
+    llamador.llamar("di hola");
+
+    assertThat(vistas.get(0).contexto()).isEqualTo(LlamadorGemini.Contexto.SIN_CONTEXTO);
+    assertThat(vistas.get(0).contexto().organizacionId()).isNull();
+  }
+
+  @Test
+  void avisaElFalloConSuDuracionYSinTokens() {
+    when(chat.call(any(Prompt.class))).thenThrow(new RuntimeException("403 clave invalida"));
+    LlamadorGemini llamador = llamador("modelo-x");
+    List<LlamadorGemini.Observacion> vistas = new ArrayList<>();
+    llamador.observarLlamadas(vistas::add);
+
+    assertThatThrownBy(
+            () -> llamador.llamar(new LlamadorGemini.Contexto("clasificar", organizacion), "x"))
+        .isInstanceOf(IaNoDisponible.class);
+
+    assertThat(vistas)
+        .singleElement()
+        .satisfies(
+            vista -> {
+              assertThat(vista.exito()).isFalse();
+              assertThat(vista.tokensEntrada()).isZero();
+              assertThat(vista.tokensSalida()).isZero();
+              assertThat(vista.modelo()).isEqualTo("modelo-x");
+              assertThat(vista.contexto().operacion()).isEqualTo("clasificar");
+              assertThat(vista.milisegundos()).isGreaterThanOrEqualTo(0L);
+            });
+  }
+
+  @Test
+  void conModelosDeRespaldoUnaPeticionDejaUnaSolaObservacion() {
+    LlamadorGemini llamador = llamador("retirado", "vivo");
+    when(chat.call(any(Prompt.class)))
+        .thenAnswer(
+            llamada -> {
+              if (modeloDe(llamada.getArgument(0)).equals("retirado")) {
+                throw new RuntimeException("404 model no longer available");
+              }
+              return conUso("ok", 3, 4);
+            });
+    List<LlamadorGemini.Observacion> vistas = new ArrayList<>();
+    llamador.observarLlamadas(vistas::add);
+
+    llamador.llamar("hola");
+
+    assertThat(vistas).singleElement().satisfies(v -> assertThat(v.modelo()).isEqualTo("vivo"));
+  }
+
+  @Test
+  void siNingunModeloRespondeLaPeticionDejaUnSoloFalloConElUltimoModelo() {
+    LlamadorGemini llamador = llamador("a", "b");
+    when(chat.call(any(Prompt.class))).thenThrow(new RuntimeException("503 saturado"));
+    List<LlamadorGemini.Observacion> vistas = new ArrayList<>();
+    llamador.observarLlamadas(vistas::add);
+
+    assertThatThrownBy(() -> llamador.llamar("hola")).isInstanceOf(IaNoDisponible.class);
+
+    assertThat(vistas)
+        .singleElement()
+        .satisfies(
+            v -> {
+              assertThat(v.exito()).isFalse();
+              assertThat(v.modelo()).isEqualTo("b");
+            });
+  }
+
+  @Test
+  void elSondeoNoSeObservaYUnObservadorRotoNoRompeLaLlamada() {
+    when(chat.call(any(Prompt.class))).thenReturn(conUso("ok", 1, 1));
+    LlamadorGemini llamador = llamador("modelo-x");
+    List<LlamadorGemini.Observacion> vistas = new ArrayList<>();
+    llamador.observarLlamadas(
+        vista -> {
+          throw new IllegalStateException("observador roto");
+        });
+    llamador.observarLlamadas(vistas::add);
+
+    llamador.comprobar();
+    assertThat(vistas).isEmpty();
+
+    assertThat(llamador.llamar("hola").texto()).isEqualTo("ok");
+    assertThat(vistas).hasSize(1);
   }
 }
