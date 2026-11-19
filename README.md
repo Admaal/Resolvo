@@ -19,7 +19,7 @@ Todo lo que llega al modelo viene de un tercero, así que se trata como dato hos
 
 - **Prompt injection.** El texto del cliente y cada fuente del RAG van entre delimitadores (`<ticket>`, `<fuente id="…">`) que el propio texto no puede cerrar ni reabrir; el prompt dice que lo de dentro son datos, no órdenes. Además, el modelo solo puede citar fuentes que el servidor recuperó, la categoría debe existir en el catálogo y el borrador se recorta a 4000 caracteres.
 - **Datos personales.** Emails, teléfonos, DNI/NIE (con su letra de control), IBAN y tarjetas (con Luhn) se sustituyen por marcadores antes de enviar nada a Gemini, tanto al redactar y clasificar como al calcular embeddings.
-- **Límites de uso.** Máximo 10 peticiones de IA por usuario y minuto, y 5 intentos de login por (email, cliente) en 15 minutos, con `429` y `Retry-After`. El bloqueo de cuenta se retiró porque, con cuentas de demo públicas, cualquiera podía dejar a todos fuera; el límite depende de que llegue la IP real del cliente (`CF-Connecting-IP`), algo aún sin comprobar en producción.
+- **Límites de uso.** Máximo 10 peticiones de IA por usuario y minuto, y 5 intentos de login por (email, cliente) en 15 minutos, con `429` y `Retry-After`. El bloqueo de cuenta se retiró porque, con cuentas de demo públicas, cualquiera podía dejar a todos fuera; la IP real del cliente la manda la Pages Function firmada con una clave compartida, porque Cloudflare entrega a Render la IP del Worker, igual para todos.
 - **Presupuesto diario.** Cada organización tiene un tope de llamadas y de tokens por día UTC (200 y 300 000 por defecto) comprobado en el servidor y que cuenta las llamadas de chat (sugerir y clasificar), no los embeddings; al superarlo, `429 ia-presupuesto-agotado`. Los límites viven en memoria porque Render Free corre una sola instancia.
 
 ## Cómo se construye
@@ -93,6 +93,7 @@ El log de arranque dice qué modelos responden y en cuánto tiempo (`Gemini sond
    | `RESOLVO_COOKIE_SECURE` | `true` |
    | `SPRING_PROFILES_ACTIVE` / `RESOLVO_GEMINI_API_KEY` | `gemini` y la clave; sin ellas la IA queda apagada |
    | `RESOLVO_IA_LLAMADAS_DIA` / `RESOLVO_IA_TOKENS_DIA` | opcionales: presupuesto diario de IA por organización (200 y 300000) |
+   | `RESOLVO_PROXY_CLAVE` | clave compartida con la Pages Function (la misma que el secreto `PROXY_CLAVE` de Pages: `npx wrangler pages secret put PROXY_CLAVE --project-name resolvo`); sin ella el límite de login cuenta a todos los clientes como uno |
    | `RESOLVO_LIMITE_IA_POR_MINUTO` / `RESOLVO_LIMITE_LOGIN_FALLOS` | opcionales: peticiones de IA por usuario y minuto (10) y fallos de login por 15 min (5) |
 
 3. **Cloudflare Pages:** proyecto `resolvo` de subida directa (no está conectado a Git). Se despliega a mano desde `frontend/`: `npm run build && npx wrangler pages deploy --project-name resolvo --branch main` (con `--branch main`, o sale como preview). Las Pages Functions de `frontend/functions` van en el mismo despliegue. Variable `API_ORIGIN` = URL del servicio de Render (sin barra final), ya definida en `wrangler.toml`.
