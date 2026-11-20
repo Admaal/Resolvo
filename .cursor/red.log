@@ -75,3 +75,13 @@
 2026-11-19T19:34:23 fast 6539e256e03841889da9c6d20a4d3b0282f1f523 RED backend/src/test/java/com/admaal/resolvo/infrastructure/ai/RedactorSpringAiTest.java exit=1
 2026-11-19T19:35:49 fast 6539e256e03841889da9c6d20a4d3b0282f1f523 RED backend/src/test/java/com/admaal/resolvo/infrastructure/ai/ClasificadorSpringAiTest.java exit=1
 2026-11-19T19:37:30 fast 6539e256e03841889da9c6d20a4d3b0282f1f523 RED backend/src/test/java/com/admaal/resolvo/application/IniciarSesionTest.java exit=1
+2026-11-20T08:35:02 fast 78a3f642ada2bb8a75ffc83dc6d7ade6f4a9480b RED frontend/src/app/features/tickets/etiquetas.spec.ts exit=1
+2026-11-20T08:35:34 fast 78a3f642ada2bb8a75ffc83dc6d7ade6f4a9480b RED frontend/src/app/features/tickets/etiquetas.spec.ts exit=1
+2026-11-20T08:36:02 fast 78a3f642ada2bb8a75ffc83dc6d7ade6f4a9480b RED frontend/src/app/core/errores.spec.ts exit=1
+2026-11-20T08:36:41 fast 78a3f642ada2bb8a75ffc83dc6d7ade6f4a9480b RED frontend/src/app/core/tema.spec.ts exit=1
+2026-11-20T08:38:21 fast 78a3f642ada2bb8a75ffc83dc6d7ade6f4a9480b RED frontend/src/app/core/shell.spec.ts exit=1
+2026-11-20T08:38:57 fast 78a3f642ada2bb8a75ffc83dc6d7ade6f4a9480b RED frontend/src/app/features/sesion/login.page.spec.ts exit=1
+2026-11-20T08:39:31 fast 78a3f642ada2bb8a75ffc83dc6d7ade6f4a9480b RED frontend/src/app/features/tickets/ticket-thread.spec.ts exit=1
+2026-11-20T08:40:26 fast 78a3f642ada2bb8a75ffc83dc6d7ade6f4a9480b RED frontend/src/app/features/tickets/bandeja.page.spec.ts exit=1
+2026-11-20T08:41:23 fast 78a3f642ada2bb8a75ffc83dc6d7ade6f4a9480b RED frontend/src/app/features/tickets/alta.page.spec.ts exit=1
+2026-11-20T08:42:03 fast 78a3f642ada2bb8a75ffc83dc6d7ade6f4a9480b RED frontend/src/app/features/tickets/detalle.page.spec.ts exit=1

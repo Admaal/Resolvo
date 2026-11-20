@@ -8,5 +8,6 @@
   --sla-breached: var(--red);
   --priority-urgent: var(--red);
   --priority-high: var(--orange);
+  --ai: var(--accent);
   --tint: 12%;
 }

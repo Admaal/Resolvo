@@ -1,15 +1,16 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { MatButton } from '@angular/material/button';
+import { mensajeDeError } from '../../core/errores';
 import { Categoria } from './ticket.model';
+import { etiquetaPrioridad } from './etiquetas';
 import { TicketsService } from './tickets.service';
 
 @Component({
   selector: 'app-alta',
-  imports: [FormsModule, MatButton],
+  imports: [FormsModule],
   template: `
-    <form class="login" (ngSubmit)="crear()">
+    <form class="formulario" (ngSubmit)="crear()">
       <h1>Nuevo ticket</h1>
       <label>Categoría
         <select name="categoria" [(ngModel)]="categoriaId">
@@ -20,16 +21,15 @@ import { TicketsService } from './tickets.service';
       </label>
       <label>Prioridad
         <select name="prioridad" [(ngModel)]="prioridad">
-          <option>BAJA</option>
-          <option>MEDIA</option>
-          <option>ALTA</option>
-          <option>URGENTE</option>
+          @for (opcion of prioridades; track opcion) {
+            <option [value]="opcion">{{ etiquetaPrioridad(opcion) }}</option>
+          }
         </select>
       </label>
-      <label>Asunto <input name="asunto" [(ngModel)]="asunto" maxlength="200" /></label>
-      <label>Cuerpo <textarea name="cuerpo" [(ngModel)]="cuerpo"></textarea></label>
-      @if (error()) { <p class="error">{{ error() }}</p> }
-      <button matButton class="primario" type="submit">Abrir</button>
+      <label>Asunto <input name="asunto" [(ngModel)]="asunto" maxlength="200" required /></label>
+      <label>Cuerpo <textarea name="cuerpo" [(ngModel)]="cuerpo" required></textarea></label>
+      @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+      <button class="btn primario" type="submit" [disabled]="enviando()">{{ enviando() ? 'Abriendo…' : 'Abrir' }}</button>
     </form>
   `,
 })
@@ -38,6 +38,9 @@ export class AltaPage {
   private readonly router = inject(Router);
   readonly categorias = signal<Categoria[]>([]);
   readonly error = signal('');
+  readonly enviando = signal(false);
+  readonly prioridades = ['BAJA', 'MEDIA', 'ALTA', 'URGENTE'];
+  protected readonly etiquetaPrioridad = etiquetaPrioridad;
   categoriaId = '';
   prioridad = 'MEDIA';
   asunto = '';
@@ -51,7 +54,9 @@ export class AltaPage {
   }
 
   async crear(): Promise<void> {
+    if (this.enviando()) return;
     this.error.set('');
+    this.enviando.set(true);
     try {
       const ticket = await this.tickets.abrir({
         categoriaId: this.categoriaId,
@@ -60,8 +65,10 @@ export class AltaPage {
         cuerpo: this.cuerpo,
       });
       await this.router.navigate(['/tickets', ticket.id]);
-    } catch {
-      this.error.set('invalido');
+    } catch (fallo) {
+      this.error.set(mensajeDeError(fallo));
+    } finally {
+      this.enviando.set(false);
     }
   }
 }

@@ -1,6 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
-import { MatButton } from '@angular/material/button';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { Articulo, CitaSugerencia, Sugerencia } from './sugerencia.model';
@@ -8,10 +7,10 @@ import { SugerenciasService } from './sugerencias.service';
 
 @Component({
   selector: 'app-sugerencia-panel',
-  imports: [MatButton, RouterLink],
+  imports: [RouterLink],
   template: `
     @if (visible()) {
-      <section class="sugerencia">
+      <section class="sugerencia panel-ia" aria-live="polite">
         @if (sugerencia(); as actual) {
           <p class="marca-ia chip">Borrador generado por IA: revísalo antes de publicar</p>
           <label>Respuesta sugerida
@@ -22,14 +21,14 @@ import { SugerenciasService } from './sugerencias.service';
               (input)="texto.set($any($event.target).value)"></textarea>
           </label>
           @if (actual.citas.length > 0) {
-            <p class="ayuda">Fuentes</p>
-            <ol class="citas">
+            <p class="ayuda" id="fuentes-ia">Fuentes</p>
+            <ol class="citas" aria-labelledby="fuentes-ia">
               @for (cita of actual.citas; track cita.orden) {
                 <li>
                   @if (cita.fuente === 'TICKET') {
                     <a class="cita cita-ticket" [routerLink]="['/tickets', cita.fuenteId]">{{ cita.titulo }}</a>
                   } @else {
-                    <button class="cita cita-articulo secundario" type="button" (click)="verArticulo(cita)">
+                    <button class="cita cita-articulo" type="button" (click)="verArticulo(cita)">
                       {{ cita.titulo }}
                     </button>
                   }
@@ -43,25 +42,24 @@ import { SugerenciasService } from './sugerencias.service';
               <p class="cuerpo">{{ leido.cuerpo }}</p>
             </div>
           }
-          <p>
+          <div class="acciones">
             <button
-              matButton
-              class="aprobar primario"
+              class="btn aprobar primario"
               type="button"
               [disabled]="enviando() || texto().trim() === ''"
               (click)="aprobar()">
               Aprobar y publicar
             </button>
-            <button class="descartar secundario" type="button" [disabled]="enviando()" (click)="descartar()">
+            <button class="btn descartar secundario" type="button" [disabled]="enviando()" (click)="descartar()">
               Descartar
             </button>
-          </p>
+          </div>
         } @else {
-          <button class="sugerir secundario" type="button" [disabled]="cargando()" (click)="sugerir()">
+          <button class="btn sugerir secundario" type="button" [disabled]="cargando()" (click)="sugerir()">
             {{ cargando() ? 'Generando…' : 'Sugerir respuesta' }}
           </button>
         }
-        @if (aviso()) { <p class="aviso error">{{ aviso() }}</p> }
+        @if (aviso()) { <p class="aviso error" role="alert">{{ aviso() }}</p> }
       </section>
     }
   `,

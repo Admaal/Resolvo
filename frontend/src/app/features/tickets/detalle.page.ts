@@ -1,50 +1,63 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { mensajeDeError } from '../../core/errores';
 import { Categoria, TicketDetalle, UsuarioResumen } from './ticket.model';
 import { ClasificacionPanel } from './clasificacion-panel';
 import { SugerenciaPanel } from './sugerencia-panel';
 import { TicketThread } from './ticket-thread';
+import { etiquetaEstado, etiquetaPrioridad, nivelSla, textoSla } from './etiquetas';
 import { TicketsService } from './tickets.service';
 
 @Component({
   selector: 'app-detalle',
   imports: [FormsModule, ClasificacionPanel, SugerenciaPanel, TicketThread],
   template: `
-    @if (ticket(); as actual) {
-      <p class="codigo">{{ actual.codigo }}</p>
-      <h1>{{ actual.asunto }}</h1>
-      <p>
-        <span class="chip" [class]="claseEstado(actual.estado)">{{ actual.estado }}</span>
-        <span class="chip prioridad">{{ actual.prioridad }}</span>
-        <span class="chip" [class]="claseSla(actual)">{{ textoSla(actual) }}</span>
-      </p>
-      <p class="cuerpo">{{ actual.cuerpo }}</p>
-      @if (puedeGestionar()) {
-        <p>
-          @for (estado of estados; track estado) {
-            <button class="secundario" type="button" (click)="transicionar(estado)">{{ estado }}</button>
-          }
-        </p>
-        @if (error()) { <p class="error">{{ error() }}</p> }
-        <label>Asignar
-          <select name="agente" [(ngModel)]="agente">
-            @for (usuario of agentes(); track usuario.id) {
-              <option [value]="usuario.id">{{ usuario.email }}</option>
-            }
-          </select>
-        </label>
-        <button class="secundario" type="button" (click)="asignar()">Asignar</button>
+    @switch (carga()) {
+      @case ('cargando') {
+        <p class="estado-carga" role="status">Cargando ticket…</p>
       }
-      <app-clasificacion-panel [ticketId]="actual.id" [categorias]="categorias()" (aplicada)="refrescar()" />
-      <app-sugerencia-panel [ticketId]="actual.id" (aprobada)="refrescar()" />
-      <app-ticket-thread
-        [comentarios]="actual.comentarios"
-        [puedeNota]="puedeGestionar()"
-        [error]="error()"
-        (enviado)="comentar($event)" />
+      @case ('error') {
+        <p class="error" role="alert">No se pudo cargar el ticket. Puede que no exista o que no tengas acceso.</p>
+      }
+      @default {
+        @if (ticket(); as actual) {
+          <p class="codigo">{{ actual.codigo }}</p>
+          <h1 class="asunto">{{ actual.asunto }}</h1>
+          <div class="chips">
+            <span class="chip" [class]="claseEstado(actual.estado)">{{ etiquetaEstado(actual.estado) }}</span>
+            <span class="chip" [class]="clasePrioridad(actual.prioridad)">{{ etiquetaPrioridad(actual.prioridad) }}</span>
+            <span class="chip" [class]="claseSla(actual)">{{ textoSla(nivel(actual)) }}</span>
+          </div>
+          <p class="cuerpo">{{ actual.cuerpo }}</p>
+          @if (puedeGestionar()) {
+            <div class="acciones transiciones" role="group" aria-label="Cambiar estado">
+              @for (estado of estados; track estado) {
+                <button class="btn secundario" type="button" [disabled]="estado === actual.estado" (click)="transicionar(estado)">{{ etiquetaEstado(estado) }}</button>
+              }
+            </div>
+            @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+            <div class="asignar">
+              <label>Asignar a
+                <select name="agente" [(ngModel)]="agente">
+                  @for (usuario of agentes(); track usuario.id) {
+                    <option [value]="usuario.id">{{ usuario.email }}</option>
+                  }
+                </select>
+              </label>
+              <button class="btn secundario" type="button" (click)="asignar()">Asignar</button>
+            </div>
+          }
+          <app-clasificacion-panel [ticketId]="actual.id" [categorias]="categorias()" (aplicada)="refrescar()" />
+          <app-sugerencia-panel [ticketId]="actual.id" (aprobada)="refrescar()" />
+          <app-ticket-thread
+            [comentarios]="actual.comentarios"
+            [puedeNota]="puedeGestionar()"
+            [error]="errorComentario()"
+            (enviado)="comentar($event)" />
+        }
+      }
     }
   `,
 })
@@ -56,6 +69,11 @@ export class DetallePage {
   readonly agentes = signal<UsuarioResumen[]>([]);
   readonly categorias = signal<Categoria[]>([]);
   readonly error = signal('');
+  readonly errorComentario = signal('');
+  readonly carga = signal<'cargando' | 'listo' | 'error'>('cargando');
+  protected readonly etiquetaEstado = etiquetaEstado;
+  protected readonly etiquetaPrioridad = etiquetaPrioridad;
+  protected readonly textoSla = textoSla;
   readonly estados = ['ABIERTO', 'PENDIENTE', 'RESUELTO', 'CERRADO'];
   agente = '';
 
@@ -80,15 +98,16 @@ export class DetallePage {
     return `chip ${estado.toLowerCase()}`;
   }
 
-  claseSla(ticket: TicketDetalle): string {
-    return `chip sla-${nivelSla(ticket)}`;
+  clasePrioridad(prioridad: string): string {
+    return `chip prioridad-${prioridad.toLowerCase()}`;
   }
 
-  textoSla(ticket: TicketDetalle): string {
-    const nivel = nivelSla(ticket);
-    if (nivel === 'incumplido') return 'SLA incumplido';
-    if (nivel === 'riesgo') return 'SLA en riesgo';
-    return 'SLA en plazo';
+  nivel(ticket: TicketDetalle) {
+    return nivelSla(ticket);
+  }
+
+  claseSla(ticket: TicketDetalle): string {
+    return `chip sla-${nivelSla(ticket)}`;
   }
 
   async transicionar(estado: string): Promise<void> {
@@ -98,7 +117,7 @@ export class DetallePage {
     try {
       this.ticket.set(await this.tickets.transicionar(actual.id, estado));
     } catch (fallo) {
-      this.error.set(mensaje(fallo));
+      this.error.set(mensajeDeError(fallo));
       this.ticket.set(await this.tickets.detalle(actual.id));
     }
   }
@@ -113,12 +132,12 @@ export class DetallePage {
   async comentar(evento: { cuerpo: string; interno: boolean }): Promise<void> {
     const actual = this.ticket();
     if (!actual) return;
-    this.error.set('');
+    this.errorComentario.set('');
     try {
       await this.tickets.comentar(actual.id, evento.cuerpo, evento.interno);
       this.ticket.set(await this.tickets.detalle(actual.id));
     } catch (fallo) {
-      this.error.set(mensaje(fallo));
+      this.errorComentario.set(mensajeDeError(fallo));
     }
   }
 
@@ -128,23 +147,11 @@ export class DetallePage {
   }
 
   private async cargar(id: string): Promise<void> {
-    this.ticket.set(await this.tickets.detalle(id));
+    try {
+      this.ticket.set(await this.tickets.detalle(id));
+      this.carga.set('listo');
+    } catch {
+      this.carga.set('error');
+    }
   }
-}
-
-function nivelSla(ticket: TicketDetalle): 'ok' | 'riesgo' | 'incumplido' {
-  const vence = new Date(ticket.venceEl).getTime();
-  const ahora = Date.now();
-  if (ahora >= vence) return 'incumplido';
-  const abierto = new Date(ticket.abiertoEn).getTime();
-  const total = vence - abierto;
-  if (total > 0 && (vence - ahora) / total < 0.25) return 'riesgo';
-  return 'ok';
-}
-
-function mensaje(fallo: unknown): string {
-  if (fallo instanceof HttpErrorResponse) {
-    return fallo.error?.error ?? 'conflicto';
-  }
-  return 'conflicto';
 }
