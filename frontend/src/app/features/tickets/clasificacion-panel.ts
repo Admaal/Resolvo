@@ -3,13 +3,14 @@ import { Component, OnInit, computed, inject, input, output, signal } from '@ang
 import { AuthService } from '../../core/auth.service';
 import { Clasificacion, PRIORIDADES, Prioridad } from './clasificacion.model';
 import { ClasificacionesService } from './clasificaciones.service';
+import { etiquetaPrioridad } from './etiquetas';
 import { Categoria } from './ticket.model';
 
 @Component({
   selector: 'app-clasificacion-panel',
   template: `
     @if (visible()) {
-      <section class="clasificacion">
+      <section class="clasificacion panel-ia" aria-live="polite">
         @if (clasificacion(); as actual) {
           <p class="marca-ia chip">Clasificación sugerida por IA: revísala antes de aplicar</p>
           <p class="motivo">{{ actual.motivo }}</p>
@@ -23,24 +24,24 @@ import { Categoria } from './ticket.model';
           <label>Prioridad
             <select class="prioridad" name="prioridadIa" [value]="prioridad()" (change)="prioridad.set($any($event.target).value)">
               @for (opcion of prioridades; track opcion) {
-                <option [value]="opcion" [selected]="opcion === prioridad()">{{ opcion }}</option>
+                <option [value]="opcion" [selected]="opcion === prioridad()">{{ etiquetaPrioridad(opcion) }}</option>
               }
             </select>
           </label>
-          <p>
-            <button class="aplicar-clasificacion primario" type="button" [disabled]="enviando()" (click)="aplicar()">
+          <div class="acciones">
+            <button class="btn aplicar-clasificacion primario" type="button" [disabled]="enviando()" (click)="aplicar()">
               Aplicar
             </button>
-            <button class="descartar-clasificacion secundario" type="button" [disabled]="enviando()" (click)="descartar()">
+            <button class="btn descartar-clasificacion secundario" type="button" [disabled]="enviando()" (click)="descartar()">
               Descartar
             </button>
-          </p>
+          </div>
         } @else {
-          <button class="sugerir-clasificacion secundario" type="button" [disabled]="cargando()" (click)="sugerir()">
+          <button class="btn sugerir-clasificacion secundario" type="button" [disabled]="cargando()" (click)="sugerir()">
             {{ cargando() ? 'Clasificando…' : 'Sugerir clasificación' }}
           </button>
         }
-        @if (aviso()) { <p class="aviso error">{{ aviso() }}</p> }
+        @if (aviso()) { <p class="aviso error" role="alert">{{ aviso() }}</p> }
       </section>
     }
   `,
@@ -54,6 +55,7 @@ export class ClasificacionPanel implements OnInit {
   readonly aplicada = output<void>();
 
   readonly prioridades = PRIORIDADES;
+  protected readonly etiquetaPrioridad = etiquetaPrioridad;
   readonly clasificacion = signal<Clasificacion | null>(null);
   readonly categoriaId = signal('');
   readonly prioridad = signal<Prioridad>('MEDIA');

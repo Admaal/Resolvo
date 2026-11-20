@@ -1,0 +1,29 @@
+[data-theme="light"] {
+  color-scheme: light;
+  --on-accent: #ffffff;
+  --bg-0: #f7f7f8;
+  --bg-1: #ffffff;
+  --bg-2: #f9f9fc;
+  --bg-3: #f3f3f6;
+  --bg-4: #ececf1;
+  --bg-5: #e4e4ea;
+  --bg-6: #1f1f28;
+  --border-1: #e7e7ef;
+  --border-2: #d6d6df;
+  --border-3: #c4c4cf;
+  --border-alpha: #0000000f;
+  --text-1: #1f1f28;
+  --text-2: #3c3c48;
+  --text-3: #636370;
+  --text-4: #9898a9;
+  --accent: #5e6ad2;
+  --accent-hover: #4f5bc4;
+  --accent-tint: #eef0fd;
+  --accent-solid: #5e6ad2;
+  --red: #c4302b;
+  --orange: #b25e09;
+  --yellow: #8a6a00;
+  --green: #1e7f36;
+  --blue: #2563c9;
+  --teal: #0e7c8a;
+}
