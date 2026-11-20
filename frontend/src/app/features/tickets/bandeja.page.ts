@@ -1,88 +1,163 @@
-import { Component, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { map } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
-import { etiquetaEstado, etiquetaPrioridad, nivelSla, textoSla } from './etiquetas';
+import { EstadoIcono } from '../../shared/estado-icono';
+import { Icono, NombreIcono } from '../../shared/icono';
+import { ClaveGrupo, agruparPorUrgencia } from './agrupacion';
+import { etiquetaEstado, etiquetaPrioridad, nivelSla, slaCorre, textoSla, tiempoSla } from './etiquetas';
 import { TicketResumen } from './ticket.model';
-import { TicketsService } from './tickets.service';
+import { TicketsStore, filtrarPorVista } from './tickets.store';
 
 const TITULOS: Record<string, string> = {
   mios: 'Mis tickets',
   sin: 'Sin asignar',
   todos: 'Todos los tickets',
+  riesgo: 'SLA en riesgo',
+  resueltos: 'Resueltos',
+};
+
+const ICONOS_GRUPO: Record<ClaveGrupo, NombreIcono> = {
+  incumplido: 'alert',
+  riesgo: 'clock',
+  urgente: 'zap',
+  resto: 'inbox',
 };
 
 @Component({
   selector: 'app-bandeja',
-  imports: [RouterLink],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, Icono, EstadoIcono],
   template: `
-    <h1>{{ titulo() }}</h1>
-    @switch (carga()) {
-      @case ('cargando') {
-        <p class="estado-carga" role="status">Cargando tickets…</p>
-      }
-      @case ('error') {
-        <p class="error" role="alert">No se pudieron cargar los tickets. Recarga la página e inténtalo de nuevo.</p>
-      }
-      @default {
-        @if (visibles().length > 0) {
-          <ul class="lista-tickets">
-            @for (ticket of visibles(); track ticket.id) {
-              <li>
-                <a class="fila" [routerLink]="['/tickets', ticket.id]">
-                  <span class="codigo">{{ ticket.codigo }}</span>
-                  <span>{{ ticket.asunto }}</span>
-                  <span class="chip" [class]="clasePrioridad(ticket)">{{ etiquetaPrioridad(ticket.prioridad) }}</span>
-                  <span class="chip" [class]="claseEstado(ticket.estado)">{{ etiquetaEstado(ticket.estado) }}</span>
-                  <span class="chip" [class]="claseSla(ticket)">{{ textoSla(nivel(ticket)) }}</span>
-                </a>
-              </li>
+    <div class="bandeja" [class.con-detalle]="detalleAbierto()">
+      <section class="panel lista" aria-label="Lista de tickets">
+        <header class="panel-cabecera">
+          <h1>{{ titulo() }}</h1>
+          <span class="contador-vista" [attr.aria-label]="visibles().length + ' tickets'">{{ visibles().length }}</span>
+        </header>
+        <div class="busqueda">
+          <rs-icono nombre="search" />
+          <input
+            type="search"
+            name="busqueda"
+            aria-label="Buscar por asunto o código"
+            placeholder="Buscar por asunto o código"
+            [value]="busqueda()"
+            (input)="busqueda.set($any($event.target).value)" />
+        </div>
+        <div class="panel-cuerpo">
+          @switch (store.carga()) {
+            @case ('cargando') {
+              <div class="estado-carga" role="status">
+                <span class="visually-hidden">Cargando tickets…</span>
+                @for (esqueleto of esqueletos; track esqueleto) {
+                  <div class="esqueleto" aria-hidden="true"></div>
+                }
+              </div>
             }
-          </ul>
-        } @else {
-          <p class="estado-vacio">No hay tickets en esta vista.</p>
-        }
-      }
-    }
+            @case ('error') {
+              <p class="error" role="alert">No se pudieron cargar los tickets. Recarga la página e inténtalo de nuevo.</p>
+            }
+            @default {
+              @for (grupo of grupos(); track grupo.clave) {
+                <section class="grupo" [class]="'grupo ' + grupo.clave">
+                  <h2 class="grupo-titulo">
+                    <rs-icono [nombre]="iconoGrupo(grupo.clave)" [tam]="14" />
+                    <span>{{ grupo.titulo }}</span>{{ ' ' }}<span class="n">{{ grupo.tickets.length }}</span>
+                  </h2>
+                  <ul class="lista-tickets">
+                    @for (ticket of grupo.tickets; track ticket.id) {
+                      <li>
+                        <a
+                          class="fila"
+                          [routerLink]="['/tickets', ticket.id]"
+                          queryParamsHandling="preserve"
+                          routerLinkActive="activa"
+                          ariaCurrentWhenActive="page">
+                          <rs-estado [estado]="ticket.estado" />
+                          <span class="fila-texto">
+                            <span class="fila-linea">
+                              <span class="codigo">{{ ticket.codigo }}</span>
+                              <span class="fila-asunto">{{ ticket.asunto }}</span>
+                            </span>
+                            <span class="fila-meta">
+                              <span class="chip" [class]="claseEstado(ticket.estado)">{{ etiquetaEstado(ticket.estado) }}</span>
+                              <span class="chip" [class]="clasePrioridad(ticket)">{{ etiquetaPrioridad(ticket.prioridad) }}</span>
+                              @if (slaCorre(ticket.estado)) {
+                                <span class="chip" [class]="claseSla(ticket)">
+                                  <span class="visually-hidden">{{ textoSla(nivel(ticket)) }}: </span>{{ tiempo(ticket) }}
+                                </span>
+                              }
+                            </span>
+                          </span>
+                        </a>
+                      </li>
+                    }
+                  </ul>
+                </section>
+              } @empty {
+                <div class="estado-vacio">
+                  <rs-icono nombre="inbox" [tam]="32" />
+                  <p>{{ busqueda().trim() ? 'Ningún ticket coincide con la búsqueda.' : 'No hay tickets en esta vista.' }}</p>
+                </div>
+              }
+            }
+          }
+        </div>
+      </section>
+      <section class="panel detalle" aria-label="Detalle">
+        <router-outlet (activate)="alActivar()" (deactivate)="detalleAbierto.set(false)" />
+      </section>
+    </div>
   `,
 })
 export class BandejaPage {
-  private readonly tickets = inject(TicketsService);
+  protected readonly store = inject(TicketsStore);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
-  private readonly todos = signal<TicketResumen[]>([]);
-  private readonly vista = signal('todos');
-  readonly carga = signal<'cargando' | 'listo' | 'error'>('cargando');
+  private readonly router = inject(Router);
+  private readonly vista = toSignal(this.route.queryParamMap.pipe(map((params) => params.get('vista') ?? 'todos')), {
+    initialValue: 'todos',
+  });
+  protected readonly busqueda = signal('');
+  protected readonly detalleAbierto = signal(false);
+  protected readonly esqueletos = [1, 2, 3, 4, 5, 6];
 
   protected readonly etiquetaEstado = etiquetaEstado;
   protected readonly etiquetaPrioridad = etiquetaPrioridad;
   protected readonly textoSla = textoSla;
+  protected readonly slaCorre = slaCorre;
+
+  readonly titulo = computed(() => TITULOS[this.vista()] ?? TITULOS['todos']);
+
+  readonly visibles = computed(() => {
+    const texto = this.busqueda().trim().toLowerCase();
+    return filtrarPorVista(this.store.tickets(), this.vista(), this.auth.usuarioId()).filter(
+      (ticket) => !texto || ticket.asunto.toLowerCase().includes(texto) || ticket.codigo.toLowerCase().includes(texto),
+    );
+  });
+
+  protected readonly grupos = computed(() => agruparPorUrgencia(this.visibles()));
 
   constructor() {
-    this.route.queryParamMap.subscribe((params) => this.vista.set(params.get('vista') ?? 'todos'));
-    this.tickets
-      .listar({})
-      .then((pagina) => {
-        this.todos.set(pagina.elementos);
-        this.carga.set('listo');
-      })
-      .catch(() => this.carga.set('error'));
+    void this.store.cargar();
   }
 
-  titulo(): string {
-    return TITULOS[this.vista()] ?? TITULOS['todos'];
+  /** Con un ticket (o el alta) abierto, en pantallas estrechas la lista cede el sitio al detalle. */
+  protected alActivar(): void {
+    this.detalleAbierto.set(this.router.url.split('?')[0] !== '/tickets');
   }
 
-  visibles(): TicketResumen[] {
-    const yo = this.auth.usuarioId();
-    return this.todos().filter((ticket) => {
-      if (this.vista() === 'sin') return ticket.asignadoId == null;
-      if (this.vista() === 'mios') return ticket.autorId === yo || ticket.asignadoId === yo;
-      return true;
-    });
+  protected iconoGrupo(clave: ClaveGrupo): NombreIcono {
+    return ICONOS_GRUPO[clave];
   }
 
   nivel(ticket: TicketResumen) {
     return nivelSla(ticket);
+  }
+
+  tiempo(ticket: TicketResumen): string {
+    return tiempoSla(ticket.venceEl);
   }
 
   claseEstado(estado: string): string {

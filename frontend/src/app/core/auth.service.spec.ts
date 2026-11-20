@@ -26,4 +26,54 @@ describe('AuthService', () => {
       globalThis.fetch = fetchOriginal;
     }
   });
+
+  describe('restaurar', () => {
+    const cuerpo = btoa(JSON.stringify({ rol: 'AGENTE', sub: 'usuario-2' }));
+
+    it('guarda token, rol y usuario si el refresh responde 200', async () => {
+      const fetchOriginal = globalThis.fetch;
+      const llamadas: { url: string; init?: RequestInit }[] = [];
+      globalThis.fetch = (url: RequestInfo | URL, init?: RequestInit) => {
+        llamadas.push({ url: String(url), init });
+        return Promise.resolve(new Response(JSON.stringify({ access: `aaa.${cuerpo}.zzz` }), { status: 200 }));
+      };
+      try {
+        const servicio = TestBed.inject(AuthService);
+
+        expect(await servicio.restaurar()).toBe(true);
+        expect(servicio.token()).toBe(`aaa.${cuerpo}.zzz`);
+        expect(servicio.rol()).toBe('AGENTE');
+        expect(servicio.usuarioId()).toBe('usuario-2');
+        expect(llamadas[0].url).toBe('/api/sesion/refresh');
+        expect(llamadas[0].init?.method).toBe('POST');
+        expect(llamadas[0].init?.credentials).toBe('include');
+      } finally {
+        globalThis.fetch = fetchOriginal;
+      }
+    });
+
+    it('devuelve false sin cookie de sesión y no guarda nada', async () => {
+      const fetchOriginal = globalThis.fetch;
+      globalThis.fetch = () => Promise.resolve(new Response(null, { status: 401 }));
+      try {
+        const servicio = TestBed.inject(AuthService);
+
+        expect(await servicio.restaurar()).toBe(false);
+        expect(servicio.token()).toBeNull();
+        expect(servicio.rol()).toBeNull();
+      } finally {
+        globalThis.fetch = fetchOriginal;
+      }
+    });
+
+    it('devuelve false si la red falla', async () => {
+      const fetchOriginal = globalThis.fetch;
+      globalThis.fetch = () => Promise.reject(new TypeError('red'));
+      try {
+        expect(await TestBed.inject(AuthService).restaurar()).toBe(false);
+      } finally {
+        globalThis.fetch = fetchOriginal;
+      }
+    });
+  });
 });

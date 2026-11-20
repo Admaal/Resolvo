@@ -1,13 +1,29 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, provideRouter } from '@angular/router';
-import { describe, expect, it } from 'vitest';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { of } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../../core/auth.service';
 import { ClasificacionesService } from './clasificaciones.service';
 import { DetallePage } from './detalle.page';
 import { SugerenciasService } from './sugerencias.service';
 import { TicketDetalle } from './ticket.model';
 import { TicketsService } from './tickets.service';
+import { TicketsStore } from './tickets.store';
+
+const resumen = (id: string, codigo: string) => ({
+  id,
+  codigo,
+  asunto: `Asunto ${codigo}`,
+  estado: 'ABIERTO',
+  prioridad: 'MEDIA',
+  asignadoId: null,
+  autorId: 'u1',
+  abiertoEn: '2026-11-01T00:00:00Z',
+  venceEl: '2999-01-01T00:00:00Z',
+});
+const lista = [resumen('t0', 'RS-0'), resumen('t1', 'RS-1'), resumen('t2', 'RS-2')];
 
 const esperar = () => new Promise<void>((resolver) => setTimeout(resolver));
 
@@ -26,13 +42,14 @@ const ticket: TicketDetalle = {
   comentarios: [],
 };
 
-function montar(rol: string, detalle: () => Promise<TicketDetalle>, transicionar: () => Promise<TicketDetalle> = () => Promise.resolve(ticket)) {
+function montar(rol: string, detalle: () => Promise<TicketDetalle>, transicionar: () => Promise<TicketDetalle> = () => Promise.resolve(ticket), vista = '') {
   TestBed.configureTestingModule({
     imports: [DetallePage],
     providers: [
       provideRouter([]),
-      { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 't1' } } } },
-      { provide: AuthService, useValue: { rol: () => rol } },
+      { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: 't1' })), queryParamMap: of(convertToParamMap(vista ? { vista } : {})) } },
+      { provide: TicketsStore, useValue: { tickets: signal(lista), cargar: vi.fn() } },
+      { provide: AuthService, useValue: { rol: () => rol, usuarioId: () => 'u1' } },
       {
         provide: TicketsService,
         useValue: { detalle, transicionar, categorias: () => Promise.resolve([]), usuarios: () => Promise.resolve([]) },
@@ -97,5 +114,65 @@ describe('DetallePage', () => {
 
     expect(el(fixture, '.error')?.textContent).not.toBe('conflicto');
     expect(el(fixture, '.error')?.textContent).toContain('ha cambiado');
+  });
+
+  it('volver lleva a la bandeja con la vista actual', async () => {
+    const fixture = montar('AGENTE', () => Promise.resolve(ticket), undefined, 'mios');
+    await esperar();
+    fixture.detectChanges();
+
+    expect(el(fixture, 'a.volver')?.getAttribute('href')).toBe('/tickets?vista=mios');
+  });
+
+  it('enseña la posición y enlaza al anterior y al siguiente', async () => {
+    const fixture = montar('AGENTE', () => Promise.resolve(ticket));
+    await esperar();
+    fixture.detectChanges();
+
+    expect(el(fixture, '.posicion')?.textContent?.trim()).toBe('2 / 3');
+    expect(el(fixture, 'a.anterior')?.getAttribute('href')).toBe('/tickets/t0');
+    expect(el(fixture, 'a.siguiente')?.getAttribute('href')).toBe('/tickets/t2');
+  });
+
+  it('en el primero no hay anterior', async () => {
+    const fixture = montar('AGENTE', () => Promise.resolve({ ...ticket, id: 't0', codigo: 'RS-0' }));
+    await esperar();
+    fixture.detectChanges();
+
+    expect(el(fixture, 'a.anterior')).toBeNull();
+    expect(el(fixture, 'a.siguiente')?.getAttribute('href')).toBe('/tickets/t1');
+  });
+
+  it('la tecla j abre el siguiente y Escape vuelve a la bandeja', async () => {
+    const fixture = montar('AGENTE', () => Promise.resolve(ticket));
+    const ir = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    await esperar();
+    fixture.detectChanges();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'j' }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+    expect(ir.mock.calls.map((c) => String(c[0]))).toEqual(['/tickets/t2', '/tickets']);
+  });
+
+  it('las teclas no actúan mientras se escribe en un campo', async () => {
+    const fixture = montar('AGENTE', () => Promise.resolve(ticket));
+    const ir = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    await esperar();
+    fixture.detectChanges();
+    const campo = document.createElement('textarea');
+    document.body.appendChild(campo);
+    campo.dispatchEvent(new KeyboardEvent('keydown', { key: 'j', bubbles: true }));
+    campo.remove();
+
+    expect(ir).not.toHaveBeenCalled();
+  });
+
+  it('muestra las propiedades en una columna lateral con la fecha de vencimiento', async () => {
+    const fixture = montar('AGENTE', () => Promise.resolve(ticket));
+    await esperar();
+    fixture.detectChanges();
+
+    expect(el(fixture, '.propiedades')).not.toBeNull();
+    expect(el(fixture, '.propiedades time')).not.toBeNull();
   });
 });

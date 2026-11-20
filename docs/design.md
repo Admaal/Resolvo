@@ -167,14 +167,27 @@ La escala está **[m]** (en el CSS de Linear); los interlineados son **[propuest
 - La sidebar y los paneles van sobre `--bg-1`, separados por bordes de 1px `--border-1`; no hay huecos entre paneles (estilo "split", no tarjetas flotando).
 - La cabecera de cada panel mide `--h-header` (48px) y tiene borde inferior.
 - Contenido de lectura (artículos de la KB y la conversación): ancho máximo de 720px.
-- **Responsive:**
-  - Con ≥1440 se ven las 4 columnas.
-  - Entre 1200 y 1439, el panel IA se superpone como drawer.
-  - Entre 960 y 1199, la sidebar se colapsa a un rail de 48px.
-  - Con <960 se ve un solo panel con navegación hacia atrás (secundario: es una herramienta de escritorio).
+- **En la app construida** el layout es de tres zonas: sidebar (232px), lista (`--list-w`, 380px) y ticket, que ocupa todo el ancho restante. El panel de IA no es una cuarta columna: vive en la columna lateral del ticket (`--aside-w`, 320px) junto a las propiedades, bajo el título «Asistente ✦». Esa columna lateral se pone al lado de la conversación solo si el panel del ticket mide ≥52rem (container query); si no, baja bajo la conversación.
+- **Navegación:**
+  - Un ticket abierto siempre tiene **«← Bandeja»** (vuelve a la lista con la misma vista), la posición «3 / 12» y los botones anterior/siguiente, que siguen el orden de la bandeja. Atajos: `J` siguiente, `K` anterior y `Esc` volver (no actúan mientras se escribe en un campo).
+  - La vista elegida vive en la URL (`?vista=`): se conserva al abrir un ticket, al volver y al recargar.
+  - Al recargar, la sesión se recupera con la cookie de refresco; solo si no hay sesión se vuelve a `/login?volver=<ruta>`.
+- **Responsive** (los puntos de corte van en `em`, para seguir la escala de texto):
+  - Con ≥1200px se ven la lista y el ticket a la vez.
+  - Entre 960 y 1199px, un solo panel: la lista, o el ticket con su «← Bandeja».
+  - Con <960px la sidebar pasa a barra superior con los mismos accesos.
+  - (Queda pendiente el panel IA como drawer y el rail de 48px de la sidebar: no se han construido.)
 - Densidad conmutable entre **compacta** (fila de 36px) y **cómoda** (56px, dos líneas), con `[data-density]`.
 
 ## 4. Componentes clave
+
+### 4.0 Inicio y acceso
+Es lo primero que ve quien llega, así que cuenta qué es Resolvo antes de pedir nada.
+- **Inicio (`/`)**, pública. Cabecera con logo, cambio de tema y «Iniciar sesión» (o «Ir a la bandeja» si ya hay sesión). Héroe centrado con una etiqueta, el titular (`clamp(2rem, 1rem + 4vw, 3.25rem)`, 590) y un subtítulo de dos líneas. Debajo, los **accesos de demostración** (el punto siguiente) y, a continuación, una maqueta de la bandeja y del panel de IA hecha en HTML y CSS, sin imágenes y marcada `aria-hidden`. Luego tres tarjetas de valor (respuestas con citas, SLA a la vista, la IA propone y tú decides), «Cómo funciona» en tres pasos y un pie con el enlace al código.
+- **Accesos de demostración:** «Entrar como Cliente / Agente / Admin», cada uno con una línea de lo que puede hacer ese rol. Entran con un clic con la cuenta demo, se deshabilitan mientras entra (un doble clic no entra dos veces) y enseñan el mismo error que el formulario si falla.
+- **Login (`/login`)** a dos columnas: a la izquierda `--bg-1` con el logo, una frase y tres puntos del producto; a la derecha «← Volver al inicio», el formulario (email y contraseña, 24rem de ancho), un separador «o usa la demostración» y los accesos demo. Con <960px queda una sola columna y la columna izquierda se reduce al logo. Tras entrar se vuelve a la ruta que se pedía (`?volver=`), solo si es interna.
+- **Lista de tickets vacía del panel derecho:** icono de mensaje a 48px, «Elige un ticket de la lista…» y la pista de atajos con `kbd`.
+- **El SLA solo se muestra mientras corre** (ticket abierto o pendiente): un ticket resuelto o cerrado no lleva chip de SLA, ni rojo por un plazo que ya no importa.
 
 ### 4.1 Sidebar (patrón Linear [aprox.])
 - Arriba, el selector de organización con chevron, y a la derecha los botones de búsqueda y de "nuevo ticket".

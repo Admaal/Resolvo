@@ -61,6 +61,8 @@
   --h-header: 3rem;
   --sidebar-w: 14.5rem;
   --measure: 45rem;
+  --list-w: 23.75rem;
+  --aside-w: 20rem;
   --dur-quick: 100ms;
   --dur-regular: 160ms;
   --dur-slow: 250ms;

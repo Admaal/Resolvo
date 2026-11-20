@@ -1,26 +1,72 @@
-import { Component, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { filter, map } from 'rxjs';
+import { Icono, NombreIcono } from '../shared/icono';
+import { TicketsStore, VISTAS, Vista } from '../features/tickets/tickets.store';
 import { AuthService } from './auth.service';
-import { CLAVE_TEMA, Tema } from './tema';
+import { alternarTema } from './tema';
 
-const EXACTO = { paths: 'exact', queryParams: 'exact', fragment: 'ignored', matrixParams: 'ignored' } as const;
+interface Item {
+  vista: Vista;
+  nombre: string;
+  icono: NombreIcono;
+  soloEquipo?: boolean;
+  alerta?: boolean;
+}
+
+const ITEMS: Item[] = [
+  { vista: 'mios', nombre: 'Mis tickets', icono: 'user' },
+  { vista: 'sin', nombre: 'Sin asignar', icono: 'user-x', soloEquipo: true },
+  { vista: 'todos', nombre: 'Todos', icono: 'layers' },
+  { vista: 'riesgo', nombre: 'SLA en riesgo', icono: 'alert', soloEquipo: true, alerta: true },
+  { vista: 'resueltos', nombre: 'Resueltos', icono: 'check-circle' },
+];
+
+function capitalizar(texto: string): string {
+  return texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
+}
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, Icono],
   template: `
     <div class="shell">
       <aside class="sidebar">
-        <a class="marca" routerLink="/tickets">Resolvo</a>
-        <nav class="nav" aria-label="Principal">
-          <a routerLink="/tickets" [queryParams]="{ vista: 'mios' }" routerLinkActive="activo" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="exacto">Mis tickets</a>
-          <a routerLink="/tickets" [queryParams]="{ vista: 'sin' }" routerLinkActive="activo" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="exacto">Sin asignar</a>
-          <a routerLink="/tickets" routerLinkActive="activo" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="exacto">Todos</a>
-          <a routerLink="/tickets/nuevo" routerLinkActive="activo" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="exacto">Nuevo ticket</a>
+        <div class="sidebar-cabecera">
+          <a class="marca" routerLink="/tickets" aria-label="Resolvo, ir a la bandeja">
+            <span class="marca-logo" aria-hidden="true"><rs-icono nombre="check-circle" [tam]="14" /></span>
+            Resolvo
+          </a>
+        </div>
+        <a class="btn primario nuevo" routerLink="/tickets/nuevo" [attr.aria-current]="activa() === 'nuevo' ? 'page' : null">
+          <rs-icono nombre="plus" />
+          <span class="nombre">Nuevo ticket</span>
+        </a>
+        <nav class="nav" aria-label="Vistas">
+          @for (item of items(); track item.vista) {
+            <a
+              [routerLink]="['/tickets']"
+              [queryParams]="item.vista === 'todos' ? null : { vista: item.vista }"
+              [attr.aria-current]="activa() === item.vista ? 'page' : null">
+              <rs-icono [nombre]="item.icono" />
+              <span class="nombre">{{ item.nombre }}</span>
+              @if (contadores()[item.vista] > 0) {
+                <span class="contador" [class.alerta]="item.alerta">{{ contadores()[item.vista] }}</span>
+              }
+            </a>
+          }
         </nav>
         <div class="sidebar-pie">
-          <button class="btn fantasma tema" type="button" (click)="tema()">Tema {{ oscuro() ? 'claro' : 'oscuro' }}</button>
-          <button class="btn fantasma" type="button" (click)="salir()">Salir</button>
+          <p class="rol"><rs-icono nombre="user-check" />{{ rol() }}</p>
+          <button class="btn fantasma tema" type="button" (click)="tema()">
+            <rs-icono [nombre]="oscuro() ? 'sun' : 'moon'" />
+            Tema {{ oscuro() ? 'claro' : 'oscuro' }}
+          </button>
+          <button class="btn fantasma" type="button" (click)="salir()">
+            <rs-icono nombre="log-out" />
+            Salir
+          </button>
         </div>
       </aside>
       <main class="contenido">
@@ -32,22 +78,36 @@ const EXACTO = { paths: 'exact', queryParams: 'exact', fragment: 'ignored', matr
 export class Shell {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  protected readonly exacto = EXACTO;
+  private readonly store = inject(TicketsStore);
   readonly oscuro = signal(document.documentElement.dataset['theme'] !== 'light');
+  protected readonly contadores = this.store.contadores;
+  protected readonly rol = computed(() => capitalizar(this.auth.rol() ?? ''));
+  protected readonly items = computed(() => ITEMS.filter((item) => !item.soloEquipo || this.auth.rol() !== 'CLIENTE'));
+
+  private readonly url = toSignal(
+    this.router.events.pipe(
+      filter((evento) => evento instanceof NavigationEnd),
+      map(() => this.router.url),
+    ),
+    { initialValue: this.router.url },
+  );
+
+  /** La vista (o «nuevo») que corresponde a la URL actual, también al ver un ticket. */
+  protected readonly activa = computed<Vista | 'nuevo' | null>(() => {
+    const arbol = this.router.parseUrl(this.url());
+    const segmentos = arbol.root.children['primary']?.segments.map((segmento) => segmento.path) ?? [];
+    if (segmentos[0] !== 'tickets') return null;
+    if (segmentos[1] === 'nuevo') return 'nuevo';
+    const vista = arbol.queryParams['vista'];
+    return VISTAS.includes(vista) ? vista : 'todos';
+  });
 
   tema(): void {
-    const siguiente: Tema = this.oscuro() ? 'light' : 'dark';
-    document.documentElement.dataset['theme'] = siguiente;
-    try {
-      localStorage.setItem(CLAVE_TEMA, siguiente);
-    } catch {
-      // sin almacenamiento: el cambio vale solo para esta sesión
-    }
-    this.oscuro.set(siguiente === 'dark');
+    this.oscuro.set(alternarTema() === 'dark');
   }
 
   async salir(): Promise<void> {
     await this.auth.salir();
-    await this.router.navigateByUrl('/login');
+    await this.router.navigateByUrl('/');
   }
 }
