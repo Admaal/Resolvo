@@ -20,10 +20,13 @@ public final class IndexarTicketResuelto implements ConsumidorEventos {
 
   @Override
   public boolean admite(TipoEvento tipo) {
-    return tipo == TipoEvento.TICKET_RESUELTO;
+    return tipo == TipoEvento.TICKET_RESUELTO || tipo == TipoEvento.COMENTARIO_MODERADO;
   }
 
-  /** Lee el ticket tal como esta ahora: si ya no esta resuelto, {@code indexar.ticket} lo ignora. */
+  /**
+   * Lee el ticket tal como esta ahora: si ya no esta resuelto, {@code indexar.ticket} lo ignora, y
+   * si un comentario se oculto o restauro, el texto cambia y sus fragmentos se reemplazan.
+   */
   @Override
   public void consumir(EventoTicket evento) {
     tickets.porId(evento.organizacionId(), evento.ticketId()).ifPresent(indexar::ticket);

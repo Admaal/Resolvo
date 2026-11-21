@@ -2,6 +2,7 @@ package com.admaal.resolvo.infrastructure.web;
 
 import static com.admaal.resolvo.infrastructure.web.HttpAyuda.INCIDENCIA;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -10,6 +11,7 @@ import com.admaal.resolvo.application.soporte.EmbebedorFalso;
 import com.admaal.resolvo.bootstrap.ResolvoApplication;
 import com.admaal.resolvo.infrastructure.PostgresDePrueba;
 import com.admaal.resolvo.infrastructure.ProcesadorDeEventos;
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -122,6 +124,79 @@ class EventosHttpTest {
 
     assertThat(eventos(ticket, "TICKET_REABIERTO", "HECHO")).isEqualTo(1);
     assertThat(fragmentosDe(ticket)).isZero();
+  }
+
+  private String comentar(String ticket, String cuerpo) throws Exception {
+    String respuesta =
+        mvc.perform(
+                post("/api/tickets/" + ticket + "/comentarios")
+                    .header("Authorization", "Bearer " + agente)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"cuerpo\":\"%s\",\"interno\":false}".formatted(cuerpo)))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    return JsonPath.read(respuesta, "$.id");
+  }
+
+  private void ocultar(String ticket, String comentario) throws Exception {
+    mvc.perform(
+            post("/api/tickets/" + ticket + "/comentarios/" + comentario + "/ocultacion")
+                .header("Authorization", "Bearer " + agente)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"motivo\":\"SPAM\"}"))
+        .andExpect(status().isOk());
+  }
+
+  private void restaurar(String ticket, String comentario) throws Exception {
+    String admin = HttpAyuda.token(mvc, "admin@acme.test");
+    mvc.perform(
+            delete("/api/tickets/" + ticket + "/comentarios/" + comentario + "/ocultacion")
+                .header("Authorization", "Bearer " + admin))
+        .andExpect(status().isOk());
+  }
+
+  private String textoIndexado(String ticket) {
+    return jdbc.queryForObject(
+        "select string_agg(texto, ' ') from fragmento where fuente = 'TICKET' and fuente_id = ?::uuid",
+        String.class,
+        ticket);
+  }
+
+  @Test
+  void ocultarUnComentarioDeUnTicketResueltoQuitaSuTextoDelIndiceYRestaurarLoDevuelve()
+      throws Exception {
+    String ticket = nuevoTicket();
+    String spam = comentar(ticket, "texto-de-spam");
+    transicionar(ticket, "RESUELTO");
+    procesador.procesar();
+    assertThat(textoIndexado(ticket)).contains("texto-de-spam");
+
+    ocultar(ticket, spam);
+
+    assertThat(eventos(ticket, "COMENTARIO_MODERADO", "PENDIENTE")).isEqualTo(1);
+    procesador.procesar();
+    assertThat(eventos(ticket, "COMENTARIO_MODERADO", "HECHO")).isEqualTo(1);
+    assertThat(textoIndexado(ticket)).doesNotContain("texto-de-spam");
+
+    restaurar(ticket, spam);
+    procesador.procesar();
+
+    assertThat(textoIndexado(ticket)).contains("texto-de-spam");
+  }
+
+  @Test
+  void ocultarEnUnTicketAbiertoNoDejaEvento() throws Exception {
+    String ticket = nuevoTicket();
+    String comentario = comentar(ticket, "texto-cualquiera");
+
+    ocultar(ticket, comentario);
+
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from evento_outbox where ticket_id = ?::uuid", Integer.class, ticket))
+        .isZero();
   }
 
   @Test
