@@ -25,6 +25,7 @@
               }
             ],
             "styles": [
+              "src/styles/fuentes.css",
               "src/styles/tokens.css",
               "src/styles/semantic.css",
               "src/styles/themes.css",
