@@ -149,14 +149,15 @@ public class AplicacionDeResolvo {
       UsuarioId actor,
       Rol rol,
       MotivoModeracion motivo) {
-    return new ModerarComentario(tickets, reloj)
+    return new ModerarComentario(tickets, eventos, reloj)
         .ocultar(organizacionId, ticketId, comentarioId, actor, rol, motivo);
   }
 
   @Transactional
   public Comentario restaurarComentario(
       OrganizacionId organizacionId, TicketId ticketId, ComentarioId comentarioId, Rol rol) {
-    return new ModerarComentario(tickets, reloj).restaurar(organizacionId, ticketId, comentarioId, rol);
+    return new ModerarComentario(tickets, eventos, reloj)
+        .restaurar(organizacionId, ticketId, comentarioId, rol);
   }
 
   @Transactional(readOnly = true)

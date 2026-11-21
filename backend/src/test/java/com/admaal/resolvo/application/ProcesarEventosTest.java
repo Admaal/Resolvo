@@ -8,10 +8,13 @@ import com.admaal.resolvo.application.soporte.Banco;
 import com.admaal.resolvo.application.soporte.BaseConocimientoEnMemoria;
 import com.admaal.resolvo.application.soporte.EmbebedorFalso;
 import com.admaal.resolvo.application.soporte.ProcesadosEnMemoria;
+import com.admaal.resolvo.application.soporte.PublicadorEnMemoria;
 import com.admaal.resolvo.application.soporte.RepositorioEnMemoria;
 import com.admaal.resolvo.application.soporte.ArticulosEnMemoria;
+import com.admaal.resolvo.domain.ComentarioId;
 import com.admaal.resolvo.domain.EstadoTicket;
 import com.admaal.resolvo.domain.EventoTicket;
+import com.admaal.resolvo.domain.MotivoModeracion;
 import com.admaal.resolvo.domain.OrganizacionId;
 import com.admaal.resolvo.domain.Prioridad;
 import com.admaal.resolvo.domain.Rol;
@@ -335,8 +338,48 @@ class ProcesarEventosTest {
     assertThat(indexa.nombre()).isEqualTo("indexar-ticket");
     assertThat(indexa.admite(TipoEvento.TICKET_RESUELTO)).isTrue();
     assertThat(indexa.admite(TipoEvento.TICKET_REABIERTO)).isFalse();
+    assertThat(indexa.admite(TipoEvento.COMENTARIO_MODERADO)).isTrue();
     assertThat(desindexa.nombre()).isEqualTo("desindexar-ticket");
     assertThat(desindexa.admite(TipoEvento.TICKET_REABIERTO)).isTrue();
     assertThat(desindexa.admite(TipoEvento.TICKET_RESUELTO)).isFalse();
+    assertThat(desindexa.admite(TipoEvento.COMENTARIO_MODERADO)).isFalse();
+  }
+
+  private void entregar(PublicadorEnMemoria publicador) {
+    publicador.publicados().forEach(bandeja::agregar);
+    publicador.vaciar();
+  }
+
+  @Test
+  void ocultarUnComentarioReindexaElTicketSinElTextoOcultoYRestaurarLoDevuelve() {
+    RepositorioEnMemoria tickets = new RepositorioEnMemoria();
+    BaseConocimientoEnMemoria base = new BaseConocimientoEnMemoria();
+    IndexarConocimiento indexar =
+        new IndexarConocimiento(new EmbebedorFalso(), base, new ArticulosEnMemoria(), tickets);
+    PublicadorEnMemoria publicador = new PublicadorEnMemoria();
+    ModerarComentario moderar = new ModerarComentario(tickets, publicador, () -> AHORA);
+    Ticket ticket = Banco.abrir(tickets, acme, autor, Prioridad.ALTA, AHORA);
+    ticket.comentar(ComentarioId.nuevo(), autor, Rol.AGENTE, "Solucion publica", false, AHORA);
+    ComentarioId spam = ComentarioId.nuevo();
+    ticket.comentar(spam, autor, Rol.CLIENTE, "Compra pastillas ya", false, AHORA);
+    ticket.transicionar(EstadoTicket.RESUELTO, Rol.AGENTE);
+    indexar.ticket(ticket);
+    assertThat(base.fragmentosDe(ticket.id().valor()).get(0).texto())
+        .contains("Compra pastillas ya");
+    ProcesarEventos proceso = procesador(new IndexarTicketResuelto(indexar, tickets));
+
+    moderar.ocultar(acme, ticket.id(), spam, autor, Rol.AGENTE, MotivoModeracion.SPAM);
+    entregar(publicador);
+    proceso.ejecutar();
+
+    String sinSpam = base.fragmentosDe(ticket.id().valor()).get(0).texto();
+    assertThat(sinSpam).contains("Solucion publica").doesNotContain("Compra pastillas ya");
+
+    moderar.restaurar(acme, ticket.id(), spam, Rol.ADMIN);
+    entregar(publicador);
+    proceso.ejecutar();
+
+    assertThat(base.fragmentosDe(ticket.id().valor()).get(0).texto())
+        .contains("Compra pastillas ya");
   }
 }

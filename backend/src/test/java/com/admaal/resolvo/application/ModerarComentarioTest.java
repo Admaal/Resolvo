@@ -4,10 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.admaal.resolvo.application.soporte.Banco;
+import com.admaal.resolvo.application.soporte.PublicadorEnMemoria;
 import com.admaal.resolvo.application.soporte.RelojManual;
 import com.admaal.resolvo.application.soporte.RepositorioEnMemoria;
 import com.admaal.resolvo.domain.Comentario;
 import com.admaal.resolvo.domain.ComentarioId;
+import com.admaal.resolvo.domain.EstadoTicket;
 import com.admaal.resolvo.domain.MotivoModeracion;
 import com.admaal.resolvo.domain.NoEncontrado;
 import com.admaal.resolvo.domain.OrganizacionId;
@@ -15,6 +17,7 @@ import com.admaal.resolvo.domain.Prioridad;
 import com.admaal.resolvo.domain.Prohibido;
 import com.admaal.resolvo.domain.Rol;
 import com.admaal.resolvo.domain.Ticket;
+import com.admaal.resolvo.domain.TipoEvento;
 import com.admaal.resolvo.domain.UsuarioId;
 import java.time.Instant;
 import java.util.UUID;
@@ -28,7 +31,9 @@ class ModerarComentarioTest {
   private final UsuarioId agente = new UsuarioId(UUID.randomUUID());
   private final RepositorioEnMemoria tickets = new RepositorioEnMemoria();
   private final Ticket ticket = Banco.abrir(tickets, organizacion, cliente, Prioridad.MEDIA, ahora);
-  private final ModerarComentario caso = new ModerarComentario(tickets, new RelojManual(ahora));
+  private final PublicadorEnMemoria publicador = new PublicadorEnMemoria();
+  private final ModerarComentario caso =
+      new ModerarComentario(tickets, publicador, new RelojManual(ahora));
 
   private Comentario spam() {
     return new ComentarTicket(tickets, new RelojManual(ahora))
@@ -114,5 +119,111 @@ class ModerarComentarioTest {
                     Rol.AGENTE,
                     MotivoModeracion.SPAM))
         .isInstanceOf(NoEncontrado.class);
+  }
+
+  private void resolver() {
+    ticket.transicionar(EstadoTicket.RESUELTO, Rol.AGENTE);
+  }
+
+  @Test
+  void ocultarEnUnTicketResueltoPublicaComentarioModerado() {
+    Comentario comentario = spam();
+    resolver();
+
+    caso.ocultar(
+        organizacion, ticket.id(), comentario.id(), agente, Rol.AGENTE, MotivoModeracion.SPAM);
+
+    assertThat(publicador.publicados())
+        .singleElement()
+        .satisfies(
+            evento -> {
+              assertThat(evento.tipo()).isEqualTo(TipoEvento.COMENTARIO_MODERADO);
+              assertThat(evento.organizacionId()).isEqualTo(organizacion);
+              assertThat(evento.ticketId()).isEqualTo(ticket.id());
+              assertThat(evento.ocurridoEn()).isEqualTo(ahora);
+            });
+  }
+
+  @Test
+  void tambienPublicaEnUnTicketCerrado() {
+    Comentario comentario = spam();
+    resolver();
+    ticket.transicionar(EstadoTicket.CERRADO, Rol.AGENTE);
+
+    caso.ocultar(
+        organizacion, ticket.id(), comentario.id(), agente, Rol.AGENTE, MotivoModeracion.SPAM);
+
+    assertThat(publicador.publicados()).hasSize(1);
+  }
+
+  @Test
+  void restaurarEnUnTicketResueltoPublicaComentarioModerado() {
+    Comentario comentario = spam();
+    resolver();
+    caso.ocultar(
+        organizacion, ticket.id(), comentario.id(), agente, Rol.AGENTE, MotivoModeracion.SPAM);
+    publicador.vaciar();
+
+    caso.restaurar(organizacion, ticket.id(), comentario.id(), Rol.ADMIN);
+
+    assertThat(publicador.publicados())
+        .singleElement()
+        .satisfies(evento -> assertThat(evento.tipo()).isEqualTo(TipoEvento.COMENTARIO_MODERADO));
+  }
+
+  @Test
+  void ocultarEnUnTicketAbiertoNoPublicaNada() {
+    Comentario comentario = spam();
+
+    caso.ocultar(
+        organizacion, ticket.id(), comentario.id(), agente, Rol.AGENTE, MotivoModeracion.SPAM);
+    caso.restaurar(organizacion, ticket.id(), comentario.id(), Rol.ADMIN);
+
+    assertThat(publicador.publicados()).isEmpty();
+  }
+
+  @Test
+  void ocultarDosVecesPublicaUnSoloEvento() {
+    Comentario comentario = spam();
+    resolver();
+
+    caso.ocultar(
+        organizacion, ticket.id(), comentario.id(), agente, Rol.AGENTE, MotivoModeracion.SPAM);
+    caso.ocultar(
+        organizacion, ticket.id(), comentario.id(), agente, Rol.AGENTE, MotivoModeracion.OTRO);
+
+    assertThat(publicador.publicados()).hasSize(1);
+  }
+
+  @Test
+  void restaurarUnComentarioVisibleNoPublicaNada() {
+    Comentario comentario = spam();
+    resolver();
+
+    caso.restaurar(organizacion, ticket.id(), comentario.id(), Rol.ADMIN);
+
+    assertThat(publicador.publicados()).isEmpty();
+  }
+
+  @Test
+  void unaModeracionRechazadaNoPublicaNada() {
+    Comentario comentario = spam();
+    resolver();
+
+    assertThatThrownBy(
+            () ->
+                caso.ocultar(
+                    organizacion,
+                    ticket.id(),
+                    comentario.id(),
+                    cliente,
+                    Rol.CLIENTE,
+                    MotivoModeracion.OTRO))
+        .isInstanceOf(Prohibido.class);
+    assertThatThrownBy(
+            () -> caso.restaurar(organizacion, ticket.id(), comentario.id(), Rol.AGENTE))
+        .isInstanceOf(Prohibido.class);
+
+    assertThat(publicador.publicados()).isEmpty();
   }
 }

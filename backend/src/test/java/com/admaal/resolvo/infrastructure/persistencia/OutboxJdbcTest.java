@@ -75,6 +75,20 @@ class OutboxJdbcTest {
   }
 
   @Test
+  void elEventoDeComentarioModeradoSeGuardaYSeLeeConSuTipo() {
+    EventoTicket evento =
+        EventoTicket.nuevo(
+            TipoEvento.COMENTARIO_MODERADO,
+            ACME,
+            new TicketId(UUID.randomUUID()),
+            Instant.parse("2026-11-21T10:00:00Z"));
+
+    outbox.publicar(evento);
+
+    assertThat(outbox.reclamar(10)).singleElement().satisfies(r -> assertThat(r.evento()).isEqualTo(evento));
+  }
+
+  @Test
   void siLaTransaccionSeRevierteNoQuedaEvento() {
     EventoTicket evento = evento(Instant.now());
 
