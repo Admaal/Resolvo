@@ -11,6 +11,7 @@ import com.admaal.resolvo.domain.Articulo;
 import com.admaal.resolvo.domain.ComentarioId;
 import com.admaal.resolvo.domain.EstadoTicket;
 import com.admaal.resolvo.domain.Fragmento;
+import com.admaal.resolvo.domain.MotivoModeracion;
 import com.admaal.resolvo.domain.OrganizacionId;
 import com.admaal.resolvo.domain.Prioridad;
 import com.admaal.resolvo.domain.Rol;
@@ -115,6 +116,22 @@ class IndexarConocimientoTest {
     assertThat(texto).doesNotContain("Nota interna secreta");
     assertThat(base.fragmentosDe(ticket.id().valor()).get(0).titulo())
         .isEqualTo(ticket.codigo() + " " + ticket.asunto());
+  }
+
+  @Test
+  void elTicketIndexadoNoIncluyeComentariosOcultos() {
+    Ticket ticket = Banco.abrir(tickets, acme, autor, Prioridad.ALTA, AHORA);
+    ticket.comentar(ComentarioId.nuevo(), autor, Rol.AGENTE, "Solucion publica", false, AHORA);
+    ComentarioId spam = ComentarioId.nuevo();
+    ticket.comentar(spam, autor, Rol.CLIENTE, "Compra pastillas ya", false, AHORA);
+    ticket.ocultarComentario(spam, autor, Rol.AGENTE, MotivoModeracion.SPAM, AHORA);
+    ticket.transicionar(EstadoTicket.RESUELTO, Rol.AGENTE);
+
+    indexar.ticket(ticket);
+
+    String texto = base.fragmentosDe(ticket.id().valor()).get(0).texto();
+    assertThat(texto).contains("Solucion publica");
+    assertThat(texto).doesNotContain("Compra pastillas ya").doesNotContain("null");
   }
 
   @Test

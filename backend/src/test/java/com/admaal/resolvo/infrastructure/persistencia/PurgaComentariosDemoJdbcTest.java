@@ -1,6 +1,7 @@
 package com.admaal.resolvo.infrastructure.persistencia;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.admaal.resolvo.application.ComentariosDemo;
 import com.admaal.resolvo.bootstrap.ResolvoApplication;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -63,6 +65,21 @@ class PurgaComentariosDemoJdbcTest {
     assertThat(existe(antiguo)).isFalse();
     assertThat(existe(reciente)).isTrue();
     assertThat(existe(semillaAntigua)).isTrue();
+  }
+
+  @Test
+  void laModeracionDeUnComentarioSeGuardaCompletaONoSeGuarda() {
+    assertThatThrownBy(
+            () ->
+                jdbc.update(
+                    """
+                    insert into comentario (id, ticket_id, autor_id, cuerpo, interno, creado_en, oculto_motivo)
+                    values (?, ?::uuid, ?::uuid, 'texto', false, now(), 'SPAM')
+                    """,
+                    UUID.randomUUID(),
+                    TICKET_SEMILLA,
+                    AUTOR))
+        .isInstanceOf(DataIntegrityViolationException.class);
   }
 
   @Test

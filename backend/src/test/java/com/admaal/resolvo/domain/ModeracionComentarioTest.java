@@ -199,6 +199,22 @@ class ModeracionComentarioTest {
   }
 
   @Test
+  void unEnlacePegadoAUnCaracterDePalabraCuentaIgual() {
+    String cuatro = "1https://a.test _https://b.test xhttp://c.test yhttp://d.test";
+
+    assertThatThrownBy(() -> comentar(cliente, Rol.CLIENTE, cuatro, false))
+        .isInstanceOf(DemasiadosEnlaces.class);
+  }
+
+  @Test
+  void dosEnlacesSinEspacioEntreEllosCuentanPorSeparado() {
+    String cuatro = "http://a.testhttp://b.test http://c.test http://d.test";
+
+    assertThatThrownBy(() -> comentar(cliente, Rol.CLIENTE, cuatro, false))
+        .isInstanceOf(DemasiadosEnlaces.class);
+  }
+
+  @Test
   void unAgentePuedePegarEnlaces() {
     String muchos = "http://a.test http://b.test http://c.test http://d.test http://e.test";
 

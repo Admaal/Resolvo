@@ -113,7 +113,8 @@ public final class Mapeo {
       destino.setCreadoEn(comentario.creadoEn());
       Moderacion moderacion = comentario.moderacion();
       destino.setOcultoMotivo(moderacion == null ? null : moderacion.motivo());
-      destino.setOcultoPor(moderacion == null ? null : moderacion.por().valor());
+      destino.setOcultoPor(
+          moderacion == null || moderacion.por() == null ? null : moderacion.por().valor());
       destino.setOcultoEn(moderacion == null ? null : moderacion.en());
       siguientes.add(destino);
     }

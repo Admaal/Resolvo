@@ -10,7 +10,7 @@ public final class Ticket {
   /** Un cliente puede pegar hasta este numero de enlaces por comentario (frena el spam). */
   private static final int MAXIMO_ENLACES_DE_CLIENTE = 3;
 
-  private static final Pattern ENLACE = Pattern.compile("(?i)\\b(?:https?://|www\\.)\\S+");
+  private static final Pattern ENLACE = Pattern.compile("(?i)(?:https?://(?:www\\.)?|www\\.)");
 
   private final TicketId id;
   private final OrganizacionId organizacionId;

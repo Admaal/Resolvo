@@ -7,7 +7,11 @@ alter table comentario
   add column oculto_en timestamptz,
   add column semilla boolean not null default false,
   add constraint comentario_oculto_motivo_valido
-    check (oculto_motivo is null or oculto_motivo in ('SPAM', 'OFENSIVO', 'OTRO'));
+    check (oculto_motivo is null or oculto_motivo in ('SPAM', 'OFENSIVO', 'OTRO')),
+  -- La moderacion se guarda entera (motivo, quien y cuando) o no se guarda.
+  add constraint comentario_moderacion_completa
+    check ((oculto_motivo is null and oculto_por is null and oculto_en is null)
+        or (oculto_motivo is not null and oculto_por is not null and oculto_en is not null));
 
 -- Los comentarios de la demo sembrada (V3) no los borra la limpieza diaria de la demo.
 update comentario

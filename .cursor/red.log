@@ -105,3 +105,5 @@
 2026-11-21T17:15:16 fast b914b3718e2cc77d94bb20df5643031250ea733c RED frontend/src/app/features/tickets/detalle.page.spec.ts exit=1
 2026-11-21T17:15:16 fast b914b3718e2cc77d94bb20df5643031250ea733c RED frontend/src/app/core/errores.spec.ts exit=1
 2026-11-21T17:15:25 fast b914b3718e2cc77d94bb20df5643031250ea733c RED frontend/src/app/features/tickets/ticket-thread.spec.ts exit=1
+2026-11-21T17:33:48 fast 67393cd380a16dd84a65425e1894c85c021db1e3 RED backend/src/test/java/com/admaal/resolvo/domain/ModeracionComentarioTest.java exit=1
+2026-11-21T17:33:56 fast 67393cd380a16dd84a65425e1894c85c021db1e3 RED backend/src/test/java/com/admaal/resolvo/application/IndexarConocimientoTest.java exit=1
