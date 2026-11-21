@@ -61,11 +61,11 @@ function capitalizar(texto: string): string {
           <p class="rol"><rs-icono nombre="user-check" />{{ rol() }}</p>
           <button class="btn fantasma tema" type="button" (click)="tema()">
             <rs-icono [nombre]="oscuro() ? 'sun' : 'moon'" />
-            Tema {{ oscuro() ? 'claro' : 'oscuro' }}
+            <span class="nombre">Tema {{ oscuro() ? 'claro' : 'oscuro' }}</span>
           </button>
           <button class="btn fantasma" type="button" (click)="salir()">
             <rs-icono nombre="log-out" />
-            Salir
+            <span class="nombre">Salir</span>
           </button>
         </div>
       </aside>

@@ -24,6 +24,7 @@ Las referencias sirven de inspiración: no uses sus logos, iconos propios ni fue
 ## 2. Tokens
 
 ### 2.1 Color — tema claro (por defecto si el sistema no pide oscuro) [propuesta]
+Contraste medido el 2026-11-21: todo texto y todo chip (color al 12 % sobre cualquier superficie) llega a 4.5:1 como mínimo; `--text-4` queda solo para lo decorativo.
 ```css
 :root, [data-theme="light"] {
   --bg-0: #fbf8f3;   /* fondo de la app y del detalle */
@@ -35,11 +36,11 @@ Las referencias sirven de inspiración: no uses sus logos, iconos propios ni fue
   --bg-6: #2b2219;   /* tooltips y avisos */
   --bg-sidebar: #f3eee5;
   --border-1: #ebe3d6; --border-2: #dfd3c1; --border-3: #cdbea8;
-  --text-1: #231c15; --text-2: #4a4037; --text-3: #7d7163; --text-4: #a89b8b;
-  --accent: #b8492a;       /* texto y enlaces (5.9:1 sobre --bg-1) */
+  --text-1: #231c15; --text-2: #4a4037; --text-3: #6a5e50; --text-4: #a89b8b; /* solo decorativo */
+  --accent: #a93f22;       /* texto y enlaces (6.0:1 sobre --bg-1, 5.0:1 sobre --accent-tint) */
   --accent-solid: #c2552d; /* botón primario con texto #fff (4.9:1) */
   --accent-tint: #f8e4d6;
-  --red: #b4321f; --orange: #a85a06; --yellow: #8a6a00; --green: #3f7a3c; --blue: #2f6690; --teal: #1f7a72;
+  --red: #ad301e; --orange: #904d05; --yellow: #755a00; --green: #376a34; --blue: #2d628a; --teal: #1f7a72;
   /* Sombras cálidas: tiñen de marrón, no de negro */
   --shadow-low: 0 1px 0 #3b2a140d, 0 1px 3px #3b2a1414;
   --shadow-medium: 0 1px 0 #3b2a140a, 0 8px 22px -10px #6b4a1f40;
@@ -300,6 +301,8 @@ Navegación secundaria a la izquierda (General, Miembros, Equipos, SLA, Canales,
 - Panel de IA y drawers: entran deslizando 250ms con `--ease-out-quint`.
 - Filas: no se animan al reordenar si hay más de 50; un ticket nuevo entra con un fundido de 160ms y el fondo `--accent-tint` se desvanece en 1.5s.
 - El destacado de una cita se desvanece en 150ms **[m]** (el "highlight fade-out" de Linear).
+- Implementado (2026-11-21): una sola animación, `aparecer` (opacidad 0→1 y subida de 6px, `--dur-slow`), en la conversación al abrir un ticket y en los paneles de IA cuando llegan. La llegada al login es el único momento orquestado: titular y tres puntos en cascada de 80ms. Todo bajo `prefers-reduced-motion: no-preference`.
+- Los botones se hunden 1px al pulsar. No hay entradas con desplazamiento en cada sección ni hover animado en cada tarjeta.
 - Nada rebota, y no hay parallax ni animaciones decorativas.
 
 ## 6. Imágenes e iconos
