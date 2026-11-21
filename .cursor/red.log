@@ -85,3 +85,7 @@
 2026-11-20T08:40:26 fast 78a3f642ada2bb8a75ffc83dc6d7ade6f4a9480b RED frontend/src/app/features/tickets/bandeja.page.spec.ts exit=1
 2026-11-20T08:41:23 fast 78a3f642ada2bb8a75ffc83dc6d7ade6f4a9480b RED frontend/src/app/features/tickets/alta.page.spec.ts exit=1
 2026-11-20T08:42:03 fast 78a3f642ada2bb8a75ffc83dc6d7ade6f4a9480b RED frontend/src/app/features/tickets/detalle.page.spec.ts exit=1
+2026-11-20T14:37:13 fast ce06148edf4080c2b9d846cfa4f760ace4b6eebf RED frontend/src/app/core/auth.guard.spec.ts exit=1
+2026-11-20T14:38:49 fast ce06148edf4080c2b9d846cfa4f760ace4b6eebf RED frontend/src/app/core/accesos-demo.spec.ts exit=1
+2026-11-20T14:42:04 fast ce06148edf4080c2b9d846cfa4f760ace4b6eebf RED frontend/src/app/features/tickets/bandeja.page.spec.ts exit=1
+2026-11-20T14:52:39 fast ce06148edf4080c2b9d846cfa4f760ace4b6eebf RED frontend/src/app/features/tickets/bandeja.page.spec.ts exit=1

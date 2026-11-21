@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { etiquetaEstado, etiquetaPrioridad, nivelSla, textoSla } from './etiquetas';
+import { etiquetaEstado, etiquetaPrioridad, nivelSla, textoSla, tiempoSla } from './etiquetas';
 
 describe('etiquetas', () => {
   it.each([
@@ -54,5 +54,22 @@ describe('etiquetas', () => {
     expect(textoSla('incumplido')).toBe('SLA incumplido');
     expect(textoSla('riesgo')).toBe('SLA en riesgo');
     expect(textoSla('ok')).toBe('SLA en plazo');
+  });
+
+  describe('tiempoSla', () => {
+    const ahora = Date.parse('2026-11-20T12:00:00Z');
+    const en = (minutos: number) => new Date(ahora + minutos * 60_000).toISOString();
+
+    it.each([
+      [200, '3h 20m'],
+      [45, '45m'],
+      [60, '1h'],
+      [26 * 60 + 30, '1d 2h'],
+      [0, '0m'],
+      [-105, '−1h 45m'],
+      [-30, '−30m'],
+    ])('con %i minutos de margen dice %s', (minutos, texto) => {
+      expect(tiempoSla(en(minutos), ahora)).toBe(texto);
+    });
   });
 });

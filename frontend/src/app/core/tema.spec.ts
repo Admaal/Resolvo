@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { temaInicial } from './tema';
+import { CLAVE_TEMA, alternarTema, temaInicial } from './tema';
 
 describe('temaInicial', () => {
   it('respeta la elección guardada', () => {
@@ -14,5 +14,17 @@ describe('temaInicial', () => {
 
   it('ignora un valor guardado que no es un tema', () => {
     expect(temaInicial('rosa', false)).toBe('light');
+  });
+});
+
+describe('alternarTema', () => {
+  it('cambia el tema del documento y lo guarda', () => {
+    localStorage.clear();
+    document.documentElement.dataset['theme'] = 'dark';
+
+    expect(alternarTema()).toBe('light');
+    expect(document.documentElement.dataset['theme']).toBe('light');
+    expect(localStorage.getItem(CLAVE_TEMA)).toBe('light');
+    expect(alternarTema()).toBe('dark');
   });
 });

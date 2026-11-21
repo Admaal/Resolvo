@@ -30,3 +30,26 @@ export function textoSla(nivel: NivelSla): string {
   if (nivel === 'riesgo') return 'SLA en riesgo';
   return 'SLA en plazo';
 }
+
+/** Tiempo que falta (o que ha pasado) respecto al vencimiento: «3h 20m», «1d 2h» o «−1h 45m». */
+export function tiempoSla(venceEl: string, ahora: number = Date.now()): string {
+  const diferencia = Math.round((new Date(venceEl).getTime() - ahora) / 60_000);
+  const minutos = Math.abs(diferencia);
+  const dias = Math.floor(minutos / 1440);
+  const horas = Math.floor((minutos % 1440) / 60);
+  const resto = minutos % 60;
+  const partes: string[] = [];
+  if (dias > 0) {
+    partes.push(`${dias}d`);
+    if (horas > 0) partes.push(`${horas}h`);
+  } else {
+    if (horas > 0) partes.push(`${horas}h`);
+    if (resto > 0 || horas === 0) partes.push(`${resto}m`);
+  }
+  return `${diferencia < 0 ? '\u2212' : ''}${partes.join(' ')}`;
+}
+
+/** El SLA solo corre mientras el ticket está abierto o pendiente. */
+export function slaCorre(estado: string): boolean {
+  return estado === 'ABIERTO' || estado === 'PENDIENTE';
+}

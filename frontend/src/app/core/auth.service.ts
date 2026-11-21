@@ -21,11 +21,19 @@ export class AuthService {
       const cuerpo = await respuesta.json().catch(() => ({ error: 'no-autorizado' }));
       throw new Error(cuerpo.error ?? 'no-autorizado');
     }
-    const cuerpo = (await respuesta.json()) as { access: string };
-    this.access = cuerpo.access;
-    const datos = datosDelToken(cuerpo.access);
-    this.rol.set(datos.rol);
-    this.usuarioId.set(datos.sub);
+    this.guardar(((await respuesta.json()) as { access: string }).access);
+  }
+
+  /** Recupera la sesión con la cookie de refresco, por ejemplo al recargar la página. */
+  async restaurar(): Promise<boolean> {
+    try {
+      const respuesta = await fetch('/api/sesion/refresh', { method: 'POST', credentials: 'include' });
+      if (!respuesta.ok) return false;
+      this.guardar(((await respuesta.json()) as { access: string }).access);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async salir(): Promise<void> {
@@ -33,6 +41,13 @@ export class AuthService {
     this.rol.set(null);
     this.usuarioId.set(null);
     await fetch('/api/sesion', { method: 'DELETE', credentials: 'include' });
+  }
+
+  private guardar(access: string): void {
+    this.access = access;
+    const datos = datosDelToken(access);
+    this.rol.set(datos.rol);
+    this.usuarioId.set(datos.sub);
   }
 }
 

@@ -1,77 +1,63 @@
-# Resolvo — design.md (Neutro denso, modo oscuro primero)
+# Resolvo — design.md (Cálido editorial, claro por defecto)
 
 > Leyenda de valores: **[m]** medido en el CSS o los tokens publicados por la referencia · **[aprox.]** estimado a ojo sobre capturas · **[propuesta]** decisión propia para completar el sistema.
-> Front: Angular. Los tokens son CSS custom properties con tema por `[data-theme]`; los componentes van en una librería propia (o sobre Angular CDK) que solo consume estos tokens.
+> Front: Angular. Los tokens son CSS custom properties con tema por `[data-theme]` (`frontend/src/styles/tokens.css` y `themes.css`); los componentes solo consumen estos tokens.
+> Cambio de dirección del 2026-11-21: la primera versión («neutro denso, modo oscuro primero», al estilo Linear) se veía fría y lejana, con letra de 13px sobre casi negro. Esta dirección conserva la estructura (sidebar, bandeja agrupada por SLA, detalle con panel de IA) y cambia la piel.
 
 ## 1. Visión
-Resolvo es una herramienta de trabajo diaria para gente que pasa horas en la bandeja. El diseño busca lo mismo que Linear: neutros casi negros, bordes de 1px, tipografía pequeña y nítida, y color reservado solo para **estados, SLA y la acción principal**. Debe transmitir fiabilidad: la IA propone y siempre enseña de dónde sale lo que dice.
+Resolvo es una herramienta de trabajo diaria para gente que pasa horas en la bandeja, y al otro lado hay un cliente con un problema. El diseño busca **cercanía y calma**: papel cálido en vez de gris, titulares con serifa como en una revista, letra que se lee sin esfuerzo y color reservado para **estados, SLA y la acción principal**. Debe transmitir fiabilidad: la IA propone y siempre enseña de dónde sale lo que dice.
 
 **Principios**
-1. **Densidad legible.** Mucha información por pantalla, con jerarquía clara por peso y gris, no por tamaño.
-2. **El color significa algo.** Si algo tiene color, es un estado, una prioridad o un aviso de SLA.
+1. **Cercano antes que denso.** Texto base de 15px, filas con aire y asuntos en serifa a 17px. La jerarquía va por familia y peso, no por letra diminuta.
+2. **El color significa algo.** Terracota para la acción y la IA; rojo, ámbar y verde solo para SLA y estado.
 3. **La IA es verificable.** Toda afirmación lleva su cita a la fuente, y toda propuesta es editable antes de enviarla.
 4. **Teclado primero.** Cada acción frecuente tiene atajo, y la paleta de comandos (⌘K) llega a todo.
 
 ### Referencias
-- [Linear](https://linear.app): la base visual (tokens de color, tipografía, radios, sombras y motion medidos en su CSS), la sidebar, la vista de detalle y el panel del agente.
 - [Plain](https://www.plain.com): la bandeja agrupada por urgencia ("Breaching" primero), el chip de tiempo de SLA, los IDs en mono y las filas de dos líneas.
-- [Intercom Helpdesk](https://www.intercom.com/helpdesk): el panel Copilot, con un chip de fuente dentro de la frase, "2 sources" en el pie del borrador y una traza colapsable.
-- Secundarias: [Help Scout Inbox](https://www.helpscout.com/inbox/) (columna de tiempo esperando y contadores por vista) y [Missive](https://missiveapp.com) (barra roja lateral en las urgentes).
-- Capturas en `/workspace/design/resolvo/refs/` (las de detalle llevan el prefijo `study-`).
+- [Intercom Helpdesk](https://www.intercom.com/helpdesk): el panel Copilot, con un chip de fuente dentro de la frase y "2 sources" en el pie del borrador.
+- [Linear](https://linear.app): la estructura de sidebar y vista de detalle, y la escala de motion.
+- Tono editorial: revistas y webs con serifa de display sobre papel cálido (Fraunces + sans humanista).
 
 Las referencias sirven de inspiración: no uses sus logos, iconos propios ni fuentes de pago.
 
-> Ninguna web pública mostraba una base de conocimiento ni un panel de métricas en oscuro, así que esas pantallas (§4.8 y §4.9) son **[propuesta]** coherente con el sistema.
-
 ## 2. Tokens
 
-### 2.1 Color — tema oscuro (por defecto)
+### 2.1 Color — tema claro (por defecto si el sistema no pide oscuro) [propuesta]
+Contraste medido el 2026-11-21: todo texto y todo chip (color al 12 % sobre cualquier superficie) llega a 4.5:1 como mínimo; `--text-4` queda solo para lo decorativo.
 ```css
-:root, [data-theme="dark"] {
-  /* Superficies [m] Linear */
-  --bg-0: #08090a;         /* fondo de la app */
-  --bg-1: #0f1011;         /* paneles: sidebar, lista, detalle */
-  --bg-2: #141516;         /* tarjetas y filas en hover */
-  --bg-3: #191a1b;         /* inputs y menús */
-  --bg-4: #1c1c1f;         /* chips y botón secundario */
-  --bg-5: #232326;         /* seleccionado y pulsado */
-  --bg-6: #28282c;         /* tooltips */
-
-  /* Bordes [m] */
-  --border-1: #23252a;     /* separadores por defecto */
-  --border-2: #34343a;     /* inputs y hover */
-  --border-3: #3e3e44;     /* fuerte */
-  --border-alpha: #ffffff14;
-
-  /* Texto [m] */
-  --text-1: #f7f8f8;       /* principal */
-  --text-2: #d0d6e0;       /* secundario */
-  --text-3: #8a8f98;       /* terciario: metadatos y placeholders */
-  --text-4: #62666d;       /* solo decorativo o deshabilitado (3.3:1, no para texto que haya que leer) */
-
-  /* Acento [m] indigo de Linear */
-  --accent: #7170ff;
-  --accent-hover: #828fff;
-  --accent-tint: #18182f;
-  --accent-solid: #5e6ad2; /* fondo del botón primario, texto #fff (4.7:1) */
-  --on-accent: #ffffff;
-
-  /* Paleta de estado base [m] */
-  --red: #eb5757; --orange: #fc7840; --yellow: #f0bf00;
-  --green: #27a644; --blue: #4ea7fc; --teal: #00b8cc;
+:root, [data-theme="light"] {
+  --bg-0: #fbf8f3;   /* fondo de la app y del detalle */
+  --bg-1: #fffdf9;   /* paneles y tarjetas */
+  --bg-2: #f6f0e6;   /* hover */
+  --bg-3: #ffffff;   /* inputs y fila seleccionada */
+  --bg-4: #f1eadf;   /* chips y pestaña activa */
+  --bg-5: #ece3d5;   /* pulsado */
+  --bg-6: #2b2219;   /* tooltips y avisos */
+  --bg-sidebar: #f3eee5;
+  --border-1: #ebe3d6; --border-2: #dfd3c1; --border-3: #cdbea8;
+  --text-1: #231c15; --text-2: #4a4037; --text-3: #6a5e50; --text-4: #a89b8b; /* solo decorativo */
+  --accent: #a93f22;       /* texto y enlaces (6.0:1 sobre --bg-1, 5.0:1 sobre --accent-tint) */
+  --accent-solid: #c2552d; /* botón primario con texto #fff (4.9:1) */
+  --accent-tint: #f8e4d6;
+  --red: #ad301e; --orange: #904d05; --yellow: #755a00; --green: #376a34; --blue: #2d628a; --teal: #1f7a72;
+  /* Sombras cálidas: tiñen de marrón, no de negro */
+  --shadow-low: 0 1px 0 #3b2a140d, 0 1px 3px #3b2a1414;
+  --shadow-medium: 0 1px 0 #3b2a140a, 0 8px 22px -10px #6b4a1f40;
+  --shadow-high: 0 18px 44px -16px #6b4a1f52;
 }
 ```
 
-### 2.2 Color — tema claro [propuesta]
-Plain e Intercom solo enseñaban su versión clara de marketing, así que estos valores los he ajustado yo para que cumplan AA sobre blanco. El gris `#636370` y la tinta `#1f1f28` sí están medidos en Plain.
+### 2.2 Color — tema oscuro cálido [propuesta]
+La misma dirección de noche: carbón tostado en vez de negro azulado, y terracota clara como acento.
 ```css
-[data-theme="light"] {
-  --bg-0: #f7f7f8; --bg-1: #ffffff; --bg-2: #f9f9fc; --bg-3: #f3f3f6;
-  --bg-4: #ececf1; --bg-5: #e4e4ea; --bg-6: #1f1f28;
-  --border-1: #e7e7ef; --border-2: #d6d6df; --border-3: #c4c4cf; --border-alpha: #0000000f;
-  --text-1: #1f1f28; --text-2: #3c3c48; --text-3: #636370; --text-4: #9898a9;
-  --accent: #5e6ad2; --accent-hover: #4f5bc4; --accent-tint: #eef0fd; --accent-solid: #5e6ad2;
-  --red: #c4302b; --orange: #b25e09; --yellow: #8a6a00; --green: #1e7f36; --blue: #2563c9; --teal: #0e7c8a;
+[data-theme="dark"] {
+  --bg-0: #17140f; --bg-1: #1e1a14; --bg-2: #241f18; --bg-3: #26211a; --bg-4: #2b251d; --bg-5: #342c22; --bg-6: #3d3428;
+  --bg-sidebar: #120f0b;
+  --border-1: #2e2820; --border-2: #40372b; --border-3: #52473a;
+  --text-1: #f6efe4; --text-2: #d6cbbb; --text-3: #a39684; --text-4: #75695b;
+  --accent: #f0916a; --accent-solid: #e8805a; --on-accent: #1c0f08; --accent-tint: #3a2419;
+  --red: #ff8a73; --orange: #f0a45b; --yellow: #f2c35b; --green: #8fd18a; --blue: #84b6e8; --teal: #6cc8bd;
 }
 ```
 
@@ -96,56 +82,45 @@ Plain e Intercom solo enseñaban su versión clara de marketing, así que estos 
 Un estado nunca va solo con color: lleva siempre icono y texto (§4.2).
 
 ### 2.4 Tipografía
-- **UI:** `Inter` **[m]**, la misma familia que usa Linear (Inter Variable). Disponible en Google Fonts. Actívale `font-feature-settings: "cv01", "ss03"` **[m]**, y además `"tnum"` en las cifras.
-- **Mono** (IDs de ticket, código, atajos): Linear usa Berkeley Mono **[m]**, que es de pago. Equivalente libre: **`JetBrains Mono`** o `Geist Mono` (este último lo usa Plain [m]).
-- Sin serifa de display: el producto no es una landing.
+- **Display:** `Fraunces` (Google Fonts, variable con eje óptico) en titulares de página, asunto del ticket, asuntos de la bandeja y la marca. Peso 500–600, tracking −0.01em.
+- **UI:** `Instrument Sans`, sans humanista que acompaña a la serifa sin competir. Texto por defecto a 15px.
+- **Mono** (IDs de ticket, tiempos de SLA, citas, contadores): `Geist Mono`.
+- Evitar Inter, Roboto y Arial: son lo que hacía la UI genérica y lejana.
 
-Pesos **[m]** de Linear: 400 normal, 510 medium y 590 semibold (con Inter Variable funcionan; si no, usa 400, 500 y 600).
+Pesos: 400 normal, 500 medium y 600 semibold.
 
-| Token | Tamaño / interlineado | Peso | Uso |
+| Token | Tamaño | Peso | Uso |
 |---|---|---|---|
-| `--fs-micro` | 11px / 16px | 510 | contadores, etiquetas de sección, timestamps |
-| `--fs-mini` | 12px / 16px | 400–510 | chips, metadatos y columnas de tabla |
-| `--fs-small` | 13px / 20px | 400 | **texto por defecto de la UI**, filas de la bandeja |
-| `--fs-regular` | 15px / 24px | 400 | cuerpo de la conversación y artículos de la KB |
-| `--fs-large` | 18px / 26px | 590 | títulos de sección |
-| `--fs-title3` | 20px / 28px | 590 | título de la página |
-| `--fs-title2` | 24px / 32px | 590 | cifras de KPI |
-| `--fs-title1` | 36px / 40px | 590 | cifra destacada del panel |
-
-La escala está **[m]** (en el CSS de Linear); los interlineados son **[propuesta]**.
+| `--fs-micro` | 12px | 500–600 | contadores, etiquetas de sección en versalitas, SLA en mono |
+| `--fs-mini` | 13px | 400–500 | chips y metadatos |
+| `--fs-small` | 14px | 400–500 | botones, etiquetas de formulario, cabeceras de mensaje |
+| `--fs-regular` | 15px | 400 | **texto por defecto**, conversación y artículos |
+| `--fs-large` | 17px | 500 (serifa) | asunto en la fila de la bandeja |
+| `--fs-title3` | 22px | 600 (serifa) | cabeceras de panel |
+| `--fs-title2` | 30px | 500–600 (serifa) | título de página y asunto del ticket |
+| `--fs-title1` | 40px | 500 (serifa) | titulares de inicio y acceso |
 
 ### 2.5 Spacing, radius, shadow, layout
 ```css
 :root {
-  --space-0_5: 2px; --space-1: 4px; --space-1_5: 6px; --space-2: 8px; --space-3: 12px;
-  --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-12: 48px;
+  --space-0_5: 2px; --space-1: 4px; --space-1_5: 6px; --space-2: 8px; --space-2_5: 10px; --space-3: 12px;
+  --space-3_5: 14px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
 
-  /* Radios [m] Linear */
-  --radius-xs: 4px;   /* chips y badges */
-  --radius-sm: 6px;   /* botones, inputs e ítems de navegación */
-  --radius-md: 8px;   /* menús y tarjetas pequeñas */
-  --radius-lg: 12px;  /* paneles flotantes, tarjeta del borrador IA y modales */
-  --radius-xl: 16px;
-  --radius-pill: 9999px;
+  --radius-xs: 5px;   /* citas */
+  --radius-sm: 8px;   /* logo y controles pequeños */
+  --radius-md: 10px;  /* botones, inputs e ítems de navegación */
+  --radius-lg: 14px;  /* filas de la bandeja */
+  --radius-xl: 18px;  /* tarjetas, burbujas, panel de IA y compositor */
+  --radius-pill: 9999px; /* chips y botones segmentados */
 
-  /* Sombras [m] Linear (en oscuro, solo para lo que flota) */
-  --shadow-low:    0 2px 4px #0000001a;
-  --shadow-medium: 0 4px 24px #00000033;
-  --shadow-high:   0 7px 32px #00000059;
+  --h-control-sm: 28px; --h-control: 36px; --h-control-lg: 42px;
+  --h-row: 44px; --h-row-2: 68px; --h-header: 60px;
 
-  /* Alturas [propuesta] (no se pudieron medir en la app real) */
-  --h-control-sm: 24px; --h-control: 28px; --h-control-lg: 32px;
-  --h-row: 36px;        /* fila de bandeja compacta (1 línea) */
-  --h-row-2: 56px;      /* fila cómoda (2 líneas, patrón Plain) */
-  --h-header: 48px;
-
-  --sidebar-w: 232px;   /* [m] Linear */
-  --ai-panel-w: 360px;  /* [propuesta] */
+  --sidebar-w: 248px; --list-w: 384px; --aside-w: 304px; --measure: 736px;
 }
 ```
 
-### 2.6 Motion [m] Linear
+### 2.6 Motion [m] Linear (sin cambios)
 ```css
 :root {
   --dur-quick: 100ms;    /* hover y press */
@@ -167,14 +142,27 @@ La escala está **[m]** (en el CSS de Linear); los interlineados son **[propuest
 - La sidebar y los paneles van sobre `--bg-1`, separados por bordes de 1px `--border-1`; no hay huecos entre paneles (estilo "split", no tarjetas flotando).
 - La cabecera de cada panel mide `--h-header` (48px) y tiene borde inferior.
 - Contenido de lectura (artículos de la KB y la conversación): ancho máximo de 720px.
-- **Responsive:**
-  - Con ≥1440 se ven las 4 columnas.
-  - Entre 1200 y 1439, el panel IA se superpone como drawer.
-  - Entre 960 y 1199, la sidebar se colapsa a un rail de 48px.
-  - Con <960 se ve un solo panel con navegación hacia atrás (secundario: es una herramienta de escritorio).
+- **En la app construida** el layout es de tres zonas: sidebar (232px), lista (`--list-w`, 380px) y ticket, que ocupa todo el ancho restante. El panel de IA no es una cuarta columna: vive en la columna lateral del ticket (`--aside-w`, 320px) junto a las propiedades, bajo el título «Asistente ✦». Esa columna lateral se pone al lado de la conversación solo si el panel del ticket mide ≥52rem (container query); si no, baja bajo la conversación.
+- **Navegación:**
+  - Un ticket abierto siempre tiene **«← Bandeja»** (vuelve a la lista con la misma vista), la posición «3 / 12» y los botones anterior/siguiente, que siguen el orden de la bandeja. Atajos: `J` siguiente, `K` anterior y `Esc` volver (no actúan mientras se escribe en un campo).
+  - La vista elegida vive en la URL (`?vista=`): se conserva al abrir un ticket, al volver y al recargar.
+  - Al recargar, la sesión se recupera con la cookie de refresco; solo si no hay sesión se vuelve a `/login?volver=<ruta>`.
+- **Responsive** (los puntos de corte van en `em`, para seguir la escala de texto):
+  - Con ≥1200px se ven la lista y el ticket a la vez.
+  - Entre 960 y 1199px, un solo panel: la lista, o el ticket con su «← Bandeja».
+  - Con <960px la sidebar pasa a barra superior con los mismos accesos.
+  - (Queda pendiente el panel IA como drawer y el rail de 48px de la sidebar: no se han construido.)
 - Densidad conmutable entre **compacta** (fila de 36px) y **cómoda** (56px, dos líneas), con `[data-density]`.
 
 ## 4. Componentes clave
+
+### 4.0 Inicio y acceso
+Es lo primero que ve quien llega, así que cuenta qué es Resolvo antes de pedir nada.
+- **Inicio (`/`)**, pública. Cabecera con logo, cambio de tema y «Iniciar sesión» (o «Ir a la bandeja» si ya hay sesión). Héroe centrado con una etiqueta, el titular (`clamp(2rem, 1rem + 4vw, 3.25rem)`, 590) y un subtítulo de dos líneas. Debajo, los **accesos de demostración** (el punto siguiente) y, a continuación, una maqueta de la bandeja y del panel de IA hecha en HTML y CSS, sin imágenes y marcada `aria-hidden`. Luego tres tarjetas de valor (respuestas con citas, SLA a la vista, la IA propone y tú decides), «Cómo funciona» en tres pasos y un pie con el enlace al código.
+- **Accesos de demostración:** «Entrar como Cliente / Agente / Admin», cada uno con una línea de lo que puede hacer ese rol. Entran con un clic con la cuenta demo, se deshabilitan mientras entra (un doble clic no entra dos veces) y enseñan el mismo error que el formulario si falla.
+- **Login (`/login`)** a dos columnas: a la izquierda `--bg-1` con el logo, una frase y tres puntos del producto; a la derecha «← Volver al inicio», el formulario (email y contraseña, 24rem de ancho), un separador «o usa la demostración» y los accesos demo. Con <960px queda una sola columna y la columna izquierda se reduce al logo. Tras entrar se vuelve a la ruta que se pedía (`?volver=`), solo si es interna.
+- **Lista de tickets vacía del panel derecho:** icono de mensaje a 48px, «Elige un ticket de la lista…» y la pista de atajos con `kbd`.
+- **El SLA solo se muestra mientras corre** (ticket abierto o pendiente): un ticket resuelto o cerrado no lleva chip de SLA, ni rojo por un plazo que ya no importa.
 
 ### 4.1 Sidebar (patrón Linear [aprox.])
 - Arriba, el selector de organización con chevron, y a la derecha los botones de búsqueda y de "nuevo ticket".
@@ -223,7 +211,7 @@ Icono circular de 14px, al estilo de Linear [aprox.], siempre con tooltip o text
 
 ### 4.5 Vista de ticket (conversación)
 - **Cabecera:** ID en mono, asunto en `--fs-large`, selector de estado, asignado, prioridad, navegación "3 / 84" con ↑↓ y menú "⋯".
-- **Mensajes:** una sola columna sin burbujas de color (más sobrio que Intercom).
+- **Mensajes:** una columna de tarjetas blancas con la esquina superior izquierda casi recta (apunta al avatar), sombra baja y avatar de 32px con iniciales en `--accent-tint`. Las notas internas van en ámbar con borde discontinuo.
   - Cada mensaje lleva avatar, nombre en 510, hora y cuerpo en `--fs-regular` `--text-1`.
   - Mensaje del cliente: fondo `--bg-1`.
   - Respuesta del agente: tarjeta `--bg-2` con borde `--border-1`.
@@ -313,6 +301,8 @@ Navegación secundaria a la izquierda (General, Miembros, Equipos, SLA, Canales,
 - Panel de IA y drawers: entran deslizando 250ms con `--ease-out-quint`.
 - Filas: no se animan al reordenar si hay más de 50; un ticket nuevo entra con un fundido de 160ms y el fondo `--accent-tint` se desvanece en 1.5s.
 - El destacado de una cita se desvanece en 150ms **[m]** (el "highlight fade-out" de Linear).
+- Implementado (2026-11-21): una sola animación, `aparecer` (opacidad 0→1 y subida de 6px, `--dur-slow`), en la conversación al abrir un ticket y en los paneles de IA cuando llegan. La llegada al login es el único momento orquestado: titular y tres puntos en cascada de 80ms. Todo bajo `prefers-reduced-motion: no-preference`.
+- Los botones se hunden 1px al pulsar. No hay entradas con desplazamiento en cada sección ni hover animado en cada tarjeta.
 - Nada rebota, y no hay parallax ni animaciones decorativas.
 
 ## 6. Imágenes e iconos
@@ -392,7 +382,7 @@ Revisa además estos puntos:
   - `rs-empty-state`
   - `rs-toast`
 - Menús, popovers y tooltips con `@angular/cdk/overlay` y `a11y` (FocusTrap, ListKeyManager para la bandeja y la paleta de comandos).
-- Fuentes: Inter y JetBrains Mono autoalojadas (woff2, `font-display: swap`).
+- Fuentes: Fraunces, Instrument Sans y Geist Mono desde Google Fonts (`display=swap`); autoalojarlas en woff2 queda pendiente.
 
 ## 10. Valores pendientes de validar
 - Las alturas reales de filas, botones e inputs y los paddings no se pudieron medir (las webs muestran maquetas de marketing). Los valores de §2.5 son una propuesta; valídalos con un prototipo.

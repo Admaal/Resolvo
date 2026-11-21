@@ -1,73 +1,85 @@
-:root, [data-theme="dark"] {
-  color-scheme: dark;
-  --bg-0: #08090a;
-  --bg-1: #0f1011;
-  --bg-2: #141516;
-  --bg-3: #191a1b;
-  --bg-4: #1c1c1f;
-  --bg-5: #232326;
-  --bg-6: #28282c;
-  --border-1: #23252a;
-  --border-2: #34343a;
-  --border-3: #3e3e44;
-  --border-alpha: #ffffff14;
-  --text-1: #f7f8f8;
-  --text-2: #d0d6e0;
-  --text-3: #8a8f98;
-  --text-4: #62666d;
-  --accent: #7170ff;
-  --accent-hover: #828fff;
-  --accent-tint: #18182f;
-  --accent-solid: #5e6ad2;
+/* Dirección «cálido editorial» (design §2): papel claro, serifa en titulares y terracota como único acento. */
+:root, [data-theme="light"] {
+  color-scheme: light;
+  --bg-0: #fbf8f3;         /* fondo de la app y del detalle */
+  --bg-1: #fffdf9;         /* paneles: lista, tarjetas */
+  --bg-2: #f6f0e6;         /* hover */
+  --bg-3: #ffffff;         /* inputs */
+  --bg-4: #f1eadf;         /* chips y botón secundario */
+  --bg-5: #ece3d5;         /* pulsado */
+  --bg-6: #2b2219;         /* tooltips y avisos */
+  --bg-sidebar: #f3eee5;
+  --border-1: #ebe3d6;
+  --border-2: #dfd3c1;
+  --border-3: #cdbea8;
+  --border-alpha: #3b2a1414;
+  --text-1: #231c15;
+  --text-2: #4a4037;
+  --text-3: #6a5e50;       /* mín. 4.67:1 sobre cualquier superficie y en chips */
+  --text-4: #a89b8b;
+  --accent: #a93f22;       /* texto y enlaces: 6.0:1 sobre --bg-1, 5.0:1 sobre --accent-tint */
+  --accent-hover: #8f3519;
+  --accent-tint: #f8e4d6;
+  --accent-solid: #c2552d; /* botón primario, texto #fff (4.9:1) */
   --on-accent: #ffffff;
-  --red: #eb5757;
-  --orange: #fc7840;
-  --yellow: #f0bf00;
-  --green: #27a644;
-  --blue: #4ea7fc;
-  --teal: #00b8cc;
+  --red: #ad301e;
+  --orange: #904d05;
+  --yellow: #755a00;
+  --green: #376a34;
+  --blue: #2d628a;
+  --teal: #1f7a72;
+
+  --shadow-low: 0 1px 0 #3b2a140d, 0 1px 3px #3b2a1414;
+  --shadow-medium: 0 1px 0 #3b2a140a, 0 8px 22px -10px #6b4a1f40;
+  --shadow-high: 0 18px 44px -16px #6b4a1f52;
+}
+
+:root {
   --space-0_5: 0.125rem;
   --space-1: 0.25rem;
   --space-1_5: 0.375rem;
   --space-2: 0.5rem;
+  --space-2_5: 0.625rem;
   --space-3: 0.75rem;
+  --space-3_5: 0.875rem;
   --space-4: 1rem;
   --space-5: 1.25rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
+  --space-10: 2.5rem;
   --space-12: 3rem;
-  --radius-xs: 0.25rem;
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+  --radius-xs: 0.3125rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.125rem;
   --radius-pill: 9999px;
-  --shadow-low: 0 2px 4px #0000001a;
-  --shadow-medium: 0 4px 24px #00000033;
-  --shadow-high: 0 7px 32px #00000059;
-  --fs-micro: 0.6875rem;
-  --fs-mini: 0.75rem;
-  --fs-small: 0.8125rem;
+  --fs-micro: 0.75rem;
+  --fs-mini: 0.8125rem;
+  --fs-small: 0.875rem;
   --fs-regular: 0.9375rem;
   --fs-large: 1.0625rem;
-  --fs-title3: 1.25rem;
-  --fs-title2: 1.5rem;
-  --fs-title1: 2rem;
-  --h-control-sm: 1.5rem;
-  --h-control: 1.75rem;
-  --h-control-lg: 2rem;
-  --h-row: 2.25rem;
-  --h-row-2: 3.5rem;
-  --h-header: 3rem;
-  --sidebar-w: 14.5rem;
-  --measure: 45rem;
+  --fs-title3: 1.375rem;
+  --fs-title2: 1.875rem;
+  --fs-title1: 2.5rem;
+  --h-control-sm: 1.75rem;
+  --h-control: 2.25rem;
+  --h-control-lg: 2.625rem;
+  --h-row: 2.75rem;
+  --h-row-2: 4.25rem;
+  --h-header: 3.75rem;
+  --sidebar-w: 15.5rem;
+  --measure: 46rem;
+  --list-w: 24rem;
+  --aside-w: 19rem;
   --dur-quick: 100ms;
   --dur-regular: 160ms;
   --dur-slow: 250ms;
   --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
-  --font-ui: "Inter", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-ui: "Instrument Sans", system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
 }
 
 @media (prefers-reduced-motion: reduce) {

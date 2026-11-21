@@ -62,4 +62,18 @@ describe('AltaPage', () => {
     expect(form?.classList.contains('formulario')).toBe(true);
     expect(form?.classList.contains('login')).toBe(false);
   });
+
+  it('Cancelar vuelve a la bandeja', () => {
+    const fixture = montar(vi.fn());
+    const cancelar = (fixture.nativeElement as HTMLElement).querySelector('a.volver');
+
+    expect(cancelar?.getAttribute('href')).toBe('/tickets');
+    expect(cancelar?.textContent).toContain('Cancelar');
+  });
+
+  it('pone categoría y prioridad en la misma fila', () => {
+    const fixture = montar(vi.fn());
+
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.fila-campos select')).toHaveLength(2);
+  });
 });

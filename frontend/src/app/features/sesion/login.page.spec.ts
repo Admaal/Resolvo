@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, Router, provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../../core/auth.service';
 import { LoginPage } from './login.page';
@@ -52,5 +52,34 @@ describe('LoginPage', () => {
     expect(boton.textContent).toContain('Entrando');
     terminar();
     await entrando;
+  });
+
+  describe('volver', () => {
+    function conVolver(volver: string | null) {
+      TestBed.configureTestingModule({
+        imports: [LoginPage],
+        providers: [
+          provideRouter([]),
+          { provide: AuthService, useValue: { entrar: vi.fn().mockResolvedValue(undefined) } },
+          { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => volver } } } },
+        ],
+      });
+      const ir = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+      return { fixture: TestBed.createComponent(LoginPage), ir };
+    }
+
+    it('tras entrar vuelve a la ruta pedida', async () => {
+      const { fixture, ir } = conVolver('/tickets/abc?vista=mios');
+      await fixture.componentInstance.entrar();
+
+      expect(ir).toHaveBeenCalledWith('/tickets/abc?vista=mios');
+    });
+
+    it.each(['https://malo.example/', '//malo.example', 'tickets'])('ignora un volver externo o relativo: %s', async (volver) => {
+      const { fixture, ir } = conVolver(volver);
+      await fixture.componentInstance.entrar();
+
+      expect(ir).toHaveBeenCalledWith('/tickets');
+    });
   });
 });

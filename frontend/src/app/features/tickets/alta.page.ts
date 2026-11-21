@@ -1,40 +1,57 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { mensajeDeError } from '../../core/errores';
+import { Icono } from '../../shared/icono';
 import { Categoria } from './ticket.model';
 import { etiquetaPrioridad } from './etiquetas';
 import { TicketsService } from './tickets.service';
+import { TicketsStore } from './tickets.store';
 
 @Component({
   selector: 'app-alta',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink, Icono],
   template: `
-    <form class="formulario" (ngSubmit)="crear()">
-      <h1>Nuevo ticket</h1>
-      <label>Categoría
-        <select name="categoria" [(ngModel)]="categoriaId">
-          @for (categoria of categorias(); track categoria.id) {
-            <option [value]="categoria.id">{{ categoria.nombre }}</option>
-          }
-        </select>
-      </label>
-      <label>Prioridad
-        <select name="prioridad" [(ngModel)]="prioridad">
-          @for (opcion of prioridades; track opcion) {
-            <option [value]="opcion">{{ etiquetaPrioridad(opcion) }}</option>
-          }
-        </select>
-      </label>
-      <label>Asunto <input name="asunto" [(ngModel)]="asunto" maxlength="200" required /></label>
-      <label>Cuerpo <textarea name="cuerpo" [(ngModel)]="cuerpo" required></textarea></label>
-      @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
-      <button class="btn primario" type="submit" [disabled]="enviando()">{{ enviando() ? 'Abriendo…' : 'Abrir' }}</button>
-    </form>
+    <header class="panel-cabecera">
+      <a class="btn fantasma volver" routerLink="/tickets">
+        <rs-icono nombre="arrow-left" />
+        Cancelar
+      </a>
+      <span class="espacio"></span>
+    </header>
+    <div class="panel-cuerpo">
+      <form class="formulario ancho" (ngSubmit)="crear()">
+        <h1>Nuevo ticket</h1>
+        <p class="ayuda">Cuéntanos qué pasa. Cuanto más detalle, más rápido podremos resolverlo.</p>
+        <div class="fila-campos">
+          <label>Categoría
+            <select name="categoria" [(ngModel)]="categoriaId">
+              @for (categoria of categorias(); track categoria.id) {
+                <option [value]="categoria.id">{{ categoria.nombre }}</option>
+              }
+            </select>
+          </label>
+          <label>Prioridad
+            <select name="prioridad" [(ngModel)]="prioridad">
+              @for (opcion of prioridades; track opcion) {
+                <option [value]="opcion">{{ etiquetaPrioridad(opcion) }}</option>
+              }
+            </select>
+          </label>
+        </div>
+        <label>Asunto <input name="asunto" [(ngModel)]="asunto" maxlength="200" required /></label>
+        <label>Cuerpo <textarea name="cuerpo" [(ngModel)]="cuerpo" rows="8" required></textarea></label>
+        @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+        <div class="acciones">
+          <button class="btn primario" type="submit" [disabled]="enviando()">{{ enviando() ? 'Abriendo…' : 'Abrir ticket' }}</button>
+        </div>
+      </form>
+    </div>
   `,
 })
 export class AltaPage {
   private readonly tickets = inject(TicketsService);
+  private readonly store = inject(TicketsStore);
   private readonly router = inject(Router);
   readonly categorias = signal<Categoria[]>([]);
   readonly error = signal('');
@@ -64,6 +81,7 @@ export class AltaPage {
         asunto: this.asunto,
         cuerpo: this.cuerpo,
       });
+      void this.store.cargar();
       await this.router.navigate(['/tickets', ticket.id]);
     } catch (fallo) {
       this.error.set(mensajeDeError(fallo));
