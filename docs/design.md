@@ -82,7 +82,7 @@ La misma dirección de noche: carbón tostado en vez de negro azulado, y terraco
 Un estado nunca va solo con color: lleva siempre icono y texto (§4.2).
 
 ### 2.4 Tipografía
-- **Display:** `Fraunces` (Google Fonts, variable con eje óptico) en titulares de página, asunto del ticket, asuntos de la bandeja y la marca. Peso 500–600, tracking −0.01em.
+- **Display:** `Fraunces` (variable, con eje óptico) en titulares de página, asunto del ticket, asuntos de la bandeja y la marca. Peso 500–600, tracking −0.01em.
 - **UI:** `Instrument Sans`, sans humanista que acompaña a la serifa sin competir. Texto por defecto a 15px.
 - **Mono** (IDs de ticket, tiempos de SLA, citas, contadores): `Geist Mono`.
 - Evitar Inter, Roboto y Arial: son lo que hacía la UI genérica y lejana.
@@ -382,7 +382,7 @@ Revisa además estos puntos:
   - `rs-empty-state`
   - `rs-toast`
 - Menús, popovers y tooltips con `@angular/cdk/overlay` y `a11y` (FocusTrap, ListKeyManager para la bandeja y la paleta de comandos).
-- Fuentes: Fraunces, Instrument Sans y Geist Mono desde Google Fonts (`display=swap`); autoalojarlas en woff2 queda pendiente.
+- Fuentes autoalojadas en `frontend/public/fonts/` (woff2 variables, solo subconjunto latino, licencia SIL OFL con su texto en la misma carpeta) y declaradas en `src/styles/fuentes.css` con `font-display: swap`. Fraunces e Instrument Sans se precargan en `index.html`; no hay peticiones a Google.
 
 ## 10. Valores pendientes de validar
 - Las alturas reales de filas, botones e inputs y los paddings no se pudieron medir (las webs muestran maquetas de marketing). Los valores de §2.5 son una propuesta; valídalos con un prototipo.
