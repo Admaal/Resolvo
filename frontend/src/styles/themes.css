@@ -1,29 +1,35 @@
-[data-theme="light"] {
-  color-scheme: light;
-  --on-accent: #ffffff;
-  --bg-0: #f7f7f8;
-  --bg-1: #ffffff;
-  --bg-2: #f9f9fc;
-  --bg-3: #f3f3f6;
-  --bg-4: #ececf1;
-  --bg-5: #e4e4ea;
-  --bg-6: #1f1f28;
-  --border-1: #e7e7ef;
-  --border-2: #d6d6df;
-  --border-3: #c4c4cf;
-  --border-alpha: #0000000f;
-  --text-1: #1f1f28;
-  --text-2: #3c3c48;
-  --text-3: #636370;
-  --text-4: #9898a9;
-  --accent: #5e6ad2;
-  --accent-hover: #4f5bc4;
-  --accent-tint: #eef0fd;
-  --accent-solid: #5e6ad2;
-  --red: #c4302b;
-  --orange: #b25e09;
-  --yellow: #8a6a00;
-  --green: #1e7f36;
-  --blue: #2563c9;
-  --teal: #0e7c8a;
+/* Tema oscuro cálido (design §2.2): la misma dirección de noche, carbón tostado y terracota clara. */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-0: #17140f;
+  --bg-1: #1e1a14;
+  --bg-2: #241f18;
+  --bg-3: #26211a;
+  --bg-4: #2b251d;
+  --bg-5: #342c22;
+  --bg-6: #3d3428;
+  --bg-sidebar: #120f0b;
+  --border-1: #2e2820;
+  --border-2: #40372b;
+  --border-3: #52473a;
+  --border-alpha: #fff3e014;
+  --text-1: #f6efe4;
+  --text-2: #d6cbbb;
+  --text-3: #a39684;
+  --text-4: #75695b;
+  --accent: #f0916a;
+  --accent-hover: #f5a684;
+  --accent-tint: #3a2419;
+  --accent-solid: #e8805a;
+  --on-accent: #1c0f08;
+  --red: #ff8a73;
+  --orange: #f0a45b;
+  --yellow: #f2c35b;
+  --green: #8fd18a;
+  --blue: #84b6e8;
+  --teal: #6cc8bd;
+
+  --shadow-low: 0 1px 2px #0000004d;
+  --shadow-medium: 0 8px 24px -8px #00000080;
+  --shadow-high: 0 20px 48px -12px #000000a6;
 }
