@@ -50,6 +50,8 @@ jobs:
         if: steps.secretos.outputs.hay == 'true'
         working-directory: frontend
         run: |
+          # El lockfile lo genera npm 11 (packageManager); el npm de Node 22 lo rechaza.
+          npm install --global npm@11.6.2
           npm ci
           npm run build
       - name: Desplegar en Pages (producción)
