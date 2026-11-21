@@ -5,7 +5,9 @@ import com.admaal.resolvo.application.ConsultaTickets;
 import com.admaal.resolvo.application.Pagina;
 import com.admaal.resolvo.domain.CategoriaId;
 import com.admaal.resolvo.domain.Comentario;
+import com.admaal.resolvo.domain.ComentarioId;
 import com.admaal.resolvo.domain.EstadoTicket;
+import com.admaal.resolvo.domain.MotivoModeracion;
 import com.admaal.resolvo.domain.Prioridad;
 import com.admaal.resolvo.domain.Ticket;
 import com.admaal.resolvo.domain.TicketId;
@@ -15,6 +17,7 @@ import com.admaal.resolvo.infrastructure.AplicacionDeResolvo;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -114,6 +117,30 @@ public class TicketControlador {
     return ComentarioRespuesta.de(comentario);
   }
 
+  /** Un agente o un admin oculta un comentario con un motivo. Nunca se borra. */
+  @PostMapping("/{id}/comentarios/{comentarioId}/ocultacion")
+  ComentarioRespuesta ocultar(
+      @PathVariable UUID id, @PathVariable UUID comentarioId, @RequestBody Ocultacion cuerpo) {
+    Actor actor = Actor.actual();
+    return ComentarioRespuesta.de(
+        aplicacion.ocultarComentario(
+            actor.organizacionId(),
+            new TicketId(id),
+            new ComentarioId(comentarioId),
+            actor.id(),
+            actor.rol(),
+            cuerpo.motivo()));
+  }
+
+  /** Solo un admin devuelve un comentario oculto al hilo. */
+  @DeleteMapping("/{id}/comentarios/{comentarioId}/ocultacion")
+  ComentarioRespuesta restaurar(@PathVariable UUID id, @PathVariable UUID comentarioId) {
+    Actor actor = Actor.actual();
+    return ComentarioRespuesta.de(
+        aplicacion.restaurarComentario(
+            actor.organizacionId(), new TicketId(id), new ComentarioId(comentarioId), actor.rol()));
+  }
+
   public record Alta(UUID categoriaId, Prioridad prioridad, String asunto, String cuerpo) {}
 
   public record Transicion(EstadoTicket estado) {}
@@ -122,17 +149,36 @@ public class TicketControlador {
 
   public record ComentarioAlta(String cuerpo, boolean interno) {}
 
+  public record Ocultacion(MotivoModeracion motivo) {}
+
+  /** Para un cliente, {@code cuerpo} es nulo y {@code oculto} no dice quien ni por que (lo decide el dominio). */
   public record ComentarioRespuesta(
-      UUID id, UUID autorId, String cuerpo, boolean interno, Instant creadoEn) {
+      UUID id,
+      UUID autorId,
+      String cuerpo,
+      boolean interno,
+      Instant creadoEn,
+      boolean retirado,
+      Oculto oculto) {
     static ComentarioRespuesta de(Comentario comentario) {
+      var moderacion = comentario.moderacion();
       return new ComentarioRespuesta(
           comentario.id().valor(),
           comentario.autorId().valor(),
           comentario.cuerpo(),
           comentario.interno(),
-          comentario.creadoEn());
+          comentario.creadoEn(),
+          comentario.retirado(),
+          moderacion == null
+              ? null
+              : new Oculto(
+                  moderacion.motivo(),
+                  moderacion.por() == null ? null : moderacion.por().valor(),
+                  moderacion.en()));
     }
   }
+
+  public record Oculto(MotivoModeracion motivo, UUID porId, Instant en) {}
 
   public record TicketResumen(
       UUID id,

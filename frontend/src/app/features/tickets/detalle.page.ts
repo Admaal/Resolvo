@@ -56,15 +56,6 @@ import { TicketsStore, filtrarPorVista } from './tickets.store';
             <div class="detalle-ticket">
               <div class="conversacion">
                 <h1 class="asunto">{{ actual.asunto }}</h1>
-                <div class="chips">
-                  <span class="chip" [class]="claseEstado(actual.estado)">{{ etiquetaEstado(actual.estado) }}</span>
-                  <span class="chip" [class]="clasePrioridad(actual.prioridad)">{{ etiquetaPrioridad(actual.prioridad) }}</span>
-                  @if (slaCorre(actual.estado)) {
-                    <span class="chip" [class]="claseSla(actual)">
-                      <span class="visually-hidden">{{ textoSla(nivel(actual)) }}: </span>{{ tiempo(actual) }}
-                    </span>
-                  }
-                </div>
                 <app-ticket-thread
                   [cuerpo]="actual.cuerpo"
                   [abiertoEn]="actual.abiertoEn"
@@ -74,8 +65,12 @@ import { TicketsStore, filtrarPorVista } from './tickets.store';
                   [yoId]="yo()"
                   [etiquetaOtros]="puedeGestionar() ? 'Cliente' : 'Soporte'"
                   [puedeNota]="puedeGestionar()"
+                  [puedeModerar]="puedeGestionar()"
+                  [puedeRestaurar]="esAdmin()"
                   [error]="errorComentario()"
-                  (enviado)="comentar($event)" />
+                  (enviado)="comentar($event)"
+                  (ocultado)="ocultar($event)"
+                  (restaurado)="restaurar($event)" />
               </div>
               <aside class="lateral" aria-label="Propiedades y asistente">
                 <section class="propiedades">
@@ -98,7 +93,12 @@ import { TicketsStore, filtrarPorVista } from './tickets.store';
                     <dt>Vence</dt>
                     <dd>
                       <time [attr.datetime]="actual.venceEl">{{ actual.venceEl | date: 'dd/MM/yyyy HH:mm' }}</time>
-                      @if (slaCorre(actual.estado)) { <span class="ayuda"> · {{ tiempo(actual) }}</span> }
+                      @if (slaCorre(actual.estado)) {
+                        <span [class]="claseSla(actual)">
+                          <rs-icono [nombre]="nivel(actual) === 'incumplido' ? 'alert' : 'clock'" [tam]="12" />
+                          <span class="visually-hidden">{{ textoSla(nivel(actual)) }}: </span>{{ tiempo(actual) }}
+                        </span>
+                      }
                     </dd>
                     <dt>Abierto</dt>
                     <dd><time [attr.datetime]="actual.abiertoEn">{{ actual.abiertoEn | date: 'dd/MM/yyyy HH:mm' }}</time></dd>
@@ -211,6 +211,10 @@ export class DetallePage {
     return this.auth.rol() !== 'CLIENTE';
   }
 
+  esAdmin(): boolean {
+    return this.auth.rol() === 'ADMIN';
+  }
+
   nombreDe(id: string | null, porDefecto: string): string {
     if (id && id === this.yo()) return 'Tú';
     return (id && this.nombres()[id]) || porDefecto;
@@ -218,14 +222,6 @@ export class DetallePage {
 
   categoriaDe(ticket: TicketDetalle): string | undefined {
     return this.categorias().find((categoria) => categoria.id === ticket.categoriaId)?.nombre;
-  }
-
-  claseEstado(estado: string): string {
-    return `chip ${estado.toLowerCase()}`;
-  }
-
-  clasePrioridad(prioridad: string): string {
-    return `chip prioridad-${prioridad.toLowerCase()}`;
   }
 
   nivel(ticket: TicketDetalle) {
@@ -237,7 +233,7 @@ export class DetallePage {
   }
 
   claseSla(ticket: TicketDetalle): string {
-    return `chip sla-${nivelSla(ticket)}`;
+    return `sla sla-${nivelSla(ticket)}`;
   }
 
   async transicionar(estado: string): Promise<void> {
@@ -262,11 +258,24 @@ export class DetallePage {
   }
 
   async comentar(evento: { cuerpo: string; interno: boolean }): Promise<void> {
+    await this.actuarSobreElHilo((id) => this.tickets.comentar(id, evento.cuerpo, evento.interno));
+  }
+
+  async ocultar(evento: { id: string; motivo: string }): Promise<void> {
+    await this.actuarSobreElHilo((id) => this.tickets.ocultar(id, evento.id, evento.motivo));
+  }
+
+  async restaurar(comentarioId: string): Promise<void> {
+    await this.actuarSobreElHilo((id) => this.tickets.restaurar(id, comentarioId));
+  }
+
+  /** Hace algo en el hilo del ticket y lo recarga; si falla, lo dice en lenguaje claro bajo el hilo. */
+  private async actuarSobreElHilo(accion: (ticketId: string) => Promise<unknown>): Promise<void> {
     const actual = this.ticket();
     if (!actual) return;
     this.errorComentario.set('');
     try {
-      await this.tickets.comentar(actual.id, evento.cuerpo, evento.interno);
+      await accion(actual.id);
       this.ticket.set(await this.tickets.detalle(actual.id));
     } catch (fallo) {
       this.errorComentario.set(mensajeDeError(fallo));

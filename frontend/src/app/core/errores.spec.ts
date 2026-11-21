@@ -11,6 +11,8 @@ describe('mensajeDeError', () => {
     ['conflicto', 'ha cambiado'],
     ['invalido', 'Revisa los datos'],
     ['prohibido', 'permiso'],
+    ['demasiados-enlaces', 'enlaces'],
+    ['demasiadas-peticiones', 'Espera'],
   ])('traduce el código %s', (codigo, texto) => {
     expect(mensajeDeError(http(codigo))).toContain(texto);
   });

@@ -3,6 +3,7 @@ package com.admaal.resolvo.infrastructure.web;
 import com.admaal.resolvo.application.IaNoDisponible;
 import com.admaal.resolvo.application.PresupuestoAgotado;
 import com.admaal.resolvo.domain.CredencialesInvalidas;
+import com.admaal.resolvo.domain.DemasiadosEnlaces;
 import com.admaal.resolvo.domain.NoEncontrado;
 import com.admaal.resolvo.domain.Prohibido;
 import com.admaal.resolvo.domain.SinFuentes;
@@ -35,6 +36,11 @@ public class ErroresApi {
 
   @ExceptionHandler(TextoInvalido.class)
   ResponseEntity<Map<String, String>> invalido(TextoInvalido error) {
+    return ResponseEntity.unprocessableEntity().body(Map.of("error", error.getMessage()));
+  }
+
+  @ExceptionHandler(DemasiadosEnlaces.class)
+  ResponseEntity<Map<String, String>> demasiadosEnlaces(DemasiadosEnlaces error) {
     return ResponseEntity.unprocessableEntity().body(Map.of("error", error.getMessage()));
   }
 

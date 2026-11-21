@@ -9,7 +9,7 @@ Resolvo es una herramienta de trabajo diaria para gente que pasa horas en la ban
 
 **Principios**
 1. **Cercano antes que denso.** Texto base de 15px, filas con aire y asuntos en serifa a 17px. La jerarquía va por familia y peso, no por letra diminuta.
-2. **El color significa algo.** Terracota para la acción y la IA; rojo, ámbar y verde solo para SLA y estado.
+2. **El color significa algo, y solo cuando algo va mal o pide acción.** Terracota para la acción y la IA; rojo, ámbar y verde solo para SLA y estado. Lo normal va en neutro: un ticket en plazo, de prioridad baja o media, no pinta nada de color. Cada dato se dice una sola vez por pantalla (el estado no sale como icono y como chip, ni en el titular y en Propiedades) y cada vista tiene un único botón primario.
 3. **La IA es verificable.** Toda afirmación lleva su cita a la fuente, y toda propuesta es editable antes de enviarla.
 4. **Teclado primero.** Cada acción frecuente tiene atajo, y la paleta de comandos (⌘K) llega a todo.
 
@@ -196,10 +196,11 @@ Icono circular de 14px, al estilo de Linear [aprox.], siempre con tooltip o text
 - **Barra superior:** título de la vista, tabs con contador (Triage 12 · Pendiente 30 · Todos), un botón "Filtros" que abre un menú de campos (Asignado, Estado, Prioridad, Etiqueta, Cliente, Canal, SLA) y un botón "Vista" con opciones de densidad, agrupación y orden.
 - **Filtros aplicados:** chips eliminables bajo la barra ("Estado: Abierto ×").
 - **Agrupación por defecto por urgencia** (patrón Plain): primero "SLA incumplido", luego "En riesgo", "Urgente" y "Resto". La cabecera de cada grupo lleva icono del color del grupo, nombre en 590 y contador en `--text-3`, y es colapsable.
-- **Fila cómoda (2 líneas):**
-  - Línea 1: checkbox (visible en hover o si hay selección), icono de estado, cliente o empresa en 510, ID en mono `--text-3` ("RS-24629") y asunto en `--text-1`.
-  - Línea 2: vista previa en `--text-3`, cortada en una línea, más los chips de etiqueta.
-  - A la derecha: chip de SLA, avatar del asignado (20px) y hora relativa en `--fs-micro`.
+- **Fila calmada (construida el 2026-11-21, sustituye a la de chips):** tres líneas, sin píldoras.
+  - Línea 1: ID en mono `--text-3` y, a la derecha, el SLA como **texto** en mono con icono (reloj o alerta). En plazo va en `--text-3`; en riesgo en `--sla-risk`; incumplido en `--sla-breached` y peso 600. Solo se pinta mientras el ticket está abierto o pendiente, y lleva texto accesible («SLA incumplido: −5d 17h»).
+  - Línea 2: el asunto en serifa (`--fs-large`), hasta dos líneas.
+  - Línea 3: el icono de estado con su nombre en `--text-3` y, solo si es Alta o Urgente, la prioridad con icono y su color. Baja y Media no se dicen en la fila.
+  - Sin avatar, vista previa ni hora en la fila: son candidatos a la densidad «cómoda» (pendiente).
 - **Estados de fila:**
   - hover: `--bg-2`
   - seleccionada: `--accent-tint` con una barra izquierda de 2px en `--accent`
@@ -232,6 +233,7 @@ Icono circular de 14px, al estilo de Linear [aprox.], siempre con tooltip o text
 - **Input:** "Pregunta sobre este ticket…" con envío por ↵.
 - **Estados:** pensando (tres puntos o shimmer en el texto "Analizando…"), streaming (el texto aparece por bloques, sin cursor parpadeante), error con "Reintentar" y deshabilitado si la KB no está configurada.
 - Todo lo que viene de la IA lleva su marca: un icono ✦ de 12px en `--ai`. No hay degradados "mágicos".
+- El panel va en `--bg-1` con borde `--border-1` y sin sombra ni degradado. «Aplicar» y «Aprobar y publicar» son botones secundarios: el único primario del ticket es «Enviar».
 
 ### 4.7 Botones
 | Variante | Fondo | Texto | Borde | Hover |
@@ -289,8 +291,18 @@ Navegación secundaria a la izquierda (General, Miembros, Equipos, SLA, Canales,
   - `?`: ver la lista de atajos
 - `kbd`: mono en `--fs-micro`, `--bg-4`, borde `--border-2` y `--radius-xs`.
 
+### 4.12b Moderación de comentarios
+Cualquier persona con acceso puede escribir, así que hay que poder retirar lo que sobre sin perder el rastro.
+- **Quién:** un agente o un admin **oculta** con un motivo (Spam, Ofensivo u Otro); solo un admin **restaura**. Un cliente no puede hacer ninguna de las dos cosas. Nunca se borra: queda quién, cuándo y por qué.
+- **Ocultar:** botón fantasma «Ocultar» (icono de ojo tachado) en la cabecera de cada comentario. Abre en línea un selector de motivo, «Ocultar comentario» (secundario) y «Cancelar». No hay modal.
+- **Lo oculto, para el equipo:** una sola línea en `--text-3` con icono: «Oculto por Ana · Spam», con «Ver texto» y, para el admin, «Restaurar».
+- **Lo oculto, para el cliente:** «Este comentario se ha retirado.», sin el texto y sin saber quién ni por qué (lo decide el dominio, no la interfaz).
+- **Frenos automáticos:** 10 comentarios por usuario y minuto (429) y, para un cliente, como mucho 3 enlaces por comentario (422 `demasiados-enlaces`). Un agente o un admin pueden pegar los que quieran.
+- **Demo pública:** con `RESOLVO_DEMO_PURGAR_COMENTARIOS=true`, al arrancar y cada 24 h se borran los comentarios de visitantes de más de 24 h; los de la semilla se conservan.
+
 ### 4.12 Otros
-- **Avatares:** 16, 20, 24 o 32px, circulares, con inicial sobre un color derivado del nombre (paleta neutra y desaturada).
+- **Avatares:** 16, 20, 24 o 32px, circulares, con inicial sobre `--bg-4` y texto `--text-2` (construido así el 2026-11-21: ya no son terracota). El color derivado del nombre sigue pendiente.
+- **Nota interna:** el aviso es icono (candado) y texto en ámbar, sin píldora.
 - **Etiquetas:** punto de color de 8px y texto `--text-2` sobre `--bg-4` con `--radius-xs`, al estilo Linear (sin fondo de color pleno).
 - **Toasts:** abajo a la izquierda, sobre `--bg-6`, con "Deshacer" en las acciones destructivas (5s).
 - **Tooltips:** `--bg-6`, `--fs-mini`, retardo de 400ms y atajo incluido.

@@ -3,8 +3,14 @@ package com.admaal.resolvo.domain;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public final class Ticket {
+
+  /** Un cliente puede pegar hasta este numero de enlaces por comentario (frena el spam). */
+  private static final int MAXIMO_ENLACES_DE_CLIENTE = 3;
+
+  private static final Pattern ENLACE = Pattern.compile("(?i)(?:https?://(?:www\\.)?|www\\.)");
 
   private final TicketId id;
   private final OrganizacionId organizacionId;
@@ -149,15 +155,74 @@ public final class Ticket {
     if (interno && rol == Rol.CLIENTE) {
       throw new Prohibido();
     }
+    if (rol == Rol.CLIENTE && contarEnlaces(cuerpoComentario) > MAXIMO_ENLACES_DE_CLIENTE) {
+      throw new DemasiadosEnlaces();
+    }
     Comentario comentario = new Comentario(comentarioId, autor, cuerpoComentario, interno, ahora);
     comentarios.add(comentario);
     return comentario;
   }
 
+  /** Un agente o un admin retira un comentario con un motivo. Nunca se borra. */
+  public Comentario ocultarComentario(
+      ComentarioId comentarioId,
+      UsuarioId actor,
+      Rol rol,
+      MotivoModeracion motivo,
+      Instant ahora) {
+    if (rol == Rol.CLIENTE) {
+      throw new Prohibido();
+    }
+    if (motivo == null) {
+      throw new TextoInvalido();
+    }
+    int posicion = posicionDe(comentarioId);
+    Comentario actual = comentarios.get(posicion);
+    if (actual.retirado()) {
+      return actual;
+    }
+    Comentario oculto = actual.moderado(new Moderacion(motivo, actor, ahora));
+    comentarios.set(posicion, oculto);
+    return oculto;
+  }
+
+  /** Solo un admin devuelve un comentario retirado al hilo. */
+  public Comentario restaurarComentario(ComentarioId comentarioId, Rol rol) {
+    if (rol != Rol.ADMIN) {
+      throw new Prohibido();
+    }
+    int posicion = posicionDe(comentarioId);
+    Comentario restaurado = comentarios.get(posicion).moderado(null);
+    comentarios.set(posicion, restaurado);
+    return restaurado;
+  }
+
+  private int posicionDe(ComentarioId comentarioId) {
+    for (int i = 0; i < comentarios.size(); i++) {
+      if (comentarios.get(i).id().equals(comentarioId)) {
+        return i;
+      }
+    }
+    throw new NoEncontrado();
+  }
+
+  private static int contarEnlaces(String texto) {
+    return (int) ENLACE.matcher(texto).results().count();
+  }
+
+  /** Lo que ve cada rol: el cliente no ve notas internas ni el texto de lo retirado. */
   public List<Comentario> visiblesPara(Rol rol) {
     if (rol == Rol.CLIENTE) {
-      return comentarios.stream().filter(comentario -> !comentario.interno()).toList();
+      return comentarios.stream()
+          .filter(comentario -> !comentario.interno())
+          .map(comentario -> comentario.retirado() ? comentario.sinCuerpo() : comentario)
+          .toList();
     }
+    return List.copyOf(comentarios);
+  }
+
+  /** Todos los comentarios tal como se guardan, retirados e internos incluidos. */
+  public List<Comentario> todos() {
     return List.copyOf(comentarios);
   }
 

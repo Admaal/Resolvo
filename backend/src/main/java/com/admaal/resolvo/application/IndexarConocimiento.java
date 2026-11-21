@@ -47,7 +47,9 @@ public final class IndexarConocimiento {
       return;
     }
     StringBuilder texto = new StringBuilder(ticket.asunto()).append('\n').append(ticket.cuerpo());
-    ticket.visiblesPara(Rol.CLIENTE).forEach(c -> texto.append('\n').append(c.cuerpo()));
+    ticket.visiblesPara(Rol.CLIENTE).stream()
+        .filter(c -> !c.retirado())
+        .forEach(c -> texto.append('\n').append(c.cuerpo()));
     indexar(
         FuenteConocimiento.TICKET,
         ticket.id().valor(),

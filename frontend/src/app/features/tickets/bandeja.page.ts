@@ -74,18 +74,26 @@ const ICONOS_GRUPO: Record<ClaveGrupo, NombreIcono> = {
                           queryParamsHandling="preserve"
                           routerLinkActive="activa"
                           ariaCurrentWhenActive="page">
-                          <rs-estado [estado]="ticket.estado" />
                           <span class="fila-texto">
-                            <span class="fila-linea">
+                            <span class="fila-cabecera">
                               <span class="codigo">{{ ticket.codigo }}</span>
-                              <span class="fila-asunto">{{ ticket.asunto }}</span>
-                            </span>
-                            <span class="fila-meta">
-                              <span class="chip" [class]="claseEstado(ticket.estado)">{{ etiquetaEstado(ticket.estado) }}</span>
-                              <span class="chip" [class]="clasePrioridad(ticket)">{{ etiquetaPrioridad(ticket.prioridad) }}</span>
                               @if (slaCorre(ticket.estado)) {
-                                <span class="chip" [class]="claseSla(ticket)">
+                                <span [class]="claseSla(ticket)">
+                                  <rs-icono [nombre]="iconoSla(ticket)" [tam]="12" />
                                   <span class="visually-hidden">{{ textoSla(nivel(ticket)) }}: </span>{{ tiempo(ticket) }}
+                                </span>
+                              }
+                            </span>
+                            <span class="fila-asunto">{{ ticket.asunto }}</span>
+                            <span class="fila-meta">
+                              <span class="fila-estado">
+                                <rs-estado [estado]="ticket.estado" />
+                                {{ etiquetaEstado(ticket.estado) }}
+                              </span>
+                              @if (destacaPrioridad(ticket)) {
+                                <span [class]="clasePrioridad(ticket)">
+                                  <rs-icono nombre="zap" [tam]="12" />
+                                  {{ etiquetaPrioridad(ticket.prioridad) }}
                                 </span>
                               }
                             </span>
@@ -160,15 +168,20 @@ export class BandejaPage {
     return tiempoSla(ticket.venceEl);
   }
 
-  claseEstado(estado: string): string {
-    return `chip ${estado.toLowerCase()}`;
-  }
-
   clasePrioridad(ticket: TicketResumen): string {
-    return `chip prioridad-${ticket.prioridad.toLowerCase()}`;
+    return `fila-prioridad prioridad-${ticket.prioridad.toLowerCase()}`;
   }
 
   claseSla(ticket: TicketResumen): string {
-    return `chip sla-${nivelSla(ticket)}`;
+    return `sla sla-${nivelSla(ticket)}`;
+  }
+
+  iconoSla(ticket: TicketResumen): NombreIcono {
+    return nivelSla(ticket) === 'incumplido' ? 'alert' : 'clock';
+  }
+
+  /** El color y el icono de prioridad solo aparecen cuando importa: Baja y Media no se dicen. */
+  destacaPrioridad(ticket: TicketResumen): boolean {
+    return ticket.prioridad === 'ALTA' || ticket.prioridad === 'URGENTE';
   }
 }

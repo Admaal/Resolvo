@@ -61,14 +61,44 @@ describe('BandejaPage', () => {
     expect(el(fixture, '.estado-vacio')).toBeNull();
   });
 
-  it('lista los tickets con estado legible y prioridad', async () => {
-    const fixture = montar(() => Promise.resolve({ elementos: [ticket], pagina: 0, tamano: 20, total: 1 }));
+  async function conUnTicket(cambios: Partial<TicketResumen>) {
+    const fixture = montar(() =>
+      Promise.resolve({ elementos: [{ ...ticket, ...cambios }], pagina: 0, tamano: 20, total: 1 }),
+    );
     await esperar();
     fixture.detectChanges();
+    return fixture;
+  }
+
+  it('la fila dice el estado en texto junto a su icono, sin chip', async () => {
+    const fixture = await conUnTicket({});
 
     expect(el(fixture, 'ul.lista-tickets li a.fila')).not.toBeNull();
-    expect(el(fixture, '.chip.abierto')?.textContent?.trim()).toBe('Abierto');
-    expect(el(fixture, '.chip.prioridad-alta')?.textContent?.trim()).toBe('Alta');
+    expect(el(fixture, '.fila .chip')).toBeNull();
+    expect(el(fixture, '.fila .fila-estado')?.textContent?.trim()).toBe('Abierto');
+    expect(el(fixture, '.fila .fila-estado rs-estado')).not.toBeNull();
+  });
+
+  it('la prioridad alta se dice en texto con icono, sin chip', async () => {
+    const fixture = await conUnTicket({ prioridad: 'ALTA' });
+
+    expect(el(fixture, '.fila .fila-prioridad')?.textContent?.trim()).toBe('Alta');
+    expect(el(fixture, '.fila .fila-prioridad rs-icono')).not.toBeNull();
+  });
+
+  it('la prioridad urgente se dice en texto con su clase', async () => {
+    const fixture = await conUnTicket({ prioridad: 'URGENTE' });
+
+    expect(el(fixture, '.fila .fila-prioridad.prioridad-urgente')?.textContent?.trim()).toBe('Urgente');
+  });
+
+  it('la prioridad baja o media no se pinta en la fila', async () => {
+    for (const prioridad of ['BAJA', 'MEDIA']) {
+      TestBed.resetTestingModule();
+      const fixture = await conUnTicket({ prioridad });
+
+      expect(el(fixture, '.fila .fila-prioridad')).toBeNull();
+    }
   });
 
   it('el título refleja la vista', async () => {
@@ -129,12 +159,14 @@ describe('BandejaPage', () => {
       expect(el(fixture, '.grupo-titulo')).toBeNull();
     });
 
-    it('enseña el tiempo de SLA con su significado accesible', async () => {
+    it('el SLA incumplido es texto con icono y significado accesible, no una píldora', async () => {
       const fixture = await cargada();
-      const sla = (fixture.nativeElement as HTMLElement).querySelector('.fila .chip.sla-incumplido') as HTMLElement;
+      const sla = (fixture.nativeElement as HTMLElement).querySelector('.fila .sla.sla-incumplido') as HTMLElement;
 
+      expect(sla.classList.contains('chip')).toBe(false);
       expect(sla.textContent).toContain('SLA incumplido');
-      expect(sla.textContent).toContain('\u2212');
+      expect(sla.textContent).toContain('−');
+      expect(sla.querySelector('rs-icono')).not.toBeNull();
     });
 
     it('lleva un hueco para el detalle del ticket elegido', async () => {
@@ -151,7 +183,7 @@ describe('BandejaPage', () => {
       await esperar();
       fixture.detectChanges();
 
-      expect(el(fixture, '.chip.resuelto')).not.toBeNull();
+      expect(el(fixture, '.fila .fila-estado')?.textContent?.trim()).toBe('Resuelto');
       expect(el(fixture, '[class*="sla-"]')).toBeNull();
     });
   });

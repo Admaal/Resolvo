@@ -171,8 +171,8 @@
   }
   .nav a rs-icono { color: var(--text-3); }
   .nav a:hover { background: var(--bg-2); }
-  .nav a[aria-current="page"] { background: var(--bg-1); color: var(--text-1); box-shadow: var(--shadow-low); }
-  .nav a[aria-current="page"] rs-icono { color: var(--accent); }
+  .nav a[aria-current="page"] { background: var(--bg-5); color: var(--text-1); }
+  .nav a[aria-current="page"] rs-icono { color: var(--text-1); }
   .nav .contador {
     margin-inline-start: auto;
     font-family: var(--font-mono);
@@ -340,11 +340,9 @@
     padding: var(--space-4) var(--space-5) var(--space-2);
     background: var(--bg-1);
     font-family: var(--font-ui);
-    font-size: var(--fs-micro);
+    font-size: var(--fs-small);
     font-weight: 600;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--text-3);
+    color: var(--text-2);
   }
   .grupo-titulo .n { color: var(--text-3); font-weight: 500; }
   .grupo.incumplido .grupo-titulo rs-icono { color: var(--sla-breached); }
@@ -364,13 +362,12 @@
     border-radius: var(--radius-lg);
     text-decoration: none;
     color: inherit;
-    transition: background-color var(--dur-regular) var(--ease-out-quad), box-shadow var(--dur-regular) var(--ease-out-quad);
+    transition: background-color var(--dur-regular) var(--ease-out-quad);
   }
-  .fila rs-estado { margin-block-start: 0.35rem; }
   .fila:hover { background: var(--bg-2); }
-  .fila.activa { background: var(--bg-3); border-color: var(--border-1); box-shadow: var(--shadow-medium); }
+  .fila.activa { background: var(--bg-5); }
   .fila-texto { display: flex; flex-direction: column; gap: var(--space-1_5); min-inline-size: 0; flex: 1; }
-  .fila-linea { display: flex; flex-direction: column; gap: var(--space-0_5); min-inline-size: 0; }
+  .fila-cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); min-block-size: 1.25rem; }
   .fila-asunto {
     display: -webkit-box;
     -webkit-box-orient: vertical;
@@ -384,7 +381,15 @@
     overflow: hidden;
     text-wrap: pretty;
   }
-  .fila-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1_5); }
+  .fila-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); font-size: var(--fs-small); color: var(--text-3); }
+  .fila-estado, .fila-prioridad, .sla { display: inline-flex; align-items: center; gap: var(--space-1_5); }
+  .fila-prioridad { font-weight: 500; }
+  .fila-prioridad.prioridad-urgente { color: var(--priority-urgent); }
+  .fila-prioridad.prioridad-alta { color: var(--priority-high); }
+  /* El SLA es texto: neutro mientras hay plazo, de color solo cuando va mal (design §4.3) */
+  .sla { flex: none; font-family: var(--font-mono); font-size: var(--fs-small); font-variant-numeric: tabular-nums; color: var(--sla-ok); }
+  .sla.sla-riesgo { color: var(--sla-risk); }
+  .sla.sla-incumplido { color: var(--sla-breached); font-weight: 600; }
   .codigo { font-family: var(--font-mono); color: var(--text-3); font-size: var(--fs-mini); flex: none; }
 
   .esqueleto {
@@ -440,7 +445,7 @@
   .chip.sla-incumplido::before { content: "!" / ""; font-weight: 700; }
   .chip.prioridad-urgente { --chip: var(--priority-urgent); }
   .chip.prioridad-alta { --chip: var(--priority-high); }
-  .chip.nota-interna { --chip: var(--yellow); }
+  .nota-interna { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--yellow); font-weight: 500; }
   .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-block-end: var(--space-4); }
 
   /* Detalle del ticket: conversación y, al lado, propiedades y asistente */
@@ -470,7 +475,6 @@
     background: var(--bg-1);
     border: 1px solid var(--border-1);
     border-radius: var(--space-1) var(--radius-xl) var(--radius-xl) var(--radius-xl);
-    box-shadow: var(--shadow-low);
   }
   .mensaje.comentario.interno {
     background: color-mix(in srgb, var(--yellow) 7%, var(--bg-1));
@@ -479,14 +483,30 @@
   }
   .mensaje-cabecera { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-1_5); color: var(--text-3); font-size: var(--fs-small); }
   .autor { font-weight: 600; color: var(--text-1); }
+
+  /* Moderación: ocultar es una acción discreta; lo retirado se pliega en una línea con icono y texto */
+  .mensaje-cabecera .ocultar { margin-inline-start: auto; min-block-size: var(--h-control-sm); color: var(--text-3); }
+  .comentario.retirado { padding: var(--space-1) var(--space-4); color: var(--text-3); }
+  .retirado-linea { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0; font-size: var(--fs-small); }
+  .comentario.retirado .cuerpo { margin-block-start: var(--space-2); color: var(--text-2); }
+  .moderar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-2);
+    margin-block-start: var(--space-3);
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--border-1);
+  }
+  .moderar label { display: grid; gap: var(--space-1); font-size: var(--fs-small); color: var(--text-3); }
   .avatar {
     display: grid;
     place-items: center;
     inline-size: 2rem;
     block-size: 2rem;
     border-radius: var(--radius-pill);
-    background: var(--accent-tint);
-    color: var(--accent);
+    background: var(--bg-4);
+    color: var(--text-2);
     font-size: var(--fs-micro);
     font-weight: 600;
   }
@@ -499,9 +519,8 @@
     background: var(--bg-1);
     border: 1px solid var(--border-2);
     border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-high);
   }
-  .compositor:focus-within { border-color: var(--accent); box-shadow: var(--shadow-high), 0 0 0 3px var(--accent-tint); }
+  .compositor:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
   .compositor.nota { background: color-mix(in srgb, var(--yellow) 6%, var(--bg-1)); }
   .compositor textarea {
     inline-size: 100%;
@@ -536,18 +555,15 @@
     align-items: center;
     gap: var(--space-1_5);
     margin-block-end: var(--space-2);
-    font-size: var(--fs-micro);
+    font-size: var(--fs-small);
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-3);
+    color: var(--text-2);
   }
   .propiedades {
     padding: var(--space-4);
     background: var(--bg-1);
     border: 1px solid var(--border-1);
     border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-low);
   }
   .propiedades dl { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: var(--space-3); margin: 0; align-items: center; }
   .propiedades dt { color: var(--text-3); font-size: var(--fs-small); }
@@ -565,10 +581,10 @@
   }
   .segmentado button:hover:not(:disabled) { background: var(--bg-2); }
   .segmentado button[aria-pressed="true"] {
-    background: var(--text-1);
-    border-color: var(--text-1);
-    color: var(--bg-1);
-    font-weight: 500;
+    background: var(--bg-5);
+    border-color: var(--border-3);
+    color: var(--text-1);
+    font-weight: 600;
     cursor: default;
   }
   .asignar { display: flex; flex-direction: column; gap: var(--space-2); margin-block-start: var(--space-3); }
@@ -579,10 +595,9 @@
   .panel-ia {
     margin-block: 0 var(--space-4);
     padding: var(--space-4) var(--space-5);
-    background: linear-gradient(180deg, color-mix(in srgb, var(--ai) 7%, var(--bg-1)), var(--bg-1) 70%);
-    border: 1px solid color-mix(in srgb, var(--ai) 22%, var(--border-1));
+    background: var(--bg-1);
+    border: 1px solid var(--border-1);
     border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-low);
     display: flex;
     flex-direction: column;
     gap: var(--space-3);

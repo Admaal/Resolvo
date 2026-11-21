@@ -44,7 +44,7 @@ import { SugerenciasService } from './sugerencias.service';
           }
           <div class="acciones">
             <button
-              class="btn aprobar primario"
+              class="btn aprobar secundario"
               type="button"
               [disabled]="enviando() || texto().trim() === ''"
               (click)="aprobar()">

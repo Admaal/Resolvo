@@ -5,8 +5,8 @@ import com.admaal.resolvo.domain.CategoriaId;
 import com.admaal.resolvo.domain.Comentario;
 import com.admaal.resolvo.domain.ComentarioId;
 import com.admaal.resolvo.domain.EstadoTicket;
+import com.admaal.resolvo.domain.Moderacion;
 import com.admaal.resolvo.domain.OrganizacionId;
-import com.admaal.resolvo.domain.Rol;
 import com.admaal.resolvo.domain.Ticket;
 import com.admaal.resolvo.domain.TicketId;
 import com.admaal.resolvo.domain.Usuario;
@@ -47,6 +47,16 @@ public final class Mapeo {
         new CategoriaId(fila.getId()), new OrganizacionId(fila.getOrganizacionId()), fila.getNombre());
   }
 
+  private static Moderacion moderacion(ComentarioEntity fila) {
+    if (fila.getOcultoMotivo() == null) {
+      return null;
+    }
+    return new Moderacion(
+        fila.getOcultoMotivo(),
+        fila.getOcultoPor() == null ? null : new UsuarioId(fila.getOcultoPor()),
+        fila.getOcultoEn());
+  }
+
   static Ticket ticket(TicketEntity fila) {
     List<Comentario> comentarios = new ArrayList<>();
     for (ComentarioEntity comentario : fila.getComentarios()) {
@@ -56,7 +66,8 @@ public final class Mapeo {
               new UsuarioId(comentario.getAutorId()),
               comentario.getCuerpo(),
               comentario.isInterno(),
-              comentario.getCreadoEn()));
+              comentario.getCreadoEn(),
+              moderacion(comentario)));
     }
     return Ticket.rehidratar(
         new TicketId(fila.getId()),
@@ -92,13 +103,19 @@ public final class Mapeo {
       existentes.put(comentario.getId(), comentario);
     }
     List<ComentarioEntity> siguientes = new ArrayList<>();
-    for (Comentario comentario : ticket.visiblesPara(Rol.ADMIN)) {
+    // todos(), no visiblesPara: lo retirado e interno se guarda igual (orphanRemoval borraria el resto).
+    for (Comentario comentario : ticket.todos()) {
       ComentarioEntity destino = existentes.getOrDefault(comentario.id().valor(), new ComentarioEntity());
       destino.setId(comentario.id().valor());
       destino.setAutorId(comentario.autorId().valor());
       destino.setCuerpo(comentario.cuerpo());
       destino.setInterno(comentario.interno());
       destino.setCreadoEn(comentario.creadoEn());
+      Moderacion moderacion = comentario.moderacion();
+      destino.setOcultoMotivo(moderacion == null ? null : moderacion.motivo());
+      destino.setOcultoPor(
+          moderacion == null || moderacion.por() == null ? null : moderacion.por().valor());
+      destino.setOcultoEn(moderacion == null ? null : moderacion.en());
       siguientes.add(destino);
     }
     fila.getComentarios().clear();

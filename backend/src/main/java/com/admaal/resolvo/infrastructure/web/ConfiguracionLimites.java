@@ -8,9 +8,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class ConfiguracionLimites implements WebMvcConfigurer {
 
   private final LimiteDeIa limiteDeIa;
+  private final LimiteDeComentarios limiteDeComentarios;
 
-  public ConfiguracionLimites(LimiteDeIa limiteDeIa) {
+  public ConfiguracionLimites(LimiteDeIa limiteDeIa, LimiteDeComentarios limiteDeComentarios) {
     this.limiteDeIa = limiteDeIa;
+    this.limiteDeComentarios = limiteDeComentarios;
   }
 
   @Override
@@ -21,5 +23,6 @@ public class ConfiguracionLimites implements WebMvcConfigurer {
             "/api/tickets/*/sugerencias",
             "/api/tickets/*/clasificaciones",
             "/api/conocimiento/reindexar");
+    registro.addInterceptor(limiteDeComentarios).addPathPatterns("/api/tickets/*/comentarios");
   }
 }

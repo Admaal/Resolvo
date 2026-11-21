@@ -12,6 +12,10 @@ export function mensajeDeError(fallo: unknown): string {
       return 'Revisa los datos del formulario.';
     case 'prohibido':
       return 'No tienes permiso para hacer esto.';
+    case 'demasiados-enlaces':
+      return 'Un comentario puede llevar como mucho 3 enlaces.';
+    case 'demasiadas-peticiones':
+      return 'Vas demasiado rápido. Espera un momento y vuelve a intentarlo.';
     default:
       return GENERICO;
   }
