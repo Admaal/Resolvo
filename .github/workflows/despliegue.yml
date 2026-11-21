@@ -1,0 +1,58 @@
+name: Despliegue SPA
+
+# Cloudflare Pages es de subida directa (no está conectado a Git): este workflow
+# sube la SPA cuando cambia `frontend/` en main. Necesita los secretos
+# CLOUDFLARE_API_TOKEN (permiso Cloudflare Pages: Edit) y CLOUDFLARE_ACCOUNT_ID.
+# Sin ellos el job termina en verde sin desplegar.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/despliegue.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: despliegue-spa
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  pages:
+    name: Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Comprobar secretos
+        id: secretos
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::notice::Faltan CLOUDFLARE_API_TOKEN o CLOUDFLARE_ACCOUNT_ID: no se despliega."
+            echo "hay=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "hay=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.secretos.outputs.hay == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.secretos.outputs.hay == 'true'
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Instalar y compilar
+        if: steps.secretos.outputs.hay == 'true'
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+      - name: Desplegar en Pages (producción)
+        if: steps.secretos.outputs.hay == 'true'
+        working-directory: frontend
+        run: npx wrangler pages deploy --project-name resolvo --branch main
