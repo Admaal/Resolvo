@@ -1,11 +1,12 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Icono } from '../../shared/icono';
 import { Comentario } from './ticket.model';
 
 @Component({
   selector: 'app-ticket-thread',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, Icono],
   template: `
     <ol class="hilo" aria-label="Conversación">
       @if (cuerpo()) {
@@ -23,17 +24,59 @@ import { Comentario } from './ticket.model';
         </li>
       }
       @for (comentario of comentarios(); track comentario.id) {
-        <li class="mensaje comentario" [class.interno]="comentario.interno">
-          <span class="avatar" aria-hidden="true">{{ inicial(autor(comentario)) }}</span>
-          <div class="mensaje-contenido">
-            <p class="mensaje-cabecera">
-              <span class="autor">{{ autor(comentario) }}</span>
-              @if (comentario.interno) { <span class="chip nota-interna">Nota interna</span> }
-              <time class="ayuda" [attr.datetime]="comentario.creadoEn">{{ comentario.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</time>
+        @if (comentario.retirado) {
+          <li class="comentario retirado">
+            <p class="retirado-linea">
+              <rs-icono nombre="eye-off" [tam]="14" />
+              @if (puedeModerar()) {
+                <span>Oculto por {{ quienOculto(comentario) }} · {{ textoMotivo(comentario) }}</span>
+                <button type="button" class="btn fantasma ver-texto" [attr.aria-expanded]="textoAbierto(comentario.id)" (click)="alternarTexto(comentario.id)">
+                  {{ textoAbierto(comentario.id) ? 'Ocultar texto' : 'Ver texto' }}
+                </button>
+                @if (puedeRestaurar()) {
+                  <button type="button" class="btn fantasma restaurar" (click)="restaurado.emit(comentario.id)">
+                    <rs-icono nombre="rotate-ccw" [tam]="14" /> Restaurar
+                  </button>
+                }
+              } @else {
+                <span>Este comentario se ha retirado.</span>
+              }
             </p>
-            <p class="cuerpo">{{ comentario.cuerpo }}</p>
-          </div>
-        </li>
+            @if (puedeModerar() && textoAbierto(comentario.id)) {
+              <p class="cuerpo">{{ comentario.cuerpo }}</p>
+            }
+          </li>
+        } @else {
+          <li class="mensaje comentario" [class.interno]="comentario.interno">
+            <span class="avatar" aria-hidden="true">{{ inicial(autor(comentario)) }}</span>
+            <div class="mensaje-contenido">
+              <p class="mensaje-cabecera">
+                <span class="autor">{{ autor(comentario) }}</span>
+                @if (comentario.interno) { <span class="nota-interna"><rs-icono nombre="lock" [tam]="12" /> Nota interna</span> }
+                <time class="ayuda" [attr.datetime]="comentario.creadoEn">{{ comentario.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</time>
+                @if (puedeModerar()) {
+                  <button type="button" class="btn fantasma ocultar" (click)="moderar(comentario.id)">
+                    <rs-icono nombre="eye-off" [tam]="14" /> Ocultar
+                  </button>
+                }
+              </p>
+              <p class="cuerpo">{{ comentario.cuerpo }}</p>
+              @if (moderando() === comentario.id) {
+                <div class="moderar">
+                  <label>Motivo
+                    <select name="motivo" (change)="motivo.set($any($event.target).value)">
+                      @for (opcion of motivos; track opcion.valor) {
+                        <option [value]="opcion.valor" [selected]="opcion.valor === motivo()">{{ opcion.texto }}</option>
+                      }
+                    </select>
+                  </label>
+                  <button type="button" class="btn secundario confirmar-ocultar" (click)="confirmarOcultar(comentario.id)">Ocultar comentario</button>
+                  <button type="button" class="btn fantasma cancelar-ocultar" (click)="moderando.set(null)">Cancelar</button>
+                </div>
+              }
+            </div>
+          </li>
+        }
       }
     </ol>
     <div class="compositor" [class.nota]="modo() === 'nota'">
@@ -75,6 +118,19 @@ export class TicketThread {
   /** Cómo se llama a quien no es uno mismo ni del equipo conocido. */
   readonly etiquetaOtros = input('Cliente');
   readonly enviado = output<{ cuerpo: string; interno: boolean }>();
+  /** Agente y admin pueden ocultar; solo el admin restaura. El texto de lo retirado solo llega al equipo. */
+  readonly puedeModerar = input(false);
+  readonly puedeRestaurar = input(false);
+  readonly ocultado = output<{ id: string; motivo: string }>();
+  readonly restaurado = output<string>();
+  protected readonly motivos = [
+    { valor: 'SPAM', texto: 'Spam' },
+    { valor: 'OFENSIVO', texto: 'Ofensivo' },
+    { valor: 'OTRO', texto: 'Otro' },
+  ];
+  readonly moderando = signal<string | null>(null);
+  readonly motivo = signal('SPAM');
+  private readonly textosAbiertos = signal<string[]>([]);
   readonly modo = signal<'responder' | 'nota'>('responder');
   borrador = '';
 
@@ -87,6 +143,35 @@ export class TicketThread {
 
   inicial(nombre: string): string {
     return nombre.trim().charAt(0).toUpperCase() || '?';
+  }
+
+  moderar(id: string): void {
+    this.motivo.set('SPAM');
+    this.moderando.set(id);
+  }
+
+  confirmarOcultar(id: string): void {
+    this.ocultado.emit({ id, motivo: this.motivo() });
+    this.moderando.set(null);
+  }
+
+  textoAbierto(id: string): boolean {
+    return this.textosAbiertos().includes(id);
+  }
+
+  alternarTexto(id: string): void {
+    this.textosAbiertos.update((abiertos) => (abiertos.includes(id) ? abiertos.filter((otro) => otro !== id) : [...abiertos, id]));
+  }
+
+  quienOculto(comentario: Comentario): string {
+    const id = comentario.oculto?.porId;
+    if (!id) return 'el equipo';
+    return id === this.yoId() ? 'ti' : (this.nombres()[id] ?? 'el equipo');
+  }
+
+  textoMotivo(comentario: Comentario): string {
+    const motivo = comentario.oculto?.motivo;
+    return this.motivos.find((opcion) => opcion.valor === motivo)?.texto ?? 'Sin motivo';
   }
 
   vacio(): boolean {

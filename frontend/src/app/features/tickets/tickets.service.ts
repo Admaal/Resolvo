@@ -35,6 +35,14 @@ export class TicketsService {
     return firstValueFrom(this.http.post(`/api/tickets/${id}/comentarios`, { cuerpo, interno }));
   }
 
+  ocultar(id: string, comentarioId: string, motivo: string): Promise<unknown> {
+    return firstValueFrom(this.http.post(`/api/tickets/${id}/comentarios/${comentarioId}/ocultacion`, { motivo }));
+  }
+
+  restaurar(id: string, comentarioId: string): Promise<unknown> {
+    return firstValueFrom(this.http.delete(`/api/tickets/${id}/comentarios/${comentarioId}/ocultacion`));
+  }
+
   categorias(): Promise<Categoria[]> {
     return firstValueFrom(this.http.get<Categoria[]>('/api/categorias'));
   }

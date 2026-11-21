@@ -81,14 +81,16 @@ describe('DetallePage', () => {
     expect(el(fixture, '.estado-carga')).toBeNull();
   });
 
-  it('enseña estado y prioridad legibles y el asunto como título', async () => {
+  it('enseña el asunto como título y dice estado y prioridad solo en Propiedades', async () => {
     const fixture = montar('CLIENTE', () => Promise.resolve(ticket));
     await esperar();
     fixture.detectChanges();
+    const propiedades = el(fixture, '.propiedades')?.textContent ?? '';
 
     expect(el(fixture, 'h1')?.textContent).toContain('No puedo entrar');
-    expect(el(fixture, '.chip.abierto')?.textContent?.trim()).toBe('Abierto');
-    expect(el(fixture, '.chip.prioridad-urgente')?.textContent?.trim()).toBe('Urgente');
+    expect(el(fixture, '.chip')).toBeNull();
+    expect(propiedades).toContain('Abierto');
+    expect(propiedades).toContain('Urgente');
   });
 
   it('deshabilita la transición al estado actual y usa etiquetas legibles', async () => {
@@ -174,5 +176,109 @@ describe('DetallePage', () => {
 
     expect(el(fixture, '.propiedades')).not.toBeNull();
     expect(el(fixture, '.propiedades time')).not.toBeNull();
+  });
+});
+
+describe('DetallePage: moderación de comentarios', () => {
+  const comentario = {
+    id: 'c1',
+    autorId: 'u2',
+    cuerpo: 'texto-spam',
+    interno: false,
+    creadoEn: '2026-11-02T10:00:00Z',
+    retirado: false,
+    oculto: null,
+  };
+  const oculto = {
+    ...comentario,
+    retirado: true,
+    oculto: { motivo: 'SPAM', porId: 'u1', en: '2026-11-02T11:00:00Z' },
+  };
+
+  function montarModeracion(
+    rol: string,
+    comentarios: TicketDetalle['comentarios'],
+    acciones: { ocultar?: () => Promise<unknown>; restaurar?: () => Promise<unknown> } = {},
+  ) {
+    const detalle = vi.fn(() => Promise.resolve({ ...ticket, comentarios }));
+    const ocultar = vi.fn(acciones.ocultar ?? (() => Promise.resolve({})));
+    const restaurar = vi.fn(acciones.restaurar ?? (() => Promise.resolve({})));
+    TestBed.configureTestingModule({
+      imports: [DetallePage],
+      providers: [
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: 't1' })), queryParamMap: of(convertToParamMap({})) } },
+        { provide: TicketsStore, useValue: { tickets: signal(lista), cargar: vi.fn() } },
+        { provide: AuthService, useValue: { rol: () => rol, usuarioId: () => 'u1' } },
+        {
+          provide: TicketsService,
+          useValue: { detalle, ocultar, restaurar, categorias: () => Promise.resolve([]), usuarios: () => Promise.resolve([]) },
+        },
+        { provide: ClasificacionesService, useValue: { actual: () => Promise.resolve(null) } },
+        { provide: SugerenciasService, useValue: { actual: () => Promise.resolve(null) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(DetallePage);
+    fixture.detectChanges();
+    return { fixture, detalle, ocultar, restaurar };
+  }
+
+  const pulsar = (fixture: { nativeElement: unknown; detectChanges(): void }, selector: string) => {
+    (el(fixture, selector) as HTMLButtonElement).click();
+    fixture.detectChanges();
+  };
+
+  it('un agente oculta un comentario y se recarga el ticket', async () => {
+    const { fixture, detalle, ocultar } = montarModeracion('AGENTE', [comentario]);
+    await esperar();
+    fixture.detectChanges();
+
+    pulsar(fixture, 'button.ocultar');
+    pulsar(fixture, 'button.confirmar-ocultar');
+    await esperar();
+
+    expect(ocultar).toHaveBeenCalledWith('t1', 'c1', 'SPAM');
+    expect(detalle).toHaveBeenCalledTimes(2);
+  });
+
+  it('un cliente no ve controles de moderación', async () => {
+    const { fixture } = montarModeracion('CLIENTE', [comentario]);
+    await esperar();
+    fixture.detectChanges();
+
+    expect(el(fixture, 'button.ocultar')).toBeNull();
+    expect(el(fixture, 'button.restaurar')).toBeNull();
+  });
+
+  it('solo un admin puede restaurar', async () => {
+    const comoAgente = montarModeracion('AGENTE', [oculto]);
+    await esperar();
+    comoAgente.fixture.detectChanges();
+    expect(el(comoAgente.fixture, 'button.restaurar')).toBeNull();
+    TestBed.resetTestingModule();
+
+    const comoAdmin = montarModeracion('ADMIN', [oculto]);
+    await esperar();
+    comoAdmin.fixture.detectChanges();
+    pulsar(comoAdmin.fixture, 'button.restaurar');
+    await esperar();
+
+    expect(comoAdmin.restaurar).toHaveBeenCalledWith('t1', 'c1');
+    expect(comoAdmin.detalle).toHaveBeenCalledTimes(2);
+  });
+
+  it('si ocultar falla enseña el motivo en lenguaje claro', async () => {
+    const { fixture } = montarModeracion('AGENTE', [comentario], {
+      ocultar: () => Promise.reject(new HttpErrorResponse({ status: 403, error: { error: 'prohibido' } })),
+    });
+    await esperar();
+    fixture.detectChanges();
+
+    pulsar(fixture, 'button.ocultar');
+    pulsar(fixture, 'button.confirmar-ocultar');
+    await esperar();
+    fixture.detectChanges();
+
+    expect(el(fixture, '.compositor .error')?.textContent).toContain('permiso');
   });
 });

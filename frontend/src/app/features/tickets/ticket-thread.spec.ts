@@ -62,7 +62,10 @@ describe('TicketThread', () => {
     const nodo = fixture.nativeElement as HTMLElement;
 
     expect(nodo.querySelectorAll('.comentario.interno').length).toBe(1);
-    expect(nodo.querySelector('.comentario.interno .chip.nota-interna')?.textContent).toContain('Nota interna');
+    const etiqueta = nodo.querySelector('.comentario.interno .nota-interna');
+    expect(etiqueta?.textContent).toContain('Nota interna');
+    expect(etiqueta?.classList.contains('chip')).toBe(false);
+    expect(etiqueta?.querySelector('rs-icono')).not.toBeNull();
   });
 
   it('enseña el cuerpo del ticket como primer mensaje', () => {
@@ -129,5 +132,115 @@ describe('TicketThread', () => {
     const autores = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.comentario .autor')).map((a) => a.textContent?.trim());
 
     expect(autores).toEqual(['Tú', 'agente@acme.test', 'Cliente']);
+  });
+
+  describe('moderación', () => {
+    const base = { autorId: 'a', creadoEn: '2026-11-04T10:00:00Z', interno: false };
+    const spam = { ...base, id: '1', cuerpo: 'compra ya', retirado: false, oculto: null };
+    const retirado = {
+      ...base,
+      id: '2',
+      cuerpo: 'texto-oculto',
+      retirado: true,
+      oculto: { motivo: 'SPAM', porId: 'ag', en: '2026-11-04T11:00:00Z' },
+    };
+
+    async function montar(comentarios: Comentario[], opciones: { moderar?: boolean; restaurar?: boolean } = {}) {
+      TestBed.configureTestingModule({ imports: [TicketThread] });
+      const fixture = TestBed.createComponent(TicketThread);
+      fixture.componentRef.setInput('comentarios', comentarios);
+      fixture.componentRef.setInput('puedeModerar', opciones.moderar ?? false);
+      fixture.componentRef.setInput('puedeRestaurar', opciones.restaurar ?? false);
+      fixture.componentRef.setInput('autores', { ag: 'agente@acme.test' });
+      fixture.detectChanges();
+      await fixture.whenStable();
+      return fixture;
+    }
+
+    const nodo = (fixture: { nativeElement: unknown }) => fixture.nativeElement as HTMLElement;
+    const pulsar = (fixture: { nativeElement: unknown; detectChanges(): void }, selector: string) => {
+      (nodo(fixture).querySelector(selector) as HTMLButtonElement).click();
+      fixture.detectChanges();
+    };
+
+    it('un agente elige el motivo y oculta el comentario', async () => {
+      const fixture = await montar([spam], { moderar: true });
+      const ocultados: unknown[] = [];
+      fixture.componentInstance.ocultado.subscribe((evento) => ocultados.push(evento));
+
+      pulsar(fixture, 'button.ocultar');
+      const motivo = nodo(fixture).querySelector('select[name="motivo"]') as HTMLSelectElement;
+      motivo.value = 'OFENSIVO';
+      motivo.dispatchEvent(new Event('change'));
+      pulsar(fixture, 'button.confirmar-ocultar');
+
+      expect(ocultados).toEqual([{ id: '1', motivo: 'OFENSIVO' }]);
+      expect(nodo(fixture).querySelector('select[name="motivo"]')).toBeNull();
+    });
+
+    it('el motivo por defecto es spam y se puede cancelar', async () => {
+      const fixture = await montar([spam], { moderar: true });
+      const ocultados: unknown[] = [];
+      fixture.componentInstance.ocultado.subscribe((evento) => ocultados.push(evento));
+
+      pulsar(fixture, 'button.ocultar');
+      pulsar(fixture, 'button.cancelar-ocultar');
+      pulsar(fixture, 'button.ocultar');
+      pulsar(fixture, 'button.confirmar-ocultar');
+
+      expect(ocultados).toEqual([{ id: '1', motivo: 'SPAM' }]);
+    });
+
+    it('quien no modera no ve el botón de ocultar', async () => {
+      const fixture = await montar([spam], { moderar: false });
+
+      expect(nodo(fixture).querySelector('button.ocultar')).toBeNull();
+    });
+
+    it('un comentario retirado se pliega con quién lo ocultó y por qué, sin enseñar el texto', async () => {
+      const fixture = await montar([retirado], { moderar: true });
+      const linea = nodo(fixture).querySelector('.comentario.retirado') as HTMLElement;
+
+      expect(linea.textContent).toContain('Oculto por agente@acme.test');
+      expect(linea.textContent).toContain('Spam');
+      expect(linea.querySelector('rs-icono')).not.toBeNull();
+      expect(linea.textContent).not.toContain('texto-oculto');
+      expect(nodo(fixture).querySelector('button.ocultar')).toBeNull();
+    });
+
+    it('el equipo puede ver el texto de lo oculto', async () => {
+      const fixture = await montar([retirado], { moderar: true });
+
+      pulsar(fixture, 'button.ver-texto');
+
+      expect(nodo(fixture).querySelector('.comentario.retirado')?.textContent).toContain('texto-oculto');
+    });
+
+    it('el cliente solo ve que se ha retirado', async () => {
+      const paraElCliente = {
+        ...retirado,
+        cuerpo: null,
+        oculto: { motivo: null, porId: null, en: null },
+      };
+      const fixture = await montar([paraElCliente], { moderar: false });
+      const linea = nodo(fixture).querySelector('.comentario.retirado') as HTMLElement;
+
+      expect(linea.textContent).toContain('Este comentario se ha retirado.');
+      expect(linea.querySelector('button')).toBeNull();
+      expect(linea.querySelector('rs-icono')).not.toBeNull();
+    });
+
+    it('solo el admin ve Restaurar y emite el id', async () => {
+      const comoAgente = await montar([retirado], { moderar: true, restaurar: false });
+      expect(nodo(comoAgente).querySelector('button.restaurar')).toBeNull();
+      TestBed.resetTestingModule();
+
+      const comoAdmin = await montar([retirado], { moderar: true, restaurar: true });
+      const restaurados: string[] = [];
+      comoAdmin.componentInstance.restaurado.subscribe((id) => restaurados.push(id));
+      pulsar(comoAdmin, 'button.restaurar');
+
+      expect(restaurados).toEqual(['2']);
+    });
   });
 });

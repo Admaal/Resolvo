@@ -40,6 +40,12 @@ resolvo:
     login-fallos: ${RESOLVO_LIMITE_LOGIN_FALLOS:5}
     login-ventana-minutos: ${RESOLVO_LIMITE_LOGIN_MINUTOS:15}
     ia-por-minuto: ${RESOLVO_LIMITE_IA_POR_MINUTO:10}
+    # Comentarios por usuario y minuto (frena el spam en rafaga).
+    comentarios-por-minuto: ${RESOLVO_LIMITE_COMENTARIOS_POR_MINUTO:10}
+  # Demo publica: con true, al arrancar y cada 24 h se borran los comentarios de visitantes de mas de
+  # 24 h (la semilla no). Apagado por defecto: solo se activa en la demo desplegada.
+  demo:
+    purgar-comentarios: ${RESOLVO_DEMO_PURGAR_COMENTARIOS:false}
   # RESOLVO_IA_SINCRONA: solo para tests; indexa en el hilo de la peticion en vez de en segundo plano.
   ia:
     indexar-al-arrancar: ${RESOLVO_IA_INDEXAR_AL_ARRANCAR:true}

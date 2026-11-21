@@ -29,7 +29,7 @@ import { Categoria } from './ticket.model';
             </select>
           </label>
           <div class="acciones">
-            <button class="btn aplicar-clasificacion primario" type="button" [disabled]="enviando()" (click)="aplicar()">
+            <button class="btn aplicar-clasificacion secundario" type="button" [disabled]="enviando()" (click)="aplicar()">
               Aplicar
             </button>
             <button class="btn descartar-clasificacion secundario" type="button" [disabled]="enviando()" (click)="descartar()">

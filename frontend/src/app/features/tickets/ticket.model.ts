@@ -10,12 +10,22 @@ export interface TicketResumen {
   abiertoEn?: string;
 }
 
+/** Quién retiró un comentario y por qué. Para un cliente llega vacío: solo sabe que se retiró. */
+export interface Oculto {
+  motivo: string | null;
+  porId: string | null;
+  en: string | null;
+}
+
 export interface Comentario {
   id: string;
   autorId: string;
-  cuerpo: string;
+  /** Nulo solo para un cliente ante un comentario retirado. */
+  cuerpo: string | null;
   interno: boolean;
   creadoEn: string;
+  retirado?: boolean;
+  oculto?: Oculto | null;
 }
 
 export interface TicketDetalle extends TicketResumen {

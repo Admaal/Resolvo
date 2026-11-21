@@ -39,7 +39,7 @@ function capitalizar(texto: string): string {
             Resolvo
           </a>
         </div>
-        <a class="btn primario nuevo" routerLink="/tickets/nuevo" [attr.aria-current]="activa() === 'nuevo' ? 'page' : null">
+        <a class="btn secundario nuevo" routerLink="/tickets/nuevo" [attr.aria-current]="activa() === 'nuevo' ? 'page' : null">
           <rs-icono nombre="plus" />
           <span class="nombre">Nuevo ticket</span>
         </a>

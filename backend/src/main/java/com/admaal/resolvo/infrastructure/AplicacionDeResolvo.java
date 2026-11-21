@@ -12,6 +12,7 @@ import com.admaal.resolvo.application.ConsultarTicket;
 import com.admaal.resolvo.application.EmisorDeTokens;
 import com.admaal.resolvo.application.IniciarSesion;
 import com.admaal.resolvo.application.ListarTickets;
+import com.admaal.resolvo.application.ModerarComentario;
 import com.admaal.resolvo.application.Pagina;
 import com.admaal.resolvo.application.PublicadorEventos;
 import com.admaal.resolvo.application.RefrescarSesion;
@@ -24,8 +25,10 @@ import com.admaal.resolvo.application.Usuarios;
 import com.admaal.resolvo.application.VerificadorContrasena;
 import com.admaal.resolvo.domain.Categoria;
 import com.admaal.resolvo.domain.Comentario;
+import com.admaal.resolvo.domain.ComentarioId;
 import com.admaal.resolvo.domain.CredencialesInvalidas;
 import com.admaal.resolvo.domain.EstadoTicket;
+import com.admaal.resolvo.domain.MotivoModeracion;
 import com.admaal.resolvo.domain.OrganizacionId;
 import com.admaal.resolvo.domain.Rol;
 import com.admaal.resolvo.domain.Ticket;
@@ -136,6 +139,24 @@ public class AplicacionDeResolvo {
       boolean interno) {
     return new ComentarTicket(tickets, reloj)
         .ejecutar(organizacionId, ticketId, autorId, rol, cuerpo, interno);
+  }
+
+  @Transactional
+  public Comentario ocultarComentario(
+      OrganizacionId organizacionId,
+      TicketId ticketId,
+      ComentarioId comentarioId,
+      UsuarioId actor,
+      Rol rol,
+      MotivoModeracion motivo) {
+    return new ModerarComentario(tickets, reloj)
+        .ocultar(organizacionId, ticketId, comentarioId, actor, rol, motivo);
+  }
+
+  @Transactional
+  public Comentario restaurarComentario(
+      OrganizacionId organizacionId, TicketId ticketId, ComentarioId comentarioId, Rol rol) {
+    return new ModerarComentario(tickets, reloj).restaurar(organizacionId, ticketId, comentarioId, rol);
   }
 
   @Transactional(readOnly = true)
