@@ -194,7 +194,8 @@ class SugerenciaHttpTest {
 
   @Test
   void aprobarPublicaUnComentarioVisibleAlCliente() throws Exception {
-    String ticket = nuevoTicket();
+    // El cliente solo ve sus propios tickets: el ticket lo abre el.
+    String ticket = HttpAyuda.crearTicket(mvc, cliente, INCIDENCIA, "Error al exportar informes");
     String id = sugerenciaId(ticket);
 
     aprobar(agente, id, "Respuesta final editada")

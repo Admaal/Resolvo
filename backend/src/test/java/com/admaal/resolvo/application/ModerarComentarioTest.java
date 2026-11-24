@@ -53,9 +53,9 @@ class ModerarComentarioTest {
     assertThat(oculto.moderacion().en()).isEqualTo(ahora);
     assertThat(tickets.vecesGuardado()).isEqualTo(guardadosAntes + 1);
     ConsultarTicket consulta = new ConsultarTicket(tickets);
-    assertThat(consulta.comentarios(organizacion, ticket.id(), Rol.AGENTE).get(0).retirado())
+    assertThat(consulta.comentarios(organizacion, ticket.id(), agente, Rol.AGENTE).get(0).retirado())
         .isTrue();
-    assertThat(consulta.comentarios(organizacion, ticket.id(), Rol.CLIENTE).get(0).cuerpo())
+    assertThat(consulta.comentarios(organizacion, ticket.id(), cliente, Rol.CLIENTE).get(0).cuerpo())
         .isNull();
   }
 

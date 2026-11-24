@@ -103,18 +103,21 @@ public class AplicacionDeResolvo {
   }
 
   @Transactional(readOnly = true)
-  public Ticket consultar(OrganizacionId organizacionId, TicketId ticketId) {
-    return new ConsultarTicket(tickets).ejecutar(organizacionId, ticketId);
+  public Ticket consultar(
+      OrganizacionId organizacionId, TicketId ticketId, UsuarioId solicitante, Rol rol) {
+    return new ConsultarTicket(tickets).ejecutar(organizacionId, ticketId, solicitante, rol);
   }
 
   @Transactional(readOnly = true)
-  public Ticket consultarPorCodigo(OrganizacionId organizacionId, String codigo) {
-    return new ConsultarTicket(tickets).porCodigo(organizacionId, codigo);
+  public Ticket consultarPorCodigo(
+      OrganizacionId organizacionId, String codigo, UsuarioId solicitante, Rol rol) {
+    return new ConsultarTicket(tickets).porCodigo(organizacionId, codigo, solicitante, rol);
   }
 
   @Transactional(readOnly = true)
-  public List<Comentario> comentarios(OrganizacionId organizacionId, TicketId ticketId, Rol rol) {
-    return new ConsultarTicket(tickets).comentarios(organizacionId, ticketId, rol);
+  public List<Comentario> comentarios(
+      OrganizacionId organizacionId, TicketId ticketId, UsuarioId solicitante, Rol rol) {
+    return new ConsultarTicket(tickets).comentarios(organizacionId, ticketId, solicitante, rol);
   }
 
   @Transactional(readOnly = true)
