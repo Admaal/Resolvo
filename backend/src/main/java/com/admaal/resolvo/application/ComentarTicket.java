@@ -26,7 +26,12 @@ public final class ComentarTicket {
       Rol rol,
       String cuerpo,
       boolean interno) {
-    Ticket ticket = tickets.porId(organizacionId, ticketId).orElseThrow(NoEncontrado::new);
+    // Un cliente solo comenta en sus tickets; en un ticket ajeno recibe lo mismo que si no existiera.
+    Ticket ticket =
+        tickets
+            .porId(organizacionId, ticketId)
+            .filter(visible -> visible.visiblePara(autorId, rol))
+            .orElseThrow(NoEncontrado::new);
     Comentario comentario =
         ticket.comentar(ComentarioId.nuevo(), autorId, rol, cuerpo, interno, reloj.ahora());
     tickets.guardar(ticket);

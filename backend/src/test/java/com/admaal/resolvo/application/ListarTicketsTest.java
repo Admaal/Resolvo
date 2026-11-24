@@ -34,11 +34,11 @@ class ListarTicketsTest {
     Ticket alta = Banco.abrir(tickets, organizacion, autor, Prioridad.ALTA, ahora);
     Ticket resuelto = Banco.abrir(tickets, organizacion, autor, Prioridad.MEDIA, ahora);
     Banco.abrir(tickets, new OrganizacionId(UUID.randomUUID()), autor, Prioridad.MEDIA, ahora);
-    new AsignarTicket(tickets, usuarios).ejecutar(organizacion, alta.id(), agente.id(), Rol.AGENTE);
+    new AsignarTicket(tickets, usuarios).ejecutar(organizacion, alta.id(), agente.id(), autor, Rol.AGENTE);
     new AsignarTicket(tickets, usuarios)
-        .ejecutar(organizacion, resuelto.id(), agente.id(), Rol.AGENTE);
+        .ejecutar(organizacion, resuelto.id(), agente.id(), autor, Rol.AGENTE);
     new TransicionarTicket(tickets, new PublicadorEnMemoria(), () -> ahora)
-        .ejecutar(organizacion, resuelto.id(), EstadoTicket.RESUELTO, Rol.AGENTE);
+        .ejecutar(organizacion, resuelto.id(), EstadoTicket.RESUELTO, autor, Rol.AGENTE);
 
     Pagina<Ticket> pagina =
         new ListarTickets(tickets)

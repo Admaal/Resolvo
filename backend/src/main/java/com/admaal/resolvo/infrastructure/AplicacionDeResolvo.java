@@ -127,14 +127,24 @@ public class AplicacionDeResolvo {
 
   @Transactional
   public Ticket transicionar(
-      OrganizacionId organizacionId, TicketId ticketId, EstadoTicket destino, Rol rol) {
-    return new TransicionarTicket(tickets, eventos, reloj).ejecutar(organizacionId, ticketId, destino, rol);
+      OrganizacionId organizacionId,
+      TicketId ticketId,
+      EstadoTicket destino,
+      UsuarioId solicitante,
+      Rol rol) {
+    return new TransicionarTicket(tickets, eventos, reloj)
+        .ejecutar(organizacionId, ticketId, destino, solicitante, rol);
   }
 
   @Transactional
   public Ticket asignar(
-      OrganizacionId organizacionId, TicketId ticketId, UsuarioId asignadoId, Rol actor) {
-    return new AsignarTicket(tickets, usuarios).ejecutar(organizacionId, ticketId, asignadoId, actor);
+      OrganizacionId organizacionId,
+      TicketId ticketId,
+      UsuarioId asignadoId,
+      UsuarioId solicitante,
+      Rol actor) {
+    return new AsignarTicket(tickets, usuarios)
+        .ejecutar(organizacionId, ticketId, asignadoId, solicitante, actor);
   }
 
   @Transactional
@@ -163,9 +173,13 @@ public class AplicacionDeResolvo {
 
   @Transactional
   public Comentario restaurarComentario(
-      OrganizacionId organizacionId, TicketId ticketId, ComentarioId comentarioId, Rol rol) {
+      OrganizacionId organizacionId,
+      TicketId ticketId,
+      ComentarioId comentarioId,
+      UsuarioId solicitante,
+      Rol rol) {
     return new ModerarComentario(tickets, eventos, reloj)
-        .restaurar(organizacionId, ticketId, comentarioId, rol);
+        .restaurar(organizacionId, ticketId, comentarioId, solicitante, rol);
   }
 
   @Transactional(readOnly = true)

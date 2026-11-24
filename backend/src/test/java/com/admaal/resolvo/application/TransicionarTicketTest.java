@@ -9,6 +9,7 @@ import com.admaal.resolvo.application.soporte.RepositorioEnMemoria;
 import com.admaal.resolvo.domain.EstadoTicket;
 import com.admaal.resolvo.domain.EventoTicket;
 import com.admaal.resolvo.domain.TipoEvento;
+import com.admaal.resolvo.domain.NoEncontrado;
 import com.admaal.resolvo.domain.OrganizacionId;
 import com.admaal.resolvo.domain.Prioridad;
 import com.admaal.resolvo.domain.Prohibido;
@@ -36,7 +37,7 @@ class TransicionarTicketTest {
     RepositorioEnMemoria tickets = new RepositorioEnMemoria();
     Ticket ticket = Banco.abrir(tickets, organizacion, autor, Prioridad.MEDIA, ahora);
 
-    caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.RESUELTO, Rol.AGENTE);
+    caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.RESUELTO, autor, Rol.AGENTE);
 
     assertThat(publicador.publicados())
         .singleElement()
@@ -54,10 +55,10 @@ class TransicionarTicketTest {
   void cerrarPublicaTicketResueltoParaReindexarConLosUltimosComentarios() {
     RepositorioEnMemoria tickets = new RepositorioEnMemoria();
     Ticket ticket = Banco.abrir(tickets, organizacion, autor, Prioridad.MEDIA, ahora);
-    caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.RESUELTO, Rol.AGENTE);
+    caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.RESUELTO, autor, Rol.AGENTE);
     publicador.vaciar();
 
-    caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.CERRADO, Rol.AGENTE);
+    caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.CERRADO, autor, Rol.AGENTE);
 
     assertThat(publicador.publicados())
         .extracting(EventoTicket::tipo)
@@ -68,10 +69,10 @@ class TransicionarTicketTest {
   void reabrirUnTicketResueltoPublicaTicketReabierto() {
     RepositorioEnMemoria tickets = new RepositorioEnMemoria();
     Ticket ticket = Banco.abrir(tickets, organizacion, autor, Prioridad.MEDIA, ahora);
-    caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.RESUELTO, Rol.AGENTE);
+    caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.RESUELTO, autor, Rol.AGENTE);
     publicador.vaciar();
 
-    caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.ABIERTO, Rol.AGENTE);
+    caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.ABIERTO, autor, Rol.AGENTE);
 
     assertThat(publicador.publicados())
         .singleElement()
@@ -87,8 +88,8 @@ class TransicionarTicketTest {
     RepositorioEnMemoria tickets = new RepositorioEnMemoria();
     Ticket ticket = Banco.abrir(tickets, organizacion, autor, Prioridad.MEDIA, ahora);
 
-    caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.PENDIENTE, Rol.AGENTE);
-    caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.ABIERTO, Rol.AGENTE);
+    caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.PENDIENTE, autor, Rol.AGENTE);
+    caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.ABIERTO, autor, Rol.AGENTE);
 
     assertThat(publicador.publicados()).isEmpty();
   }
@@ -99,10 +100,10 @@ class TransicionarTicketTest {
     Ticket ticket = Banco.abrir(tickets, organizacion, autor, Prioridad.MEDIA, ahora);
 
     assertThatThrownBy(
-            () -> caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.CERRADO, Rol.AGENTE))
+            () -> caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.CERRADO, autor, Rol.AGENTE))
         .isInstanceOf(TransicionNoPermitida.class);
     assertThatThrownBy(
-            () -> caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.RESUELTO, Rol.CLIENTE))
+            () -> caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.RESUELTO, autor, Rol.CLIENTE))
         .isInstanceOf(Prohibido.class);
 
     assertThat(publicador.publicados()).isEmpty();
@@ -117,7 +118,7 @@ class TransicionarTicketTest {
     assertThatThrownBy(
             () ->
                 caso(tickets)
-                    .ejecutar(organizacion, ticket.id(), EstadoTicket.CERRADO, Rol.AGENTE))
+                    .ejecutar(organizacion, ticket.id(), EstadoTicket.CERRADO, autor, Rol.AGENTE))
         .isInstanceOf(TransicionNoPermitida.class);
 
     assertThat(tickets.porId(organizacion, ticket.id()).orElseThrow().estado())
@@ -133,7 +134,7 @@ class TransicionarTicketTest {
     assertThatThrownBy(
             () ->
                 caso(tickets)
-                    .ejecutar(organizacion, ticket.id(), EstadoTicket.PENDIENTE, Rol.CLIENTE))
+                    .ejecutar(organizacion, ticket.id(), EstadoTicket.PENDIENTE, autor, Rol.CLIENTE))
         .isInstanceOf(Prohibido.class);
 
     assertThat(ticket.estado()).isEqualTo(EstadoTicket.ABIERTO);
@@ -145,31 +146,50 @@ class TransicionarTicketTest {
     TransicionarTicket caso = caso(tickets);
     Ticket ticket = Banco.abrir(tickets, organizacion, autor, Prioridad.ALTA, ahora);
 
-    assertThat(caso.ejecutar(organizacion, ticket.id(), EstadoTicket.PENDIENTE, Rol.AGENTE).estado())
+    assertThat(caso.ejecutar(organizacion, ticket.id(), EstadoTicket.PENDIENTE, autor, Rol.AGENTE).estado())
         .isEqualTo(EstadoTicket.PENDIENTE);
-    assertThat(caso.ejecutar(organizacion, ticket.id(), EstadoTicket.ABIERTO, Rol.ADMIN).estado())
+    assertThat(caso.ejecutar(organizacion, ticket.id(), EstadoTicket.ABIERTO, autor, Rol.ADMIN).estado())
         .isEqualTo(EstadoTicket.ABIERTO);
-    assertThat(caso.ejecutar(organizacion, ticket.id(), EstadoTicket.RESUELTO, Rol.AGENTE).estado())
+    assertThat(caso.ejecutar(organizacion, ticket.id(), EstadoTicket.RESUELTO, autor, Rol.AGENTE).estado())
         .isEqualTo(EstadoTicket.RESUELTO);
-    assertThat(caso.ejecutar(organizacion, ticket.id(), EstadoTicket.CERRADO, Rol.AGENTE).estado())
+    assertThat(caso.ejecutar(organizacion, ticket.id(), EstadoTicket.CERRADO, autor, Rol.AGENTE).estado())
         .isEqualTo(EstadoTicket.CERRADO);
     assertThat(tickets.vecesGuardado()).isEqualTo(5);
 
     Ticket directo = Banco.abrir(tickets, organizacion, autor, Prioridad.BAJA, ahora);
-    assertThat(caso.ejecutar(organizacion, directo.id(), EstadoTicket.RESUELTO, Rol.AGENTE).estado())
+    assertThat(caso.ejecutar(organizacion, directo.id(), EstadoTicket.RESUELTO, autor, Rol.AGENTE).estado())
         .isEqualTo(EstadoTicket.RESUELTO);
 
     Ticket pendiente = Banco.abrir(tickets, organizacion, autor, Prioridad.MEDIA, ahora);
-    caso.ejecutar(organizacion, pendiente.id(), EstadoTicket.PENDIENTE, Rol.AGENTE);
+    caso.ejecutar(organizacion, pendiente.id(), EstadoTicket.PENDIENTE, autor, Rol.AGENTE);
     assertThatThrownBy(
-            () -> caso.ejecutar(organizacion, pendiente.id(), EstadoTicket.CERRADO, Rol.AGENTE))
+            () -> caso.ejecutar(organizacion, pendiente.id(), EstadoTicket.CERRADO, autor, Rol.AGENTE))
         .isInstanceOf(TransicionNoPermitida.class);
-    assertThat(caso.ejecutar(organizacion, pendiente.id(), EstadoTicket.RESUELTO, Rol.AGENTE).estado())
+    assertThat(caso.ejecutar(organizacion, pendiente.id(), EstadoTicket.RESUELTO, autor, Rol.AGENTE).estado())
         .isEqualTo(EstadoTicket.RESUELTO);
 
     assertThatThrownBy(
-            () -> caso.ejecutar(organizacion, ticket.id(), EstadoTicket.ABIERTO, Rol.AGENTE))
+            () -> caso.ejecutar(organizacion, ticket.id(), EstadoTicket.ABIERTO, autor, Rol.AGENTE))
         .isInstanceOf(TransicionNoPermitida.class);
     assertThat(ticket.estado()).isEqualTo(EstadoTicket.CERRADO);
+  }
+
+  @Test
+  void unClienteAjenoRecibeNoEncontradoYElAutorProhibido() {
+    RepositorioEnMemoria tickets = new RepositorioEnMemoria();
+    Ticket ticket = Banco.abrir(tickets, organizacion, autor, Prioridad.MEDIA, ahora);
+    UsuarioId otro = new UsuarioId(UUID.randomUUID());
+    int guardados = tickets.vecesGuardado();
+
+    assertThatThrownBy(
+            () -> caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.RESUELTO, otro, Rol.CLIENTE))
+        .isInstanceOf(NoEncontrado.class);
+    assertThatThrownBy(
+            () -> caso(tickets).ejecutar(organizacion, ticket.id(), EstadoTicket.RESUELTO, autor, Rol.CLIENTE))
+        .isInstanceOf(Prohibido.class);
+
+    assertThat(ticket.estado()).isEqualTo(EstadoTicket.ABIERTO);
+    assertThat(tickets.vecesGuardado()).isEqualTo(guardados);
+    assertThat(publicador.publicados()).isEmpty();
   }
 }

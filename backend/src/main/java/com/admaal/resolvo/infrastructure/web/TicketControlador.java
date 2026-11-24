@@ -109,7 +109,8 @@ public class TicketControlador {
   TicketRespuesta transicionar(@PathVariable UUID id, @RequestBody Transicion cuerpo) {
     Actor actor = Actor.actual();
     Ticket ticket =
-        aplicacion.transicionar(actor.organizacionId(), new TicketId(id), cuerpo.estado(), actor.rol());
+        aplicacion.transicionar(
+            actor.organizacionId(), new TicketId(id), cuerpo.estado(), actor.id(), actor.rol());
     return TicketRespuesta.de(
         ticket, aplicacion.comentarios(actor.organizacionId(), ticket.id(), actor.id(), actor.rol()));
   }
@@ -119,7 +120,11 @@ public class TicketControlador {
     Actor actor = Actor.actual();
     Ticket ticket =
         aplicacion.asignar(
-            actor.organizacionId(), new TicketId(id), new UsuarioId(cuerpo.asignadoId()), actor.rol());
+            actor.organizacionId(),
+            new TicketId(id),
+            new UsuarioId(cuerpo.asignadoId()),
+            actor.id(),
+            actor.rol());
     return TicketRespuesta.de(ticket, List.of());
   }
 
@@ -158,7 +163,11 @@ public class TicketControlador {
     Actor actor = Actor.actual();
     return ComentarioRespuesta.de(
         aplicacion.restaurarComentario(
-            actor.organizacionId(), new TicketId(id), new ComentarioId(comentarioId), actor.rol()));
+            actor.organizacionId(),
+            new TicketId(id),
+            new ComentarioId(comentarioId),
+            actor.id(),
+            actor.rol()));
   }
 
   public record Alta(UUID categoriaId, Prioridad prioridad, String asunto, String cuerpo) {}

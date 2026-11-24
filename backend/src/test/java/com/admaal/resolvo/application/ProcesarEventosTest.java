@@ -375,7 +375,7 @@ class ProcesarEventosTest {
     String sinSpam = base.fragmentosDe(ticket.id().valor()).get(0).texto();
     assertThat(sinSpam).contains("Solucion publica").doesNotContain("Compra pastillas ya");
 
-    moderar.restaurar(acme, ticket.id(), spam, Rol.ADMIN);
+    moderar.restaurar(acme, ticket.id(), spam, autor, Rol.ADMIN);
     entregar(publicador);
     proceso.ejecutar();
 
