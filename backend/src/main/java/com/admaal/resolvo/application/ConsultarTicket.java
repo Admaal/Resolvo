@@ -6,8 +6,10 @@ import com.admaal.resolvo.domain.OrganizacionId;
 import com.admaal.resolvo.domain.Rol;
 import com.admaal.resolvo.domain.Ticket;
 import com.admaal.resolvo.domain.TicketId;
+import com.admaal.resolvo.domain.UsuarioId;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 public final class ConsultarTicket {
 
@@ -17,18 +19,25 @@ public final class ConsultarTicket {
     this.tickets = tickets;
   }
 
-  public Ticket ejecutar(OrganizacionId organizacionId, TicketId ticketId) {
-    return tickets.porId(organizacionId, ticketId).orElseThrow(NoEncontrado::new);
+  /** Un ticket que el solicitante no puede ver es indistinguible de uno que no existe. */
+  public Ticket ejecutar(
+      OrganizacionId organizacionId, TicketId ticketId, UsuarioId solicitante, Rol rol) {
+    return visible(tickets.porId(organizacionId, ticketId), solicitante, rol);
   }
 
   /** Abre un ticket por su codigo visible ({@code RS-3}), sin distinguir mayusculas. */
-  public Ticket porCodigo(OrganizacionId organizacionId, String codigo) {
-    return tickets
-        .porCodigo(organizacionId, codigo.toUpperCase(Locale.ROOT))
-        .orElseThrow(NoEncontrado::new);
+  public Ticket porCodigo(
+      OrganizacionId organizacionId, String codigo, UsuarioId solicitante, Rol rol) {
+    return visible(
+        tickets.porCodigo(organizacionId, codigo.toUpperCase(Locale.ROOT)), solicitante, rol);
   }
 
-  public List<Comentario> comentarios(OrganizacionId organizacionId, TicketId ticketId, Rol rol) {
-    return ejecutar(organizacionId, ticketId).visiblesPara(rol);
+  public List<Comentario> comentarios(
+      OrganizacionId organizacionId, TicketId ticketId, UsuarioId solicitante, Rol rol) {
+    return ejecutar(organizacionId, ticketId, solicitante, rol).visiblesPara(rol);
+  }
+
+  private static Ticket visible(Optional<Ticket> ticket, UsuarioId solicitante, Rol rol) {
+    return ticket.filter(encontrado -> encontrado.visiblePara(solicitante, rol)).orElseThrow(NoEncontrado::new);
   }
 }

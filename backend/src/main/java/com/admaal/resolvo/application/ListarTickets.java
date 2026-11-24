@@ -17,6 +17,7 @@ public final class ListarTickets {
     int pagina = Math.max(0, consulta.pagina());
     List<Ticket> filtrados =
         tickets.deLaOrganizacion(consulta.organizacionId()).stream()
+            .filter(ticket -> ticket.visiblePara(consulta.solicitanteId(), consulta.rol()))
             .filter(
                 ticket ->
                     ticket.coincide(consulta.estado(), consulta.prioridad(), consulta.asignadoId()))

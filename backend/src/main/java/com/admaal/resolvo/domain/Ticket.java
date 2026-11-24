@@ -210,6 +210,11 @@ public final class Ticket {
     return (int) ENLACE.matcher(texto).results().count();
   }
 
+  /** Un cliente solo ve los tickets que abrio; el equipo (agente y admin) ve los de su organizacion. */
+  public boolean visiblePara(UsuarioId solicitante, Rol rol) {
+    return rol != Rol.CLIENTE || autorId.equals(solicitante);
+  }
+
   /** Lo que ve cada rol: el cliente no ve notas internas ni el texto de lo retirado. */
   public List<Comentario> visiblesPara(Rol rol) {
     if (rol == Rol.CLIENTE) {

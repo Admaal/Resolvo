@@ -66,6 +66,8 @@ public class TicketControlador {
         aplicacion.listar(
             new ConsultaTickets(
                 actor.organizacionId(),
+                actor.id(),
+                actor.rol(),
                 estado,
                 prioridad,
                 asignado == null ? null : new UsuarioId(asignado),
@@ -84,10 +86,14 @@ public class TicketControlador {
     Actor actor = Actor.actual();
     Ticket ticket =
         esUuid(referencia)
-            ? aplicacion.consultar(actor.organizacionId(), new TicketId(UUID.fromString(referencia)))
-            : aplicacion.consultarPorCodigo(actor.organizacionId(), referencia);
+            ? aplicacion.consultar(
+                actor.organizacionId(),
+                new TicketId(UUID.fromString(referencia)),
+                actor.id(),
+                actor.rol())
+            : aplicacion.consultarPorCodigo(actor.organizacionId(), referencia, actor.id(), actor.rol());
     return TicketRespuesta.de(
-        ticket, aplicacion.comentarios(actor.organizacionId(), ticket.id(), actor.rol()));
+        ticket, aplicacion.comentarios(actor.organizacionId(), ticket.id(), actor.id(), actor.rol()));
   }
 
   private static boolean esUuid(String referencia) {
@@ -104,7 +110,8 @@ public class TicketControlador {
     Actor actor = Actor.actual();
     Ticket ticket =
         aplicacion.transicionar(actor.organizacionId(), new TicketId(id), cuerpo.estado(), actor.rol());
-    return TicketRespuesta.de(ticket, aplicacion.comentarios(actor.organizacionId(), ticket.id(), actor.rol()));
+    return TicketRespuesta.de(
+        ticket, aplicacion.comentarios(actor.organizacionId(), ticket.id(), actor.id(), actor.rol()));
   }
 
   @PostMapping("/{id}/asignacion")

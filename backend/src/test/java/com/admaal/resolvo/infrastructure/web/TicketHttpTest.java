@@ -185,6 +185,82 @@ class TicketHttpTest {
     }
   }
 
+  @Test
+  void unClienteNoAbreElTicketDeOtroClienteDeSuOrganizacion() throws Exception {
+    String ajeno = crear(token("cliente@acme.test"), "ALTA", "Ticket de otro cliente");
+    String codigo =
+        JsonPath.read(ver(token("agente@acme.test"), ajeno).getResponse().getContentAsString(), "$.codigo");
+    String otro = tokenOtroClienteDeAcme();
+
+    MvcResult porId = ver(otro, ajeno);
+    MvcResult porCodigo = ver(otro, codigo);
+    MvcResult inexistente = ver(otro, "RS-999999");
+
+    assertThat(porId.getResponse().getStatus()).isEqualTo(404);
+    assertThat(porCodigo.getResponse().getStatus()).isEqualTo(404);
+    assertThat(porId.getResponse().getContentAsString())
+        .isEqualTo(inexistente.getResponse().getContentAsString());
+    assertThat(porCodigo.getResponse().getContentAsString())
+        .isEqualTo(inexistente.getResponse().getContentAsString());
+    assertThat(porId.getResponse().getContentAsString()).doesNotContain("Ticket de otro cliente");
+  }
+
+  @Test
+  void unClienteSoloListaLosTicketsQueHaAbierto() throws Exception {
+    String agente = token("agente@acme.test");
+    String delOtro = tokenOtroClienteDeAcme();
+    String suyo = crear(delOtro, "BAJA", "Solo mio");
+    String ajeno = crear(token("cliente@acme.test"), "BAJA", "Ajeno al otro cliente");
+
+    String lista =
+        mvc.perform(get("/api/tickets").header("Authorization", "Bearer " + delOtro).param("tamano", "50"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String autorId = JsonPath.read(ver(delOtro, suyo).getResponse().getContentAsString(), "$.autorId");
+
+    assertThat((java.util.List<String>) JsonPath.read(lista, "$.elementos[*].id")).containsExactly(suyo);
+    assertThat((java.util.List<String>) JsonPath.read(lista, "$.elementos[*].autorId"))
+        .containsOnly(autorId);
+    assertThat((Integer) JsonPath.read(lista, "$.total")).isEqualTo(1);
+
+    mvc.perform(get("/api/tickets").header("Authorization", "Bearer " + agente).param("tamano", "1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(org.hamcrest.Matchers.greaterThan(1)));
+    mvc.perform(get("/api/tickets/" + ajeno).header("Authorization", "Bearer " + agente))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void unAgenteYUnAdminAbrenElTicketDeUnCliente() throws Exception {
+    String id = crear(token("cliente@acme.test"), "MEDIA", "Lo abre el equipo");
+
+    for (String correo : new String[] {"agente@acme.test", "admin@acme.test"}) {
+      mvc.perform(get("/api/tickets/" + id).header("Authorization", "Bearer " + token(correo)))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.id").value(id));
+    }
+  }
+
+  private String tokenOtroClienteDeAcme() throws Exception {
+    UUID usuario = UUID.randomUUID();
+    String hash =
+        jdbc.queryForObject(
+            "select hash_contrasena from usuario where email = ?",
+            String.class,
+            "cliente@acme.test");
+    jdbc.update(
+        """
+        insert into usuario (id, organizacion_id, email, rol, hash_contrasena, fallos_seguidos)
+        values (?, '11111111-1111-1111-1111-111111111111', ?, 'CLIENTE', ?, 0)
+        """,
+        usuario,
+        "otro-" + usuario + "@acme.test",
+        hash);
+    return token("otro-" + usuario + "@acme.test");
+  }
+
   private String crear(String token, String prioridad, String asunto) throws Exception {
     MvcResult resultado =
         mvc.perform(

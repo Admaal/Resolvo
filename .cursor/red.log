@@ -110,3 +110,6 @@
 2026-11-21T18:28:00 fast bbeaa2e2fd7e69767a0341dd17c42de0c8df9670 RED backend/src/test/java/com/admaal/resolvo/application/ModerarComentarioTest.java exit=1
 2026-11-21T18:28:05 fast bbeaa2e2fd7e69767a0341dd17c42de0c8df9670 RED backend/src/test/java/com/admaal/resolvo/application/ProcesarEventosTest.java exit=1
 2026-11-24T18:03:00 fast 4db93ce783f1b0b35966fc89fab6fb98ef0a94f6 RED backend/src/test/java/com/admaal/resolvo/application/ConsultarTicketTest.java exit=1
+2026-11-24T18:58:51 fast f65dda44f3702c015064af7d113afabb6ed16db2 RED backend/src/test/java/com/admaal/resolvo/application/ConsultarTicketTest.java exit=1
+2026-11-24T18:59:08 fast f65dda44f3702c015064af7d113afabb6ed16db2 RED backend/src/test/java/com/admaal/resolvo/domain/TicketVisibilidadTest.java exit=1
+2026-11-24T18:59:13 fast f65dda44f3702c015064af7d113afabb6ed16db2 RED backend/src/test/java/com/admaal/resolvo/application/ListarTicketsTest.java exit=1

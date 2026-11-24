@@ -34,10 +34,10 @@ class ComentarTicketTest {
     caso.ejecutar(organizacion, ticket.id(), agente, Rol.AGENTE, "Nota para el equipo", true);
     caso.ejecutar(organizacion, ticket.id(), autor, Rol.CLIENTE, "Sigue sin imprimir", false);
 
-    assertThat(consulta.comentarios(organizacion, ticket.id(), Rol.CLIENTE))
+    assertThat(consulta.comentarios(organizacion, ticket.id(), autor, Rol.CLIENTE))
         .extracting(comentario -> comentario.cuerpo())
         .containsExactly("Sigue sin imprimir");
-    assertThat(consulta.comentarios(organizacion, ticket.id(), Rol.AGENTE)).hasSize(2);
+    assertThat(consulta.comentarios(organizacion, ticket.id(), agente, Rol.AGENTE)).hasSize(2);
     assertThat(tickets.vecesGuardado()).isEqualTo(3);
   }
 
