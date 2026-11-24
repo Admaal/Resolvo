@@ -31,12 +31,12 @@ import { TicketsStore, filtrarPorVista } from './tickets.store';
         <span class="posicion" aria-label="Posición en la bandeja">{{ posicion() + 1 }} / {{ orden().length }}</span>
         <span class="navegar">
           @if (anterior(); as previo) {
-            <a class="btn fantasma icono anterior" [routerLink]="['/tickets', previo.id]" [queryParams]="paramsVista()" aria-label="Ticket anterior (K)" title="Anterior (K)">
+            <a class="btn fantasma icono anterior" [routerLink]="['/tickets', previo.codigo]" [queryParams]="paramsVista()" aria-label="Ticket anterior (K)" title="Anterior (K)">
               <rs-icono nombre="chevron-up" />
             </a>
           }
           @if (siguiente(); as proximo) {
-            <a class="btn fantasma icono siguiente" [routerLink]="['/tickets', proximo.id]" [queryParams]="paramsVista()" aria-label="Ticket siguiente (J)" title="Siguiente (J)">
+            <a class="btn fantasma icono siguiente" [routerLink]="['/tickets', proximo.codigo]" [queryParams]="paramsVista()" aria-label="Ticket siguiente (J)" title="Siguiente (J)">
               <rs-icono nombre="chevron-down" />
             </a>
           }
@@ -160,6 +160,7 @@ export class DetallePage {
   agente = '';
   private readonly hilo = viewChild(TicketThread);
   private enviandoComentario = false;
+  private referencia = '';
 
   protected readonly yo = computed(() => this.auth.usuarioId());
   private readonly vista = toSignal(this.route.queryParamMap.pipe(map((params) => params.get('vista') ?? 'todos')), {
@@ -179,11 +180,15 @@ export class DetallePage {
 
   constructor() {
     this.route.paramMap.subscribe((params) => {
+      const referencia = params.get('id') ?? '';
+      // Tras normalizar un UUID al código la ruta cambia, pero el ticket ya está en pantalla.
+      if (this.ticket()?.codigo === referencia) return;
+      this.referencia = referencia;
       this.ticket.set(null);
       this.error.set('');
       this.errorComentario.set('');
       this.carga.set('cargando');
-      void this.cargar(params.get('id') ?? '');
+      void this.cargar(referencia);
     });
     if (this.puedeGestionar()) {
       void this.tickets.categorias().then((categorias) => this.categorias.set(categorias));
@@ -203,9 +208,9 @@ export class DetallePage {
     if (evento.key === 'Escape') {
       void this.router.navigateByUrl(this.router.createUrlTree(['/tickets'], { queryParams: this.paramsVista() }));
     } else if (evento.key === 'j' && this.siguiente()) {
-      this.ir(this.siguiente()!.id);
+      this.ir(this.siguiente()!.codigo);
     } else if (evento.key === 'k' && this.anterior()) {
-      this.ir(this.anterior()!.id);
+      this.ir(this.anterior()!.codigo);
     }
   }
 
@@ -309,16 +314,22 @@ export class DetallePage {
     void this.store.cargar();
   }
 
-  private ir(id: string): void {
-    void this.router.navigateByUrl(this.router.createUrlTree(['/tickets', id], { queryParams: this.paramsVista() }));
+  private ir(codigo: string): void {
+    void this.router.navigateByUrl(this.router.createUrlTree(['/tickets', codigo], { queryParams: this.paramsVista() }));
   }
 
-  private async cargar(id: string): Promise<void> {
+  /** La URL lleva el código (`RS-3`); un UUID o un código en minúsculas se acepta y se normaliza. */
+  private async cargar(referencia: string): Promise<void> {
     try {
-      this.ticket.set(await this.tickets.detalle(id));
+      const cargado = await this.tickets.detalle(referencia);
+      if (referencia !== this.referencia) return;
+      this.ticket.set(cargado);
       this.carga.set('listo');
+      if (cargado.codigo !== referencia) {
+        void this.router.navigate(['/tickets', cargado.codigo], { replaceUrl: true, queryParamsHandling: 'preserve' });
+      }
     } catch {
-      this.carga.set('error');
+      if (referencia === this.referencia) this.carga.set('error');
     }
   }
 }

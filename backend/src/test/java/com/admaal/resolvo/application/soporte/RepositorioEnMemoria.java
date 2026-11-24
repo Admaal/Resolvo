@@ -28,6 +28,13 @@ public final class RepositorioEnMemoria implements TicketRepositorio {
   }
 
   @Override
+  public Optional<Ticket> porCodigo(OrganizacionId organizacionId, String codigo) {
+    return guardados.stream()
+        .filter(ticket -> ticket.codigo().equals(codigo) && ticket.organizacionId().equals(organizacionId))
+        .findFirst();
+  }
+
+  @Override
   public List<Ticket> deLaOrganizacion(OrganizacionId organizacionId) {
     return guardados.stream().filter(ticket -> ticket.organizacionId().equals(organizacionId)).toList();
   }

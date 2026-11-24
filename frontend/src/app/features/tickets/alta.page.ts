@@ -82,7 +82,7 @@ export class AltaPage {
         cuerpo: this.cuerpo,
       });
       void this.store.cargar();
-      await this.router.navigate(['/tickets', ticket.id]);
+      await this.router.navigate(['/tickets', ticket.codigo]);
     } catch (fallo) {
       this.error.set(mensajeDeError(fallo));
     } finally {

@@ -15,8 +15,8 @@ export class TicketsService {
     return firstValueFrom(this.http.get<PaginaTickets>('/api/tickets', { params }));
   }
 
-  detalle(id: string): Promise<TicketDetalle> {
-    return firstValueFrom(this.http.get<TicketDetalle>(`/api/tickets/${id}`));
+  detalle(referencia: string): Promise<TicketDetalle> {
+    return firstValueFrom(this.http.get<TicketDetalle>(`/api/tickets/${encodeURIComponent(referencia)}`));
   }
 
   abrir(cuerpo: { categoriaId: string; prioridad: string; asunto: string; cuerpo: string }): Promise<TicketDetalle> {

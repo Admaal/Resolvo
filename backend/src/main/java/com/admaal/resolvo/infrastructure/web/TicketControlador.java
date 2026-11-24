@@ -78,12 +78,25 @@ public class TicketControlador {
         resultado.total());
   }
 
-  @GetMapping("/{id}")
-  TicketRespuesta detalle(@PathVariable UUID id) {
+  /** El ticket se abre por su código (`RS-3`) o por su id interno: los enlaces antiguos siguen valiendo. */
+  @GetMapping("/{referencia}")
+  TicketRespuesta detalle(@PathVariable String referencia) {
     Actor actor = Actor.actual();
-    TicketId ticketId = new TicketId(id);
-    Ticket ticket = aplicacion.consultar(actor.organizacionId(), ticketId);
-    return TicketRespuesta.de(ticket, aplicacion.comentarios(actor.organizacionId(), ticketId, actor.rol()));
+    Ticket ticket =
+        esUuid(referencia)
+            ? aplicacion.consultar(actor.organizacionId(), new TicketId(UUID.fromString(referencia)))
+            : aplicacion.consultarPorCodigo(actor.organizacionId(), referencia);
+    return TicketRespuesta.de(
+        ticket, aplicacion.comentarios(actor.organizacionId(), ticket.id(), actor.rol()));
+  }
+
+  private static boolean esUuid(String referencia) {
+    try {
+      UUID.fromString(referencia);
+      return true;
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
   }
 
   @PostMapping("/{id}/transicion")

@@ -32,6 +32,11 @@ public class TicketRepositorioJpa implements TicketRepositorio {
   }
 
   @Override
+  public Optional<Ticket> porCodigo(OrganizacionId organizacionId, String codigo) {
+    return tickets.porCodigoEnOrganizacion(organizacionId.valor(), codigo).map(Mapeo::ticket);
+  }
+
+  @Override
   public List<Ticket> deLaOrganizacion(OrganizacionId organizacionId) {
     return tickets.deLaOrganizacion(organizacionId.valor()).stream().map(Mapeo::ticket).toList();
   }

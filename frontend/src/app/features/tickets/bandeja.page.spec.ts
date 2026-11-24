@@ -79,6 +79,12 @@ describe('BandejaPage', () => {
     expect(el(fixture, '.fila .fila-estado rs-estado')).not.toBeNull();
   });
 
+  it('la fila enlaza por el código del ticket y no por su id interno', async () => {
+    const fixture = await conUnTicket({ id: '44444444-4444-4444-4444-444444444443', codigo: 'RS-3' });
+
+    expect(el(fixture, 'a.fila')?.getAttribute('href')).toBe('/tickets/RS-3');
+  });
+
   it('la prioridad alta se dice en texto con icono, sin chip', async () => {
     const fixture = await conUnTicket({ prioridad: 'ALTA' });
 

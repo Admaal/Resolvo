@@ -11,5 +11,8 @@ public interface TicketRepositorio {
 
   Optional<Ticket> porId(OrganizacionId organizacionId, TicketId ticketId);
 
+  /** El codigo ({@code RS-3}) es unico por organizacion: otra organizacion no lo ve. */
+  Optional<Ticket> porCodigo(OrganizacionId organizacionId, String codigo);
+
   List<Ticket> deLaOrganizacion(OrganizacionId organizacionId);
 }
