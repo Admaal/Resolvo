@@ -282,3 +282,89 @@ describe('DetallePage: moderación de comentarios', () => {
     expect(el(fixture, '.compositor .error')?.textContent).toContain('permiso');
   });
 });
+
+describe('DetallePage: borrador del comentario', () => {
+  function montarComentario(comentar: () => Promise<unknown>) {
+    const detalle = vi.fn(() => Promise.resolve(ticket));
+    const enviar = vi.fn(comentar);
+    TestBed.configureTestingModule({
+      imports: [DetallePage],
+      providers: [
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: 't1' })), queryParamMap: of(convertToParamMap({})) } },
+        { provide: TicketsStore, useValue: { tickets: signal(lista), cargar: vi.fn() } },
+        { provide: AuthService, useValue: { rol: () => 'CLIENTE', usuarioId: () => 'u1' } },
+        {
+          provide: TicketsService,
+          useValue: { detalle, comentar: enviar, categorias: () => Promise.resolve([]), usuarios: () => Promise.resolve([]) },
+        },
+        { provide: ClasificacionesService, useValue: { actual: () => Promise.resolve(null) } },
+        { provide: SugerenciasService, useValue: { actual: () => Promise.resolve(null) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(DetallePage);
+    fixture.detectChanges();
+    return { fixture, detalle, enviar };
+  }
+
+  const area = (fixture: { nativeElement: unknown }) => el(fixture, '#borrador-hilo') as HTMLTextAreaElement;
+
+  const escribir = (fixture: { nativeElement: unknown; detectChanges(): void }, texto: string) => {
+    const campo = area(fixture);
+    campo.value = texto;
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  };
+
+  const enviarConTeclado = (fixture: { nativeElement: unknown }) =>
+    area(fixture).dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true, bubbles: true }));
+
+  async function listo(montado: ReturnType<typeof montarComentario>) {
+    await esperar();
+    montado.fixture.detectChanges();
+    await montado.fixture.whenStable();
+  }
+
+  it('si el envío falla el borrador se conserva y se enseña el error', async () => {
+    const montado = montarComentario(() => Promise.reject(new HttpErrorResponse({ status: 422, error: { error: 'demasiados-enlaces' } })));
+    await listo(montado);
+
+    escribir(montado.fixture, 'http://a.test http://b.test http://c.test http://d.test');
+    enviarConTeclado(montado.fixture);
+    await esperar();
+    montado.fixture.detectChanges();
+    await montado.fixture.whenStable();
+
+    expect(area(montado.fixture).value).toBe('http://a.test http://b.test http://c.test http://d.test');
+    expect(el(montado.fixture, '.compositor .error')).not.toBeNull();
+  });
+
+  it('si el envío sale bien el borrador se vacía y se recarga el ticket', async () => {
+    const montado = montarComentario(() => Promise.resolve({}));
+    await listo(montado);
+
+    escribir(montado.fixture, 'hola');
+    enviarConTeclado(montado.fixture);
+    await esperar();
+    montado.fixture.detectChanges();
+    await montado.fixture.whenStable();
+
+    expect(montado.enviar).toHaveBeenCalledWith('t1', 'hola', false);
+    expect(area(montado.fixture).value).toBe('');
+    expect(montado.detalle).toHaveBeenCalledTimes(2);
+  });
+
+  it('dos Ctrl+Enter seguidos envían un solo comentario', async () => {
+    let terminar: () => void = () => undefined;
+    const montado = montarComentario(() => new Promise((resolver) => (terminar = () => resolver({}))));
+    await listo(montado);
+
+    escribir(montado.fixture, 'hola');
+    enviarConTeclado(montado.fixture);
+    enviarConTeclado(montado.fixture);
+    terminar();
+    await esperar();
+
+    expect(montado.enviar).toHaveBeenCalledTimes(1);
+  });
+});

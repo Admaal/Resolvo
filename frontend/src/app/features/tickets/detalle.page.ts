@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -158,6 +158,8 @@ export class DetallePage {
   protected readonly slaCorre = slaCorre;
   readonly estados = ['ABIERTO', 'PENDIENTE', 'RESUELTO', 'CERRADO'];
   agente = '';
+  private readonly hilo = viewChild(TicketThread);
+  private enviandoComentario = false;
 
   protected readonly yo = computed(() => this.auth.usuarioId());
   private readonly vista = toSignal(this.route.queryParamMap.pipe(map((params) => params.get('vista') ?? 'todos')), {
@@ -257,8 +259,20 @@ export class DetallePage {
     void this.store.cargar();
   }
 
+  /**
+   * El borrador solo se vacía cuando el comentario se ha guardado: si la API lo rechaza (enlaces de más,
+   * demasiado rápido, sesión caducada) el texto sigue en el cuadro. Como no se vacía al instante, un
+   * segundo envío mientras el primero sigue en vuelo se ignora para no duplicar el comentario.
+   */
   async comentar(evento: { cuerpo: string; interno: boolean }): Promise<void> {
-    await this.actuarSobreElHilo((id) => this.tickets.comentar(id, evento.cuerpo, evento.interno));
+    if (this.enviandoComentario) return;
+    this.enviandoComentario = true;
+    try {
+      const guardado = await this.actuarSobreElHilo((id) => this.tickets.comentar(id, evento.cuerpo, evento.interno));
+      if (guardado) this.hilo()?.limpiar();
+    } finally {
+      this.enviandoComentario = false;
+    }
   }
 
   async ocultar(evento: { id: string; motivo: string }): Promise<void> {
@@ -269,17 +283,23 @@ export class DetallePage {
     await this.actuarSobreElHilo((id) => this.tickets.restaurar(id, comentarioId));
   }
 
-  /** Hace algo en el hilo del ticket y lo recarga; si falla, lo dice en lenguaje claro bajo el hilo. */
-  private async actuarSobreElHilo(accion: (ticketId: string) => Promise<unknown>): Promise<void> {
+  /**
+   * Hace algo en el hilo del ticket y lo recarga; si falla, lo dice en lenguaje claro bajo el hilo.
+   * Devuelve si la acción llegó a guardarse, aunque la recarga posterior falle.
+   */
+  private async actuarSobreElHilo(accion: (ticketId: string) => Promise<unknown>): Promise<boolean> {
     const actual = this.ticket();
-    if (!actual) return;
+    if (!actual) return false;
     this.errorComentario.set('');
+    let guardado = false;
     try {
       await accion(actual.id);
+      guardado = true;
       this.ticket.set(await this.tickets.detalle(actual.id));
     } catch (fallo) {
       this.errorComentario.set(mensajeDeError(fallo));
     }
+    return guardado;
   }
 
   async refrescar(): Promise<void> {

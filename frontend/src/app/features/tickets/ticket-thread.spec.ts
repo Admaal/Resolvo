@@ -38,7 +38,7 @@ describe('TicketThread', () => {
     expect(enviados).toEqual([]);
   });
 
-  it('envía el borrador recortado y lo limpia', () => {
+  it('envía el borrador recortado y lo conserva hasta que se confirme', () => {
     TestBed.configureTestingModule({ imports: [TicketThread] });
     const fixture = TestBed.createComponent(TicketThread);
     const enviados: unknown[] = [];
@@ -47,7 +47,28 @@ describe('TicketThread', () => {
     fixture.componentInstance.enviar(true);
 
     expect(enviados).toEqual([{ cuerpo: 'hola', interno: true }]);
+    expect(fixture.componentInstance.borrador).toBe(' hola ');
+  });
+
+  it('limpiar vacía el borrador que se acaba de enviar', () => {
+    TestBed.configureTestingModule({ imports: [TicketThread] });
+    const fixture = TestBed.createComponent(TicketThread);
+    fixture.componentInstance.borrador = ' hola ';
+    fixture.componentInstance.enviar(false);
+    fixture.componentInstance.limpiar();
+
     expect(fixture.componentInstance.borrador).toBe('');
+  });
+
+  it('limpiar no borra un texto distinto del que se envió', () => {
+    TestBed.configureTestingModule({ imports: [TicketThread] });
+    const fixture = TestBed.createComponent(TicketThread);
+    fixture.componentInstance.borrador = 'hola';
+    fixture.componentInstance.enviar(false);
+    fixture.componentInstance.borrador = 'hola, y además esto';
+    fixture.componentInstance.limpiar();
+
+    expect(fixture.componentInstance.borrador).toBe('hola, y además esto');
   });
 
   it('distingue la nota interna del resto', async () => {

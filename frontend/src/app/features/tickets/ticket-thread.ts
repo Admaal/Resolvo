@@ -133,6 +133,7 @@ export class TicketThread {
   private readonly textosAbiertos = signal<string[]>([]);
   readonly modo = signal<'responder' | 'nota'>('responder');
   borrador = '';
+  private ultimoEnviado: string | null = null;
 
   private readonly nombres = computed(() => this.autores());
 
@@ -185,9 +186,18 @@ export class TicketThread {
     }
   }
 
+  /**
+   * Emite el borrador, pero no lo vacía: quien lo guarda llama a {@link limpiar} cuando la API lo ha
+   * aceptado. Si falla, el texto sigue en el cuadro para poder corregirlo y reenviarlo.
+   */
   enviar(interno: boolean = this.modo() === 'nota'): void {
     if (this.vacio()) return;
-    this.enviado.emit({ cuerpo: this.borrador.trim(), interno });
-    this.borrador = '';
+    this.ultimoEnviado = this.borrador.trim();
+    this.enviado.emit({ cuerpo: this.ultimoEnviado, interno });
+  }
+
+  /** Vacía el borrador enviado; si la persona ya ha escrito otra cosa mientras tanto, la respeta. */
+  limpiar(): void {
+    if (this.borrador.trim() === this.ultimoEnviado) this.borrador = '';
   }
 }
