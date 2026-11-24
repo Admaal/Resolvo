@@ -75,5 +75,66 @@ describe('AuthService', () => {
         globalThis.fetch = fetchOriginal;
       }
     });
+
+    /** El refresco rota el token y es de un solo uso: dos a la vez cerrarían la sesión entera. */
+    it('dos restaurar concurrentes hacen un solo refresh', async () => {
+      const fetchOriginal = globalThis.fetch;
+      let llamadas = 0;
+      globalThis.fetch = async () => {
+        llamadas++;
+        await new Promise((resolver) => setTimeout(resolver));
+        return new Response(JSON.stringify({ access: `aaa.${cuerpo}.zzz` }), { status: 200 });
+      };
+      try {
+        const servicio = TestBed.inject(AuthService);
+        const [primera, segunda] = await Promise.all([servicio.restaurar(), servicio.restaurar()]);
+
+        expect(llamadas).toBe(1);
+        expect([primera, segunda]).toEqual([true, true]);
+      } finally {
+        globalThis.fetch = fetchOriginal;
+      }
+    });
+
+    it('tras terminar, un restaurar nuevo vuelve a pedir refresh', async () => {
+      const fetchOriginal = globalThis.fetch;
+      let llamadas = 0;
+      globalThis.fetch = () => {
+        llamadas++;
+        return Promise.resolve(new Response(JSON.stringify({ access: `aaa.${cuerpo}.zzz` }), { status: 200 }));
+      };
+      try {
+        const servicio = TestBed.inject(AuthService);
+        await servicio.restaurar();
+        await servicio.restaurar();
+
+        expect(llamadas).toBe(2);
+      } finally {
+        globalThis.fetch = fetchOriginal;
+      }
+    });
+  });
+
+  it('expirar limpia token, rol y usuario sin llamar a la API', async () => {
+    const cuerpo = btoa(JSON.stringify({ rol: 'CLIENTE', sub: 'usuario-3' }));
+    const fetchOriginal = globalThis.fetch;
+    let llamadas = 0;
+    globalThis.fetch = () => {
+      llamadas++;
+      return Promise.resolve(new Response(JSON.stringify({ access: `aaa.${cuerpo}.zzz` }), { status: 200 }));
+    };
+    try {
+      const servicio = TestBed.inject(AuthService);
+      await servicio.entrar('cliente@acme.test', 'demo-resolvo');
+      const antes = llamadas;
+      servicio.expirar();
+
+      expect(servicio.token()).toBeNull();
+      expect(servicio.rol()).toBeNull();
+      expect(servicio.usuarioId()).toBeNull();
+      expect(llamadas).toBe(antes);
+    } finally {
+      globalThis.fetch = fetchOriginal;
+    }
   });
 });
