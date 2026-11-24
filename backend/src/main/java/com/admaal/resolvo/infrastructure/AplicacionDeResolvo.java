@@ -108,6 +108,11 @@ public class AplicacionDeResolvo {
   }
 
   @Transactional(readOnly = true)
+  public Ticket consultarPorCodigo(OrganizacionId organizacionId, String codigo) {
+    return new ConsultarTicket(tickets).porCodigo(organizacionId, codigo);
+  }
+
+  @Transactional(readOnly = true)
   public List<Comentario> comentarios(OrganizacionId organizacionId, TicketId ticketId, Rol rol) {
     return new ConsultarTicket(tickets).comentarios(organizacionId, ticketId, rol);
   }

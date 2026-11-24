@@ -144,6 +144,47 @@ class TicketHttpTest {
         .andExpect(jsonPath("$.elementos[1]").doesNotExist());
   }
 
+  @Test
+  void elTicketSeAbrePorSuCodigoSinDistinguirMayusculas() throws Exception {
+    String cliente = token("cliente@acme.test");
+    String id = crear(cliente, "ALTA", "Abrir por codigo");
+    String codigo = JsonPath.read(ver(cliente, id).getResponse().getContentAsString(), "$.codigo");
+
+    for (String referencia : new String[] {codigo, codigo.toLowerCase(), id}) {
+      mvc.perform(get("/api/tickets/" + referencia).header("Authorization", "Bearer " + cliente))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.id").value(id))
+          .andExpect(jsonPath("$.codigo").value(codigo));
+    }
+  }
+
+  @Test
+  void elCodigoDeOtraOrganizacionResponde404IgualQueUnoInexistente() throws Exception {
+    String cliente = token("cliente@acme.test");
+    String id = crear(cliente, "ALTA", "Codigo ajeno");
+    String codigo = JsonPath.read(ver(cliente, id).getResponse().getContentAsString(), "$.codigo");
+    String beta = tokenBeta();
+
+    MvcResult ajeno = ver(beta, codigo);
+    MvcResult inexistente = ver(beta, "RS-999999");
+
+    assertThat(ajeno.getResponse().getStatus()).isEqualTo(404);
+    assertThat(inexistente.getResponse().getStatus()).isEqualTo(404);
+    assertThat(ajeno.getResponse().getContentAsString())
+        .isEqualTo(inexistente.getResponse().getContentAsString());
+  }
+
+  @Test
+  void unCodigoMalFormadoResponde404() throws Exception {
+    String cliente = token("cliente@acme.test");
+
+    for (String referencia : new String[] {"RS-", "abc", "RS-1x", "-1"}) {
+      assertThat(ver(cliente, referencia).getResponse().getStatus())
+          .as(referencia)
+          .isEqualTo(404);
+    }
+  }
+
   private String crear(String token, String prioridad, String asunto) throws Exception {
     MvcResult resultado =
         mvc.perform(

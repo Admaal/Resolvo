@@ -70,7 +70,7 @@ const ICONOS_GRUPO: Record<ClaveGrupo, NombreIcono> = {
                       <li>
                         <a
                           class="fila"
-                          [routerLink]="['/tickets', ticket.id]"
+                          [routerLink]="['/tickets', ticket.codigo]"
                           queryParamsHandling="preserve"
                           routerLinkActive="activa"
                           ariaCurrentWhenActive="page">

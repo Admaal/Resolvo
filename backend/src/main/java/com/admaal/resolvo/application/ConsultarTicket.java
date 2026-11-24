@@ -7,6 +7,7 @@ import com.admaal.resolvo.domain.Rol;
 import com.admaal.resolvo.domain.Ticket;
 import com.admaal.resolvo.domain.TicketId;
 import java.util.List;
+import java.util.Locale;
 
 public final class ConsultarTicket {
 
@@ -18,6 +19,13 @@ public final class ConsultarTicket {
 
   public Ticket ejecutar(OrganizacionId organizacionId, TicketId ticketId) {
     return tickets.porId(organizacionId, ticketId).orElseThrow(NoEncontrado::new);
+  }
+
+  /** Abre un ticket por su codigo visible ({@code RS-3}), sin distinguir mayusculas. */
+  public Ticket porCodigo(OrganizacionId organizacionId, String codigo) {
+    return tickets
+        .porCodigo(organizacionId, codigo.toUpperCase(Locale.ROOT))
+        .orElseThrow(NoEncontrado::new);
   }
 
   public List<Comentario> comentarios(OrganizacionId organizacionId, TicketId ticketId, Rol rol) {

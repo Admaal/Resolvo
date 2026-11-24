@@ -20,6 +20,14 @@ public interface TicketJpa extends JpaRepository<TicketEntity, UUID> {
       """
       select distinct t from TicketEntity t
       left join fetch t.comentarios
+      where t.organizacionId = :organizacion and t.codigo = :codigo
+      """)
+  Optional<TicketEntity> porCodigoEnOrganizacion(UUID organizacion, String codigo);
+
+  @Query(
+      """
+      select distinct t from TicketEntity t
+      left join fetch t.comentarios
       where t.organizacionId = :organizacion
       """)
   List<TicketEntity> deLaOrganizacion(UUID organizacion);

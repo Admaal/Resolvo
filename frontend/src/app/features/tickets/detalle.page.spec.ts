@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../../core/auth.service';
 import { ClasificacionesService } from './clasificaciones.service';
@@ -47,7 +47,7 @@ function montar(rol: string, detalle: () => Promise<TicketDetalle>, transicionar
     imports: [DetallePage],
     providers: [
       provideRouter([]),
-      { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: 't1' })), queryParamMap: of(convertToParamMap(vista ? { vista } : {})) } },
+      { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: 'RS-1' })), queryParamMap: of(convertToParamMap(vista ? { vista } : {})) } },
       { provide: TicketsStore, useValue: { tickets: signal(lista), cargar: vi.fn() } },
       { provide: AuthService, useValue: { rol: () => rol, usuarioId: () => 'u1' } },
       {
@@ -58,6 +58,7 @@ function montar(rol: string, detalle: () => Promise<TicketDetalle>, transicionar
       { provide: SugerenciasService, useValue: { actual: () => Promise.resolve(null) } },
     ],
   });
+  vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   const fixture = TestBed.createComponent(DetallePage);
   fixture.detectChanges();
   return fixture;
@@ -132,8 +133,8 @@ describe('DetallePage', () => {
     fixture.detectChanges();
 
     expect(el(fixture, '.posicion')?.textContent?.trim()).toBe('2 / 3');
-    expect(el(fixture, 'a.anterior')?.getAttribute('href')).toBe('/tickets/t0');
-    expect(el(fixture, 'a.siguiente')?.getAttribute('href')).toBe('/tickets/t2');
+    expect(el(fixture, 'a.anterior')?.getAttribute('href')).toBe('/tickets/RS-0');
+    expect(el(fixture, 'a.siguiente')?.getAttribute('href')).toBe('/tickets/RS-2');
   });
 
   it('en el primero no hay anterior', async () => {
@@ -142,7 +143,7 @@ describe('DetallePage', () => {
     fixture.detectChanges();
 
     expect(el(fixture, 'a.anterior')).toBeNull();
-    expect(el(fixture, 'a.siguiente')?.getAttribute('href')).toBe('/tickets/t1');
+    expect(el(fixture, 'a.siguiente')?.getAttribute('href')).toBe('/tickets/RS-1');
   });
 
   it('la tecla j abre el siguiente y Escape vuelve a la bandeja', async () => {
@@ -153,7 +154,7 @@ describe('DetallePage', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'j' }));
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
 
-    expect(ir.mock.calls.map((c) => String(c[0]))).toEqual(['/tickets/t2', '/tickets']);
+    expect(ir.mock.calls.map((c) => String(c[0]))).toEqual(['/tickets/RS-2', '/tickets']);
   });
 
   it('las teclas no actúan mientras se escribe en un campo', async () => {
@@ -207,7 +208,7 @@ describe('DetallePage: moderación de comentarios', () => {
       imports: [DetallePage],
       providers: [
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: 't1' })), queryParamMap: of(convertToParamMap({})) } },
+        { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: 'RS-1' })), queryParamMap: of(convertToParamMap({})) } },
         { provide: TicketsStore, useValue: { tickets: signal(lista), cargar: vi.fn() } },
         { provide: AuthService, useValue: { rol: () => rol, usuarioId: () => 'u1' } },
         {
@@ -291,7 +292,7 @@ describe('DetallePage: borrador del comentario', () => {
       imports: [DetallePage],
       providers: [
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: 't1' })), queryParamMap: of(convertToParamMap({})) } },
+        { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: 'RS-1' })), queryParamMap: of(convertToParamMap({})) } },
         { provide: TicketsStore, useValue: { tickets: signal(lista), cargar: vi.fn() } },
         { provide: AuthService, useValue: { rol: () => 'CLIENTE', usuarioId: () => 'u1' } },
         {
@@ -366,5 +367,76 @@ describe('DetallePage: borrador del comentario', () => {
     await esperar();
 
     expect(montado.enviar).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('DetallePage: el código del ticket en la URL', () => {
+  function montarConParametro(parametro: string) {
+    const parametros = new BehaviorSubject(convertToParamMap({ id: parametro }));
+    const detalle = vi.fn(() => Promise.resolve(ticket));
+    TestBed.configureTestingModule({
+      imports: [DetallePage],
+      providers: [
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: { paramMap: parametros, queryParamMap: of(convertToParamMap({})) } },
+        { provide: TicketsStore, useValue: { tickets: signal(lista), cargar: vi.fn() } },
+        { provide: AuthService, useValue: { rol: () => 'AGENTE', usuarioId: () => 'u1' } },
+        {
+          provide: TicketsService,
+          useValue: { detalle, categorias: () => Promise.resolve([]), usuarios: () => Promise.resolve([]) },
+        },
+        { provide: ClasificacionesService, useValue: { actual: () => Promise.resolve(null) } },
+        { provide: SugerenciasService, useValue: { actual: () => Promise.resolve(null) } },
+      ],
+    });
+    const ir = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const fixture = TestBed.createComponent(DetallePage);
+    fixture.detectChanges();
+    return { fixture, detalle, ir, parametros };
+  }
+
+  const normalizar = { replaceUrl: true, queryParamsHandling: 'preserve' };
+
+  it('con el código en la URL pide el ticket por el código y no redirige', async () => {
+    const { detalle, ir } = montarConParametro('RS-1');
+    await esperar();
+
+    expect(detalle).toHaveBeenCalledTimes(1);
+    expect(detalle).toHaveBeenCalledWith('RS-1');
+    expect(ir).not.toHaveBeenCalled();
+  });
+
+  it('con el UUID en la URL la normaliza al código sin dejarla en el historial', async () => {
+    const { detalle, ir } = montarConParametro('t1');
+    await esperar();
+
+    expect(detalle).toHaveBeenCalledWith('t1');
+    expect(ir).toHaveBeenCalledWith(['/tickets', 'RS-1'], normalizar);
+  });
+
+  it('con el código en minúsculas también la normaliza', async () => {
+    const { ir } = montarConParametro('rs-1');
+    await esperar();
+
+    expect(ir).toHaveBeenCalledWith(['/tickets', 'RS-1'], normalizar);
+  });
+
+  it('al llegar a la URL normalizada no vuelve a pedir el ticket', async () => {
+    const { detalle, parametros } = montarConParametro('t1');
+    await esperar();
+    parametros.next(convertToParamMap({ id: 'RS-1' }));
+    await esperar();
+
+    expect(detalle).toHaveBeenCalledTimes(1);
+  });
+
+  it('al cambiar a otro ticket sí lo pide', async () => {
+    const { detalle, parametros } = montarConParametro('RS-1');
+    await esperar();
+    parametros.next(convertToParamMap({ id: 'RS-2' }));
+    await esperar();
+
+    expect(detalle).toHaveBeenCalledTimes(2);
+    expect(detalle).toHaveBeenLastCalledWith('RS-2');
   });
 });

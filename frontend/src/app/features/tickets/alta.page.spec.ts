@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { AltaPage } from './alta.page';
 import { TicketsService } from './tickets.service';
@@ -30,6 +30,15 @@ describe('AltaPage', () => {
 
     expect(error?.textContent).toContain('Revisa los datos');
     expect(error?.getAttribute('role')).toBe('alert');
+  });
+
+  it('tras crear el ticket lo abre por su código', async () => {
+    const fixture = montar(() => Promise.resolve({ id: '44444444-4444-4444-4444-444444444447', codigo: 'RS-7' }));
+    const ir = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    await esperar();
+    await fixture.componentInstance.crear();
+
+    expect(ir).toHaveBeenCalledWith(['/tickets', 'RS-7']);
   });
 
   it('enseña la prioridad con texto legible y mantiene el valor', async () => {
