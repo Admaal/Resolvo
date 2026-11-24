@@ -37,7 +37,7 @@ public final class ModerarComentario {
       UsuarioId actor,
       Rol rol,
       MotivoModeracion motivo) {
-    Ticket ticket = tickets.porId(organizacionId, ticketId).orElseThrow(NoEncontrado::new);
+    Ticket ticket = visible(organizacionId, ticketId, actor, rol);
     boolean estabaRetirado = estaRetirado(ticket, comentarioId);
     Comentario oculto = ticket.ocultarComentario(comentarioId, actor, rol, motivo, reloj.ahora());
     tickets.guardar(ticket);
@@ -46,13 +46,26 @@ public final class ModerarComentario {
   }
 
   public Comentario restaurar(
-      OrganizacionId organizacionId, TicketId ticketId, ComentarioId comentarioId, Rol rol) {
-    Ticket ticket = tickets.porId(organizacionId, ticketId).orElseThrow(NoEncontrado::new);
+      OrganizacionId organizacionId,
+      TicketId ticketId,
+      ComentarioId comentarioId,
+      UsuarioId solicitante,
+      Rol rol) {
+    Ticket ticket = visible(organizacionId, ticketId, solicitante, rol);
     boolean estabaRetirado = estaRetirado(ticket, comentarioId);
     Comentario restaurado = ticket.restaurarComentario(comentarioId, rol);
     tickets.guardar(ticket);
     publicarSiCambio(ticket, estabaRetirado, restaurado);
     return restaurado;
+  }
+
+  /** Un ticket ajeno es indistinguible de uno inexistente: el 403 por rol solo llega al autor. */
+  private Ticket visible(
+      OrganizacionId organizacionId, TicketId ticketId, UsuarioId solicitante, Rol rol) {
+    return tickets
+        .porId(organizacionId, ticketId)
+        .filter(ticket -> ticket.visiblePara(solicitante, rol))
+        .orElseThrow(NoEncontrado::new);
   }
 
   private static boolean estaRetirado(Ticket ticket, ComentarioId comentarioId) {

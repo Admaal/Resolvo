@@ -19,8 +19,16 @@ public final class AsignarTicket {
   }
 
   public Ticket ejecutar(
-      OrganizacionId organizacionId, TicketId ticketId, UsuarioId asignadoId, Rol actor) {
-    Ticket ticket = tickets.porId(organizacionId, ticketId).orElseThrow(NoEncontrado::new);
+      OrganizacionId organizacionId,
+      TicketId ticketId,
+      UsuarioId asignadoId,
+      UsuarioId solicitante,
+      Rol actor) {
+    Ticket ticket =
+        tickets
+            .porId(organizacionId, ticketId)
+            .filter(visible -> visible.visiblePara(solicitante, actor))
+            .orElseThrow(NoEncontrado::new);
     if (actor != Rol.CLIENTE) {
       Usuario destino = usuarios.porId(asignadoId).orElseThrow(NoEncontrado::new);
       if (!destino.organizacionId().equals(organizacionId)

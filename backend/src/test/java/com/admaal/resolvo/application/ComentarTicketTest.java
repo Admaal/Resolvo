@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.admaal.resolvo.application.soporte.Banco;
 import com.admaal.resolvo.application.soporte.RelojManual;
 import com.admaal.resolvo.application.soporte.RepositorioEnMemoria;
+import com.admaal.resolvo.domain.NoEncontrado;
 import com.admaal.resolvo.domain.OrganizacionId;
 import com.admaal.resolvo.domain.Prioridad;
 import com.admaal.resolvo.domain.Prohibido;
@@ -87,5 +88,35 @@ class ComentarTicketTest {
                 new ComentarTicket(tickets, new RelojManual(ahora))
                     .ejecutar(organizacion, ticket.id(), autor, Rol.CLIENTE, "Nota", true))
         .isInstanceOf(Prohibido.class);
+  }
+
+  @Test
+  void unClienteNoComentaEnElTicketDeOtroNiLoSabeElTicket() {
+    RepositorioEnMemoria tickets = new RepositorioEnMemoria();
+    Ticket ticket = Banco.abrir(tickets, organizacion, autor, Prioridad.MEDIA, ahora);
+    UsuarioId otro = new UsuarioId(UUID.randomUUID());
+    int guardados = tickets.vecesGuardado();
+
+    assertThatThrownBy(
+            () ->
+                new ComentarTicket(tickets, new RelojManual(ahora))
+                    .ejecutar(organizacion, ticket.id(), otro, Rol.CLIENTE, "Intruso", false))
+        .isInstanceOf(NoEncontrado.class);
+
+    assertThat(ticket.todos()).isEmpty();
+    assertThat(tickets.vecesGuardado()).isEqualTo(guardados);
+  }
+
+  @Test
+  void unClienteAjenoRecibeNoEncontradoAunqueLaNotaSeaInterna() {
+    RepositorioEnMemoria tickets = new RepositorioEnMemoria();
+    Ticket ticket = Banco.abrir(tickets, organizacion, autor, Prioridad.MEDIA, ahora);
+
+    assertThatThrownBy(
+            () ->
+                new ComentarTicket(tickets, new RelojManual(ahora))
+                    .ejecutar(
+                        organizacion, ticket.id(), new UsuarioId(UUID.randomUUID()), Rol.CLIENTE, "x", true))
+        .isInstanceOf(NoEncontrado.class);
   }
 }

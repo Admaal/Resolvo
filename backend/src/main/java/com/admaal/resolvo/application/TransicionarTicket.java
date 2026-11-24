@@ -7,6 +7,7 @@ import com.admaal.resolvo.domain.OrganizacionId;
 import com.admaal.resolvo.domain.Rol;
 import com.admaal.resolvo.domain.Ticket;
 import com.admaal.resolvo.domain.TicketId;
+import com.admaal.resolvo.domain.UsuarioId;
 import com.admaal.resolvo.domain.TipoEvento;
 
 public final class TransicionarTicket {
@@ -21,8 +22,18 @@ public final class TransicionarTicket {
     this.reloj = reloj;
   }
 
-  public Ticket ejecutar(OrganizacionId organizacionId, TicketId ticketId, EstadoTicket destino, Rol rol) {
-    Ticket ticket = tickets.porId(organizacionId, ticketId).orElseThrow(NoEncontrado::new);
+  public Ticket ejecutar(
+      OrganizacionId organizacionId,
+      TicketId ticketId,
+      EstadoTicket destino,
+      UsuarioId solicitante,
+      Rol rol) {
+    // Un ticket ajeno es indistinguible de uno inexistente: el 403 por rol solo llega al autor.
+    Ticket ticket =
+        tickets
+            .porId(organizacionId, ticketId)
+            .filter(visible -> visible.visiblePara(solicitante, rol))
+            .orElseThrow(NoEncontrado::new);
     EstadoTicket origen = ticket.estado();
     ticket.transicionar(destino, rol);
     tickets.guardar(ticket);

@@ -243,6 +243,106 @@ class TicketHttpTest {
     }
   }
 
+  @Test
+  void unClienteNoComentaEnElTicketDeOtroYRecibeElMismo404QueUnoInexistente() throws Exception {
+    String ajeno = crear(token("cliente@acme.test"), "BAJA", "Comentario ajeno");
+    String otro = tokenOtroClienteDeAcme();
+    String cuerpo = "{\"cuerpo\":\"no deberia entrar\",\"interno\":false}";
+
+    MvcResult sobreAjeno = enviar(post("/api/tickets/" + ajeno + "/comentarios"), otro, cuerpo);
+    MvcResult sobreInexistente =
+        enviar(post("/api/tickets/" + UUID.randomUUID() + "/comentarios"), otro, cuerpo);
+
+    assertThat(sobreAjeno.getResponse().getStatus()).isEqualTo(404);
+    assertThat(sobreAjeno.getResponse().getContentAsString())
+        .isEqualTo(sobreInexistente.getResponse().getContentAsString());
+    mvc.perform(get("/api/tickets/" + ajeno).header("Authorization", "Bearer " + token("agente@acme.test")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.comentarios").isEmpty());
+  }
+
+  @Test
+  void unClienteComentaEnSuTicketYElEquipoEnCualquiera() throws Exception {
+    String cliente = token("cliente@acme.test");
+    String id = crear(cliente, "BAJA", "Comentarios permitidos");
+    String cuerpo = "{\"cuerpo\":\"hola\",\"interno\":false}";
+
+    for (String token : new String[] {cliente, token("agente@acme.test"), token("admin@acme.test")}) {
+      assertThat(enviar(post("/api/tickets/" + id + "/comentarios"), token, cuerpo).getResponse().getStatus())
+          .isEqualTo(200);
+    }
+  }
+
+  @Test
+  void unClienteRecibe404SobreUnTicketAjenoY403SobreElSuyoEnLosEndpointsDelEquipo() throws Exception {
+    String duenio = token("cliente@acme.test");
+    String otro = tokenOtroClienteDeAcme();
+    String ajeno = crear(duenio, "BAJA", "Endpoints del equipo");
+    String suyo = crear(otro, "BAJA", "Endpoints del equipo propio");
+    String comentario = UUID.randomUUID().toString();
+    String agente = "22222222-2222-2222-2222-222222222222";
+    Object[][] casos = {
+      {"POST", "/api/tickets/%s/transicion", "{\"estado\":\"RESUELTO\"}"},
+      {"POST", "/api/tickets/%s/asignacion", "{\"asignadoId\":\"" + agente + "\"}"},
+      {"POST", "/api/tickets/%s/comentarios/" + comentario + "/ocultacion", "{\"motivo\":\"SPAM\"}"},
+      {"DELETE", "/api/tickets/%s/comentarios/" + comentario + "/ocultacion", ""},
+    };
+
+    for (Object[] caso : casos) {
+      String ruta = (String) caso[1];
+      MvcResult delOtro = enviar(construir((String) caso[0], ruta.formatted(ajeno)), otro, (String) caso[2]);
+      MvcResult inexistente =
+          enviar(construir((String) caso[0], ruta.formatted(UUID.randomUUID())), otro, (String) caso[2]);
+      MvcResult delSuyo = enviar(construir((String) caso[0], ruta.formatted(suyo)), otro, (String) caso[2]);
+
+      assertThat(delOtro.getResponse().getStatus()).as("ajeno " + ruta).isEqualTo(404);
+      assertThat(delOtro.getResponse().getContentAsString())
+          .as("cuerpo " + ruta)
+          .isEqualTo(inexistente.getResponse().getContentAsString());
+      assertThat(delSuyo.getResponse().getStatus()).as("propio " + ruta).isEqualTo(403);
+    }
+  }
+
+  @Test
+  void losEndpointsDeIaRespondenIgualAUnClienteSeaElTicketAjenoOPropio() throws Exception {
+    String duenio = token("cliente@acme.test");
+    String otro = tokenOtroClienteDeAcme();
+    String ajeno = crear(duenio, "BAJA", "IA ajena");
+    String suyo = crear(otro, "BAJA", "IA propia");
+
+    for (String ruta :
+        new String[] {"/api/tickets/%s/sugerencias", "/api/tickets/%s/clasificaciones"}) {
+      assertThat(enviar(post(ruta.formatted(ajeno)), otro, "").getResponse().getStatus()).isEqualTo(403);
+      assertThat(enviar(post(ruta.formatted(suyo)), otro, "").getResponse().getStatus()).isEqualTo(403);
+      assertThat(enviar(get(ruta.formatted(ajeno) + "/actual"), otro, "").getResponse().getStatus())
+          .isEqualTo(403);
+    }
+    String desconocido = UUID.randomUUID().toString();
+    assertThat(enviar(post("/api/sugerencias/" + desconocido + "/aprobar"), otro, "{\"texto\":\"x\"}").getResponse().getStatus()).isEqualTo(403);
+    assertThat(enviar(post("/api/sugerencias/" + desconocido + "/descartar"), otro, "").getResponse().getStatus()).isEqualTo(403);
+    assertThat(enviar(post("/api/clasificaciones/" + desconocido + "/descarte"), otro, "").getResponse().getStatus()).isEqualTo(403);
+  }
+
+  private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder construir(
+      String metodo, String ruta) {
+    return metodo.equals("DELETE")
+        ? org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(ruta)
+        : post(ruta);
+  }
+
+  private MvcResult enviar(
+      org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder peticion,
+      String token,
+      String cuerpo)
+      throws Exception {
+    return mvc.perform(
+            peticion
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo))
+        .andReturn();
+  }
+
   private String tokenOtroClienteDeAcme() throws Exception {
     UUID usuario = UUID.randomUUID();
     String hash =

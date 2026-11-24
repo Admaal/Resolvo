@@ -33,7 +33,7 @@ class AsignarTicketTest {
     assertThatThrownBy(
             () ->
                 new AsignarTicket(tickets, new UsuariosEnMemoria())
-                    .ejecutar(organizacion, ticket.id(), new UsuarioId(UUID.randomUUID()), Rol.CLIENTE))
+                    .ejecutar(organizacion, ticket.id(), new UsuarioId(UUID.randomUUID()), autor, Rol.CLIENTE))
         .isInstanceOf(Prohibido.class);
 
     assertThat(ticket.asignadoId()).isNull();
@@ -50,7 +50,7 @@ class AsignarTicketTest {
 
     Ticket asignado =
         new AsignarTicket(tickets, usuarios)
-            .ejecutar(organizacion, ticket.id(), agente.id(), Rol.AGENTE);
+            .ejecutar(organizacion, ticket.id(), agente.id(), autor, Rol.AGENTE);
 
     assertThat(asignado.asignadoId()).isEqualTo(agente.id());
     assertThat(tickets.vecesGuardado()).isEqualTo(2);
@@ -69,7 +69,7 @@ class AsignarTicketTest {
     assertThatThrownBy(
             () ->
                 new AsignarTicket(tickets, usuarios)
-                    .ejecutar(organizacion, ticket.id(), cliente.id(), Rol.AGENTE))
+                    .ejecutar(organizacion, ticket.id(), cliente.id(), autor, Rol.AGENTE))
         .isInstanceOf(NoEncontrado.class);
   }
 
@@ -84,7 +84,7 @@ class AsignarTicketTest {
     assertThatThrownBy(
             () ->
                 new AsignarTicket(tickets, usuarios)
-                    .ejecutar(organizacion, ticket.id(), ajeno, Rol.ADMIN))
+                    .ejecutar(organizacion, ticket.id(), ajeno, autor, Rol.ADMIN))
         .isInstanceOf(NoEncontrado.class);
   }
 
@@ -95,5 +95,20 @@ class AsignarTicketTest {
         "agente@acme.test",
         Rol.AGENTE,
         "hash");
+  }
+
+  @Test
+  void unClienteAjenoRecibeNoEncontradoYElAutorProhibido() {
+    RepositorioEnMemoria tickets = new RepositorioEnMemoria();
+    Ticket ticket = Banco.abrir(tickets, organizacion, autor, Prioridad.MEDIA, ahora);
+    UsuarioId otro = new UsuarioId(UUID.randomUUID());
+    UsuarioId destino = new UsuarioId(UUID.randomUUID());
+    AsignarTicket caso = new AsignarTicket(tickets, new UsuariosEnMemoria());
+
+    assertThatThrownBy(() -> caso.ejecutar(organizacion, ticket.id(), destino, otro, Rol.CLIENTE))
+        .isInstanceOf(NoEncontrado.class);
+    assertThatThrownBy(() -> caso.ejecutar(organizacion, ticket.id(), destino, autor, Rol.CLIENTE))
+        .isInstanceOf(Prohibido.class);
+    assertThat(ticket.asignadoId()).isNull();
   }
 }

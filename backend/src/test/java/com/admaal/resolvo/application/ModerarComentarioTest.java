@@ -83,11 +83,11 @@ class ModerarComentarioTest {
     int guardadosAntes = tickets.vecesGuardado();
 
     assertThatThrownBy(
-            () -> caso.restaurar(organizacion, ticket.id(), comentario.id(), Rol.AGENTE))
+            () -> caso.restaurar(organizacion, ticket.id(), comentario.id(), agente, Rol.AGENTE))
         .isInstanceOf(Prohibido.class);
     assertThat(tickets.vecesGuardado()).isEqualTo(guardadosAntes);
 
-    Comentario restaurado = caso.restaurar(organizacion, ticket.id(), comentario.id(), Rol.ADMIN);
+    Comentario restaurado = caso.restaurar(organizacion, ticket.id(), comentario.id(), agente, Rol.ADMIN);
 
     assertThat(restaurado.retirado()).isFalse();
     assertThat(tickets.vecesGuardado()).isEqualTo(guardadosAntes + 1);
@@ -103,7 +103,7 @@ class ModerarComentarioTest {
                 caso.ocultar(
                     otra, ticket.id(), comentario.id(), agente, Rol.AGENTE, MotivoModeracion.SPAM))
         .isInstanceOf(NoEncontrado.class);
-    assertThatThrownBy(() -> caso.restaurar(otra, ticket.id(), comentario.id(), Rol.ADMIN))
+    assertThatThrownBy(() -> caso.restaurar(otra, ticket.id(), comentario.id(), agente, Rol.ADMIN))
         .isInstanceOf(NoEncontrado.class);
   }
 
@@ -164,7 +164,7 @@ class ModerarComentarioTest {
         organizacion, ticket.id(), comentario.id(), agente, Rol.AGENTE, MotivoModeracion.SPAM);
     publicador.vaciar();
 
-    caso.restaurar(organizacion, ticket.id(), comentario.id(), Rol.ADMIN);
+    caso.restaurar(organizacion, ticket.id(), comentario.id(), agente, Rol.ADMIN);
 
     assertThat(publicador.publicados())
         .singleElement()
@@ -177,7 +177,7 @@ class ModerarComentarioTest {
 
     caso.ocultar(
         organizacion, ticket.id(), comentario.id(), agente, Rol.AGENTE, MotivoModeracion.SPAM);
-    caso.restaurar(organizacion, ticket.id(), comentario.id(), Rol.ADMIN);
+    caso.restaurar(organizacion, ticket.id(), comentario.id(), agente, Rol.ADMIN);
 
     assertThat(publicador.publicados()).isEmpty();
   }
@@ -200,7 +200,7 @@ class ModerarComentarioTest {
     Comentario comentario = spam();
     resolver();
 
-    caso.restaurar(organizacion, ticket.id(), comentario.id(), Rol.ADMIN);
+    caso.restaurar(organizacion, ticket.id(), comentario.id(), agente, Rol.ADMIN);
 
     assertThat(publicador.publicados()).isEmpty();
   }
@@ -221,9 +221,30 @@ class ModerarComentarioTest {
                     MotivoModeracion.OTRO))
         .isInstanceOf(Prohibido.class);
     assertThatThrownBy(
-            () -> caso.restaurar(organizacion, ticket.id(), comentario.id(), Rol.AGENTE))
+            () -> caso.restaurar(organizacion, ticket.id(), comentario.id(), agente, Rol.AGENTE))
         .isInstanceOf(Prohibido.class);
 
+    assertThat(publicador.publicados()).isEmpty();
+  }
+
+  @Test
+  void unClienteAjenoRecibeNoEncontradoYElAutorProhibido() {
+    Comentario comentario = spam();
+    UsuarioId otro = new UsuarioId(UUID.randomUUID());
+    int guardados = tickets.vecesGuardado();
+
+    assertThatThrownBy(
+            () ->
+                caso.ocultar(
+                    organizacion, ticket.id(), comentario.id(), otro, Rol.CLIENTE, MotivoModeracion.SPAM))
+        .isInstanceOf(NoEncontrado.class);
+    assertThatThrownBy(() -> caso.restaurar(organizacion, ticket.id(), comentario.id(), otro, Rol.CLIENTE))
+        .isInstanceOf(NoEncontrado.class);
+    assertThatThrownBy(
+            () -> caso.restaurar(organizacion, ticket.id(), comentario.id(), cliente, Rol.CLIENTE))
+        .isInstanceOf(Prohibido.class);
+
+    assertThat(tickets.vecesGuardado()).isEqualTo(guardados);
     assertThat(publicador.publicados()).isEmpty();
   }
 }
