@@ -28,3 +28,7 @@ El proyecto debe demostrar entrega disciplinada: dominio testeado sin Spring, ai
 - Los tests de IA usan stub u Ollama; nunca un proveedor de pago.
 - El runner unitario de Angular (Karma o Jest) queda abierto hasta crear el esqueleto.
 - Montar esta valla es el siguiente paso del proyecto, no parte de este arranque.
+
+## Enmienda (2026-11-25)
+
+El end to end con Playwright no se llegó a montar. La SPA se cubre con tests de componente en Vitest (más de 200) y los flujos de punta a punta se comprobaron a mano en la demo desplegada y en local contra la API real, anotado con fecha en `AGENTS.md`. Queda como hueco conocido: ningún test automático recorre el navegador contra la API. El runner de Angular es Vitest, el de serie del CLI desde la versión 21.

@@ -45,6 +45,18 @@ class ArticulosJdbcTest {
   }
 
   @Test
+  void elArticuloDeLoginYaNoDiceQueLaCuentaSeBloquea() {
+    UUID login = UUID.fromString("66666666-6666-6666-6666-666666666662");
+
+    Articulo articulo = articulos.porId(ACME, login).orElseThrow();
+
+    assertThat(articulo.cuerpo())
+        .doesNotContain("se bloquea unos minutos")
+        .contains("la cuenta no se bloquea")
+        .contains("15 minutos");
+  }
+
+  @Test
   void otraOrganizacionNoVeNada() {
     UUID otra = UUID.randomUUID();
     jdbc.update("insert into organizacion (id, nombre) values (?, 'Otra')", otra);

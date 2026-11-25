@@ -50,11 +50,11 @@ Fuera de la fase 1:
 - [ADR-0003](adr/0003-datos-migraciones.md): Postgres + pgvector, Flyway desde V1 y `ddl-auto=validate`.
 - [ADR-0004](adr/0004-frontend.md): Angular standalone + Material. El diseño visual de la web sale de [design.md](design.md).
 - [ADR-0005](adr/0005-auth.md): JWT propio, access corto en memoria y refresh en cookie HttpOnly.
-- [ADR-0006](adr/0006-llm.md): Spring AI con perfiles `ollama`, `gemini` y `openai`.
+- [ADR-0006](adr/0006-llm.md): Spring AI detrás de puertos; solo existe el perfil `gemini` (enmienda del 2026-11-25).
 - [ADR-0007](adr/0007-embeddings.md): un modelo y una dimensión fijos; cambiarlos exige migración y reindexado.
 - [ADR-0008](adr/0008-eventos.md): outbox transaccional, cola en Postgres online y Redpanda en local.
 - [ADR-0009](adr/0009-hosting.md): Neon Free, Render Free y Cloudflare Pages.
-- [ADR-0010](adr/0010-tests-y-valla.md): JUnit 5, Testcontainers, ArchUnit, PIT en dominio al 80 % y Playwright.
+- [ADR-0010](adr/0010-tests-y-valla.md): JUnit 5, Testcontainers, ArchUnit y PIT en dominio al 80 %; el end to end con Playwright no se montó (enmienda del 2026-11-25).
 - [ADR-0011](adr/0011-evals.md): evals de IA contra Gemini real, en un job aparte y fuera del gate obligatorio.
 - [ADR-0012](adr/0012-metricas-ia.md): métricas de la IA en Postgres, endpoint para ADMIN y coste a precio de lista con tarifas citadas.
 - [ADR-0013](adr/0013-seguridad-ia.md): seguridad de la IA (inyección, PII), límites de uso y presupuesto diario por organización.

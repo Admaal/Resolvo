@@ -43,6 +43,15 @@ describe('InicioPage', () => {
     expect(nodo.querySelector('app-accesos-demo')).toBeNull();
   });
 
+  it('la maqueta pinta las filas como la bandeja real: sin chips y con estado en texto', () => {
+    const maqueta = montar(null).querySelector('.maqueta') as HTMLElement;
+
+    expect(maqueta.querySelectorAll('.maqueta-lista .chip')).toHaveLength(0);
+    expect(maqueta.querySelectorAll('.fila-asunto')).toHaveLength(3);
+    const estados = Array.from(maqueta.querySelectorAll('.fila-estado')).map((e) => e.textContent?.trim());
+    expect(estados).toEqual(['Abierto', 'Pendiente', 'Resuelto']);
+  });
+
   it('explica el valor del producto con citas, SLA y aprobación humana', () => {
     const texto = montar(null).textContent ?? '';
 
