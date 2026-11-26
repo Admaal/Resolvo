@@ -151,6 +151,7 @@ Pesos: 400 normal, 500 medium y 600 semibold.
   - Con ≥1200px se ven la lista y el ticket a la vez.
   - Entre 960 y 1199px, un solo panel: la lista, o el ticket con su «← Bandeja».
   - Con <960px la sidebar pasa a barra superior con los mismos accesos.
+  - Con <640px las vistas bajan a una **barra fija abajo**, al alcance del pulgar: una pestaña por vista con el icono encima del nombre (`--fs-micro`), el contador como insignia y al menos 44px de alto (`--h-tabbar`). La vista actual lleva una raya encima y el nombre en negrita, no solo color. Respeta la zona segura del iPhone (`env(safe-area-inset-bottom)`) y el contenido deja su hueco para que no tape el final de la lista. Arriba quedan la marca, «Nuevo ticket», el tema y «Salir». Dentro de un ticket o del alta la barra se esconde: el hilo, el compositor y el teclado necesitan el sitio, y se vuelve con «← Bandeja».
   - (Queda pendiente el panel IA como drawer y el rail de 48px de la sidebar: no se han construido.)
 - Densidad conmutable entre **compacta** (fila de 36px) y **cómoda** (56px, dos líneas), con `[data-density]`.
 

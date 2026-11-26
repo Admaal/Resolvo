@@ -100,6 +100,21 @@ describe('Shell', () => {
     expect(nombres).toEqual(['Mis tickets', 'Todos', 'Resueltos']);
   });
 
+  it('marca el armazón cuando se ve un ticket o el alta, para esconder la barra de vistas en móvil', async () => {
+    const enTicket = async (url: string) => {
+      const fixture = TestBed.createComponent(Shell);
+      await TestBed.inject(Router).navigateByUrl(url);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      return (fixture.nativeElement as HTMLElement).querySelector('.shell')?.classList.contains('en-ticket');
+    };
+
+    expect(await enTicket('/tickets/RS-3')).toBe(true);
+    expect(await enTicket('/tickets/nuevo')).toBe(true);
+    expect(await enTicket('/tickets?vista=mios')).toBe(false);
+  });
+
   it('enseña el rol de la persona', () => {
     const fixture = TestBed.createComponent(Shell);
     fixture.detectChanges();
