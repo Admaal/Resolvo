@@ -30,10 +30,10 @@
 {"id":"r30","asunto":"Plazo para una peticion de prioridad baja","cuerpo":"Cuanto tardais en contestar una consulta que no es urgente?","articulo":"Plazos de primera respuesta"}
 {"id":"r31","asunto":"El CSV sale cortado","cuerpo":"Exporto un informe muy grande y el fichero no trae todas las filas.","articulo":"Exportar informes a CSV"}
 {"id":"r32","asunto":"No me llega el correo para recuperar el acceso","cuerpo":"He pedido recuperar la contrasena tres veces y no recibo nada.","articulo":"Como restablecer tu contrasena"}
-{"id":"r33","asunto":"Facturar a otra empresa del grupo","cuerpo":"La siguiente factura tiene que ir a nombre de una filial distinta, podeis reemitirla?","ticket":"RS-4"}
-{"id":"r34","asunto":"Reemitir factura a otra sociedad","cuerpo":"Necesito que reemitais la ultima factura a nombre de otra sociedad nuestra.","ticket":"RS-4"}
-{"id":"r35","asunto":"Avisos repetidos desde la actualizacion","cuerpo":"Desde la ultima actualizacion cada aviso me llega dos veces al correo.","ticket":"RS-5"}
-{"id":"r36","asunto":"Correo duplicado tras actualizar","cuerpo":"Tras la ultima actualizacion los avisos por correo me llegan repetidos.","ticket":"RS-5"}
+{"id":"r33","asunto":"Facturar a otra empresa del grupo","cuerpo":"La siguiente factura tiene que ir a nombre de una filial distinta, podeis reemitirla?","ticket":"RS-4","tambien":"Cambiar los datos de facturacion"}
+{"id":"r34","asunto":"Reemitir factura a otra sociedad","cuerpo":"Necesito que reemitais la ultima factura a nombre de otra sociedad nuestra.","ticket":"RS-4","tambien":"Cambiar los datos de facturacion"}
+{"id":"r35","asunto":"Avisos repetidos desde la actualizacion","cuerpo":"Desde la ultima actualizacion cada aviso me llega dos veces al correo.","ticket":"RS-5","tambien":"Notificaciones por correo duplicadas"}
+{"id":"r36","asunto":"Correo duplicado tras actualizar","cuerpo":"Tras la ultima actualizacion los avisos por correo me llegan repetidos.","ticket":"RS-5","tambien":"Notificaciones por correo duplicadas"}
 {"id":"r37","asunto":"Borrar mi cuenta y mis datos","cuerpo":"Quiero que elimineis mi cuenta y todos mis datos personales.","articulo":null}
 {"id":"r38","asunto":"Tienen certificado ISO 27001","cuerpo":"Nuestro departamento de compras pide el certificado de seguridad del proveedor.","articulo":null}
 {"id":"r39","asunto":"Cambiar el idioma de la interfaz","cuerpo":"Se puede poner el panel en ingles para un companero de Londres?","articulo":null}

@@ -211,18 +211,23 @@ class EvalIaTest {
             base.buscar(ACME, consulta, K, UUID.randomUUID(), distanciaMaxima);
         if (caso.tieneRespuesta()) {
           distanciasConRespuesta.add(mejor);
-          UUID esperado =
-              caso.articulo() != null ? articulos.get(caso.articulo()) : tickets.get(caso.ticket());
+          // Un ticket resuelto que repite un articulo deja acertar con cualquiera de los dos.
+          Set<UUID> esperadas = new LinkedHashSet<>();
+          esperadas.add(
+              caso.articulo() != null ? articulos.get(caso.articulo()) : tickets.get(caso.ticket()));
+          if (caso.tambien() != null) {
+            esperadas.add(articulos.get(caso.tambien()));
+          }
           if (caso.ticket() != null) {
             distanciasConTicket.add(mejor);
           }
-          if (fuentesCercanas(consulta).contains(esperado)) {
+          if (fuentesCercanas(consulta).stream().anyMatch(esperadas::contains)) {
             recall++;
           }
           Thread.sleep(pausaMs);
           if (fragmentos.isEmpty()) {
             sinCita.add("%s (sin fragmentos bajo el umbral, mejor %.3f)".formatted(caso.id(), mejor));
-          } else if (citaLaFuente(ticket, fragmentos, esperado)) {
+          } else if (citaLaFuente(ticket, fragmentos, esperadas)) {
             citan++;
           } else {
             sinCita.add("%s (no cita la fuente esperada)".formatted(caso.id()));
@@ -298,12 +303,12 @@ class EvalIaTest {
     notas.add("Coste en euros: free tier (0 EUR). Sin tabla de precios de lista versionada.");
   }
 
-  private boolean citaLaFuente(Ticket ticket, List<Fragmento> fragmentos, UUID esperado) {
+  private boolean citaLaFuente(Ticket ticket, List<Fragmento> fragmentos, Set<UUID> esperadas) {
     try {
       BorradorConCitas borrador = redactor.redactar(ticket, fragmentos);
       Set<FragmentoId> citados = new LinkedHashSet<>(borrador.citas());
       return fragmentos.stream()
-          .anyMatch(f -> citados.contains(f.id()) && f.fuenteId().equals(esperado));
+          .anyMatch(f -> citados.contains(f.id()) && esperadas.contains(f.fuenteId()));
     } catch (IaNoDisponible fallo) {
       Throwable causa = fallo.getCause();
       notas.add(

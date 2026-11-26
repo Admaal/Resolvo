@@ -98,6 +98,27 @@ class CasosDeEvalTest {
   }
 
   @Test
+  void losCasosConTicketAceptanElArticuloQueDaLaMismaRespuesta() throws IOException {
+    String semilla =
+        new String(
+            new ClassPathResource("db/migration/V5__semilla_articulos.sql").getInputStream().readAllBytes(),
+            StandardCharsets.UTF_8);
+    Map<String, String> equivalente =
+        Map.of(
+            "RS-4", "Cambiar los datos de facturacion",
+            "RS-5", "Notificaciones por correo duplicadas");
+
+    assertThat(rag.stream().filter(caso -> caso.ticket() != null))
+        .allSatisfy(
+            caso -> {
+              assertThat(caso.tambien()).as(caso.id()).isEqualTo(equivalente.get(caso.ticket()));
+              assertThat(semilla).contains("'" + caso.tambien() + "'");
+            });
+    assertThat(rag.stream().filter(caso -> caso.ticket() == null).map(CasoRag::tambien))
+        .containsOnlyNulls();
+  }
+
+  @Test
   void ragCubreVariosArticulosYNoSoloUno() {
     Map<String, Long> porArticulo =
         rag.stream()
