@@ -97,7 +97,6 @@ Solo lo que sigue vigente. La historia de cada uno, con fechas, runs y cifras, e
 - Búsqueda exacta por organización, sin HNSW (ADR-0007): vale para cientos o pocos miles de fragmentos por organización; si crece, particionar o `hnsw.iterative_scan` (sin comprobar en Neon).
 - Tarifas: los alias `*-latest` y `gemini-3.5-flash` no tienen tarifa (coste `null`); `gemini-3.8-flash` y `gemini-3.6-flash` duplican precio el 2027-01-01 y `gemini-2.5-flash` figura como obsoleto. Revisar `application.yml` antes de esa fecha.
 - Limitaciones del ADR-0013 sin cubrir: embeddings fuera del presupuesto, cerrojo global con consulta a la base, enmascarado sin DNI con guion ni teléfonos con puntos. `fragmento.texto` guarda los datos personales sin enmascarar (solo se enmascaran al enviar).
-- Las sugerencias ya generadas no cambian si cambia su fuente: el borrador pendiente de RS-1 en la demo repite el texto viejo del artículo de login.
 
 **Tests y valla**
 - Los hooks de Claude Code no ven los worktrees: `postToolUse` sale con exit 0 sin lanzar tests y no anota RED. En un worktree hay que ejecutar `scripts/gates.ps1 fast <ruta>` a mano.
