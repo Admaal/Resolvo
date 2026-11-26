@@ -23,9 +23,13 @@ if ($inputJson -and $inputJson.Length -gt 0 -and $inputJson[0] -eq [char]0xFEFF)
 
 $status = "completed"
 $stopActive = $false
+$cwd = $null
 try {
   if ($inputJson) {
     $payload = $inputJson | ConvertFrom-Json
+    if ($payload.PSObject.Properties.Name -contains "cwd" -and $payload.cwd) {
+      $cwd = [string]$payload.cwd
+    }
     if ($payload.PSObject.Properties.Name -contains "status" -and $payload.status) {
       $status = [string]$payload.status
     }
@@ -45,6 +49,9 @@ if ($status -eq "aborted") {
 if ($Cliente -eq "claude" -and -not $stopActive) { Reset-Count }
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+# En un worktree la sesion trabaja en otra raiz: se miran sus cambios y se corren sus gates.
+. (Join-Path $PSScriptRoot "raiz.ps1")
+$repoRoot = Get-RaizDeTrabajo $cwd $repoRoot
 Set-Location $repoRoot
 
 $porcelain = & git status --porcelain 2>$null

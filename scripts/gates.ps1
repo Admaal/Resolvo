@@ -55,6 +55,9 @@ $FastRoutes = @(
 $FullCommands = @(
   "$Gradle test --console=plain"
 )
+# `red <test>`: corre esa clase de test sin -Pfast (con Spring y Docker) y anota el RED si falla.
+# {clase} es la clase Java que sale de la ruta (backend/src/test/java/a/b/FooTest.java -> a.b.FooTest).
+$RedCommand = "$Gradle test --console=plain --tests `"{clase}`""
 $MutationCommand = "$Gradle pitest --console=plain"
 # stryker | pit
 $MutationTool = "pit"
@@ -89,8 +92,8 @@ if ($LASTEXITCODE -eq 0 -and $parsedSha) {
   $script:headSha = ([string]$parsedSha).Trim()
 }
 
-if ($Mode -ne "fast" -and $Mode -ne "full" -and $Mode -ne "ci") {
-  Write-Output "Uso: gates.ps1 fast [ruta] | full | ci"
+if ($Mode -ne "fast" -and $Mode -ne "full" -and $Mode -ne "ci" -and $Mode -ne "red") {
+  Write-Output "Uso: gates.ps1 fast [ruta] | full | ci | red <test>"
   exit 1
 }
 
@@ -106,9 +109,9 @@ function Test-IsTestFile([string]$relative) {
   return $relative -match $TestFilePattern
 }
 
-function Add-RedLine([string]$route, $code) {
+function Add-RedLine([string]$route, $code, [string]$modo = "fast") {
   $stamp = Get-Date -Format "yyyy-MM-ddTHH:mm:ss"
-  Add-Content -Path $redLog -Value "$stamp fast $script:headSha RED $route exit=$code" -Encoding utf8 -ErrorAction SilentlyContinue
+  Add-Content -Path $redLog -Value "$stamp $modo $script:headSha RED $route exit=$code" -Encoding utf8 -ErrorAction SilentlyContinue
 }
 
 function Invoke-Gate([string]$name, [string]$command) {
@@ -247,6 +250,41 @@ function Write-GateResult {
   if ($script:failed) { $resultExit = 1 }
   $stamp = Get-Date -Format "yyyy-MM-ddTHH:mm:ss"
   Add-Content -Path $timingLog -Value "$stamp $Mode $script:headSha RESULT 0 ms exit=$resultExit" -Encoding utf8 -ErrorAction SilentlyContinue
+}
+
+function Get-ClaseDeTest([string]$relative) {
+  $match = [regex]::Match($relative, '(?:^|/)src/test/(?:java|kotlin)/(.+)\.(?:java|kt)$')
+  if (-not $match.Success) { return $null }
+  return $match.Groups[1].Value.Replace("/", ".")
+}
+
+if ($Mode -eq "red") {
+  # Un RED que el gate rapido no ve (tests full): se corre solo esa clase y se anota si falla.
+  $routes = @($Route | Where-Object { $_ } | ForEach-Object { ([string]$_).Replace("\", "/").TrimStart("/") })
+  if ($routes.Count -ne 1 -or -not (Test-IsTestFile $routes[0])) {
+    Write-Output "Uso: gates.ps1 red <ruta de un fichero de test>"
+    exit 1
+  }
+  $relative = $routes[0]
+  if (-not (Get-Variable -Name RedCommand -ErrorAction SilentlyContinue) -or (Test-Todo $RedCommand)) {
+    Write-Output "OMITIDO red: falta `$RedCommand en el bloque de config"
+    exit 1
+  }
+  $clase = Get-ClaseDeTest $relative
+  if ($RedCommand.Contains("{clase}") -and -not $clase) {
+    Write-Output "red: no se de que clase es $relative"
+    exit 1
+  }
+  $command = $RedCommand.Replace("{clase}", [string]$clase).Replace("{ruta}", $relative)
+  $code = Invoke-Gate "red[$relative]" $command
+  foreach ($line in $log) { Write-Output $line }
+  if ($null -ne $code -and $code -ne 0) {
+    Add-RedLine $relative $code "red"
+    Write-Output "RED anotado en .cursor/red.log: $relative (exit $code)"
+    exit 0
+  }
+  Write-Output "El test pasa: no hay RED que anotar."
+  exit 1
 }
 
 if ($Mode -eq "fast") {

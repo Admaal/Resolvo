@@ -75,6 +75,11 @@ if ($payload) {
   }
 }
 
+# En un worktree el fichero escrito no esta bajo este checkout: se usan los gates de su raiz.
+. (Join-Path $PSScriptRoot "raiz.ps1")
+$repoRoot = Get-RaizDeTrabajo $path $repoRoot
+Set-Location $repoRoot
+
 $relative = "<ruta desconocida>"
 if ($path) {
   $rel = Get-RelativePath $path $repoRoot
