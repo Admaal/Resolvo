@@ -1,5 +1,7 @@
 package com.admaal.resolvo.infrastructure.web;
 
+import com.admaal.resolvo.domain.LimiteDeFrecuencia;
+import com.admaal.resolvo.infrastructure.FabricaDeLimites;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -20,7 +22,9 @@ class LimiteDeLoginTest {
 
   private final RelojManual reloj = new RelojManual(Instant.parse("2026-11-19T10:00:00Z"));
   private static final String SECRETO = "secreto-de-prueba";
-  private final LimiteDeLogin limite = new LimiteDeLogin(reloj, 5, 15, SECRETO);
+  private static final FabricaDeLimites EN_MEMORIA =
+      (ambito, maximo, ventana) -> new LimiteDeFrecuencia(maximo, ventana);
+  private final LimiteDeLogin limite = new LimiteDeLogin(reloj, EN_MEMORIA, 5, 15, SECRETO);
 
   private static MockHttpServletRequest desde(String cabecera, String remota) {
     MockHttpServletRequest peticion = new MockHttpServletRequest();
@@ -144,7 +148,7 @@ class LimiteDeLoginTest {
 
   @Test
   void sinSecretoConfiguradoNuncaSeConfiaEnLaCabeceraAunqueVengaVacia() {
-    LimiteDeLogin sinSecreto = new LimiteDeLogin(reloj, 5, 15, "");
+    LimiteDeLogin sinSecreto = new LimiteDeLogin(reloj, EN_MEMORIA, 5, 15, "");
 
     assertThat(sinSecreto.clave("a@b.test", firmada("", "203.0.113.9")))
         .isEqualTo("a@b.test|2a06:98c0:3600::103");

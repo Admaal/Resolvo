@@ -1,7 +1,8 @@
 package com.admaal.resolvo.infrastructure.web;
 
 import com.admaal.resolvo.application.Reloj;
-import com.admaal.resolvo.domain.LimiteDeFrecuencia;
+import com.admaal.resolvo.domain.Limite;
+import com.admaal.resolvo.infrastructure.FabricaDeLimites;
 import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -25,18 +26,19 @@ public class LimiteDeLogin {
   /** Tope de la IP que manda el proxy: una IPv6 completa mide 45. */
   static final int MAXIMO_DE_LA_IP = 64;
 
-  private final LimiteDeFrecuencia limite;
+  private final Limite limite;
   private final Reloj reloj;
   private final byte[] secretoDelProxy;
 
   public LimiteDeLogin(
       Reloj reloj,
+      FabricaDeLimites limites,
       @Value("${resolvo.limites.login-fallos:5}") int fallos,
       @Value("${resolvo.limites.login-ventana-minutos:15}") int minutos,
       @Value("${resolvo.proxy.clave-compartida:}") String secretoDelProxy) {
     this.reloj = reloj;
     this.secretoDelProxy = secretoDelProxy.getBytes(StandardCharsets.UTF_8);
-    this.limite = new LimiteDeFrecuencia(fallos, Duration.ofMinutes(minutos));
+    this.limite = limites.crear("login", fallos, Duration.ofMinutes(minutos));
   }
 
   /**
