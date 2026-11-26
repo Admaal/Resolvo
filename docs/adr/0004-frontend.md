@@ -1,4 +1,4 @@
-# ADR-0004: Angular standalone + Material
+# ADR-0004: Angular standalone (Material retirado, ver enmiendas)
 
 - Fecha: 2026-10-31
 - Estado: aceptada
@@ -26,3 +26,4 @@ Angular standalone con Angular Material, `core/` para auth e interceptores y `fe
 - Cerrado el 2026-11-04: Angular 22.2.5 y Vitest. No se sube de mayor a mitad del plan.
 - Cerrado el 2026-11-14: no hay `API_URL` en build. La SPA sigue llamando a `/api/...` y una Pages Function (`frontend/functions/api/[[path]].ts`) reenvía a la API con la variable `API_ORIGIN`. Mismo origen, sin CORS.
 - Enmienda del 2026-11-20: los controles de la SPA son HTML nativo con los estilos de [docs/design.md](../design.md) (botones `.btn`, campos, chips, paneles); se quitó `MatButton` y el tema precompilado `azure-blue.css`. Motivo: era un tema claro con Roboto que pisaba por especificidad el color de los botones y no seguía el diseño oscuro. `@angular/material` y el CDK siguen como dependencias para los controles que sí aporten (diálogos, overlays, listas con teclado); si se adopta alguno, se tematiza con los tokens del diseño en lugar de un tema precompilado. Los estilos van en capas (`@layer base, components`), con medidas en `rem` y `color-scheme`, siguiendo la guía Modern Web Guidance de Chrome (skill instalada por el proyecto en `.claude/settings.json`).
+- Enmienda del 2026-11-26: se quitan `@angular/material` y `@angular/cdk`. Desde la enmienda anterior ningún fichero los importaba y no se adoptó ningún control suyo: diálogos, menús y listas son HTML nativo con los tokens del diseño. Si un día hace falta un overlay o una lista con teclado accesible, se vuelve a añadir el CDK solo, sin el tema de Material.

@@ -1,5 +1,7 @@
 # Resolvo
 
+[![CI](https://github.com/Admaal/Resolvo/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Admaal/Resolvo/actions/workflows/ci.yml)
+
 [English version](README.en.md)
 
 Helpdesk B2B multi-tenant para equipos de soporte, hecho en solitario como proyecto de portfolio: la demo pública usa datos ficticios. El producto está en [docs/producto.md](docs/producto.md) y las decisiones técnicas en [docs/adr/](docs/adr/).

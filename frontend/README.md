@@ -1,59 +1,29 @@
-# Frontend
+# Resolvo: SPA
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.5.
+La interfaz de Resolvo: Angular 22 con componentes standalone y signals, y estilos propios sobre tokens, sin librería de componentes. El proyecto completo está en el [README de la raíz](../README.md) y la dirección visual en [docs/design.md](../docs/design.md).
 
-## Development server
-
-To start a local development server, run:
+## Arrancar
 
 ```bash
-ng serve
+npm install
+npm start          # http://localhost:4200, con proxy de /api a http://localhost:8080
+npm test           # Vitest, una pasada
+npm run build      # salida en dist/
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+La API local necesita Postgres y `RESOLVO_JWT_SECRET`; los pasos están en el README de la raíz. Sin API, la portada se ve igual, pero no se puede entrar.
 
-## Code scaffolding
+## Cómo está organizado
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+- `src/app/core/`: sesión (`AuthService`, el guard y el interceptor que renueva el token una vez ante un 401), tema claro u oscuro, aviso de servidor dormido, traducción de errores de la API y el armazón de la app.
+- `src/app/features/inicio/`: la portada pública con los accesos de demo.
+- `src/app/features/sesion/`: login.
+- `src/app/features/tickets/`: bandeja agrupada por SLA, detalle con hilo y propiedades, alta de tickets y los paneles de IA (sugerencia de respuesta y clasificación), que solo ven AGENTE y ADMIN.
+- `src/app/shared/`: iconos y el indicador de estado.
+- `src/styles/`: tokens (`tokens.css`), semántica (`semantic.css`), temas (`themes.css`) y fuentes. Los componentes no llevan colores ni medidas sueltas: todo sale de ahí.
+- `functions/api/`: la Pages Function que hace de proxy de `/api` a la API en Render, en el mismo origen (sin CORS y con la cookie de refresh `HttpOnly`). Firma la IP real del cliente con `PROXY_CLAVE`.
+- `public/`: fuentes autoalojadas, favicon, imagen de vista previa (`og.png`) y `_redirects` para que Pages sirva la SPA en cualquier ruta.
 
-```bash
-ng generate component component-name
-```
+## Despliegue
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Cloudflare Pages, proyecto `resolvo`, de subida directa. El workflow `despliegue.yml` lo publica al cambiar `frontend/` en `main`; a mano: `npm run build && npx wrangler pages deploy --project-name resolvo --branch main`.

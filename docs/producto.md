@@ -48,7 +48,7 @@ Fuera de la fase 1:
 - [ADR-0001](adr/0001-lenguaje-framework.md): Java 21 + Spring Boot 3.5.x.
 - [ADR-0002](adr/0002-arquitectura.md): monolito modular hexagonal con ArchUnit.
 - [ADR-0003](adr/0003-datos-migraciones.md): Postgres + pgvector, Flyway desde V1 y `ddl-auto=validate`.
-- [ADR-0004](adr/0004-frontend.md): Angular standalone + Material. El diseño visual de la web sale de [design.md](design.md).
+- [ADR-0004](adr/0004-frontend.md): Angular standalone con controles nativos y estilos propios (Material se retiró el 2026-11-26). El diseño visual de la web sale de [design.md](design.md).
 - [ADR-0005](adr/0005-auth.md): JWT propio, access corto en memoria y refresh en cookie HttpOnly.
 - [ADR-0006](adr/0006-llm.md): Spring AI detrás de puertos; solo existe el perfil `gemini` (enmienda del 2026-11-25).
 - [ADR-0007](adr/0007-embeddings.md): un modelo y una dimensión fijos; cambiarlos exige migración y reindexado.
