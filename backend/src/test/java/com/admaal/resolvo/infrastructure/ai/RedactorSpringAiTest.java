@@ -185,6 +185,26 @@ class RedactorSpringAiTest {
   }
 
   @Test
+  void marcaCadaFuenteConSuTipoYPideCitarTambienLosTicketsResueltos() {
+    Fragmento ticketResuelto =
+        new Fragmento(
+            FragmentoId.nuevo(),
+            org,
+            FuenteConocimiento.TICKET,
+            UUID.randomUUID(),
+            "No llegan los correos",
+            "Se resolvio revisando el filtro de spam.");
+    chatResponde(json("x"));
+
+    redactor.redactar(ticket, List.of(fragmento, ticketResuelto));
+
+    assertThat(ultimoPrompt())
+        .contains("<fuente id=\"" + fragmento.id().valor() + "\" tipo=\"articulo\">")
+        .contains("<fuente id=\"" + ticketResuelto.id().valor() + "\" tipo=\"ticket\">")
+        .contains("Un ticket resuelto tambien es una fuente");
+  }
+
+  @Test
   void elTextoDelClienteNoPuedeCerrarElDelimitadorNiReinyectarMarcadores() {
     chatResponde(json("x"));
     Ticket normal =
@@ -505,7 +525,7 @@ class RedactorSpringAiTest {
     redactor.redactar(ticket, List.of(fragmento));
 
     assertThat(ultimoPrompt())
-        .contains("<fuente id=\"" + fragmento.id().valor() + "\">")
+        .contains("<fuente id=\"" + fragmento.id().valor() + "\" tipo=\"articulo\">")
         .contains("Reiniciar router")
         .contains("Pulsa el boton reset durante 10 segundos.")
         .contains("</fuente>");

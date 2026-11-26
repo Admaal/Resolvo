@@ -5,6 +5,7 @@ import com.admaal.resolvo.application.IaNoDisponible;
 import com.admaal.resolvo.application.RedactorRespuestas;
 import com.admaal.resolvo.domain.Fragmento;
 import com.admaal.resolvo.domain.FragmentoId;
+import com.admaal.resolvo.domain.FuenteConocimiento;
 import com.admaal.resolvo.domain.Ticket;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,7 +20,7 @@ import org.springframework.ai.chat.model.ChatModel;
 public class RedactorSpringAi implements RedactorRespuestas {
 
   private static final PlantillaDePrompt PLANTILLA =
-      PlantillaDePrompt.cargar("prompts/redactar-respuesta-v2.txt");
+      PlantillaDePrompt.cargar("prompts/redactar-respuesta-v3.txt");
 
   /** Tope del borrador que se acepta del modelo; la columna admite 8000. */
   private static final int MAXIMO_DEL_BORRADOR = 4000;
@@ -110,6 +111,8 @@ public class RedactorSpringAi implements RedactorRespuestas {
       bloque
           .append("<fuente id=\"")
           .append(fragmento.id().valor())
+          .append("\" tipo=\"")
+          .append(fragmento.fuente() == FuenteConocimiento.TICKET ? "ticket" : "articulo")
           .append("\">\nTitulo: ")
           .append(PlantillaDePrompt.limpiar(fragmento.titulo()))
           .append('\n')
