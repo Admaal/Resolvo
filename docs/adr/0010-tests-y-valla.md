@@ -32,3 +32,8 @@ El proyecto debe demostrar entrega disciplinada: dominio testeado sin Spring, ai
 ## Enmienda (2026-11-25)
 
 El end to end con Playwright no se llegó a montar. La SPA se cubre con tests de componente en Vitest (más de 200) y los flujos de punta a punta se comprobaron a mano en la demo desplegada y en local contra la API real, anotado con fecha en `AGENTS.md`. Queda como hueco conocido: ningún test automático recorre el navegador contra la API. El runner de Angular es Vitest, el de serie del CLI desde la versión 21.
+
+## Enmienda (2026-11-26)
+
+Se monta el end to end que la enmienda anterior dejó como hueco. Playwright con cuatro flujos en `frontend/e2e/` (entrar con la demo y cambiar de vista, abrir un ticket y comentar, lo que ve y no ve un CLIENTE, y la barra de vistas abajo en móvil), en escritorio y en un viewport de 390 px. Corre contra la pila real: Postgres con pgvector, la API (el jar, sin perfil `gemini`) y la SPA con `ng serve`. Va en su propio workflow, `e2e.yml`, y **no** forma parte de `Gate obligatorio`: tarda minutos (dependencias, Chromium y arranque de la API) y un fallo del navegador no debe bloquear cada push. Si se demuestra estable, puede pasar al gate. En local: API en `:8080` y `npm run e2e` desde `frontend/` (con `PW_CHANNEL=msedge` usa el Edge instalado).
+

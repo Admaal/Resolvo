@@ -22,6 +22,7 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
+import org.springframework.ai.google.genai.common.GoogleGenAiThinkingLevel;
 
 /**
  * Llama a Gemini con una lista de modelos de respaldo. Los modelos se prueban por orden: Google
@@ -59,6 +60,7 @@ public class LlamadorGemini {
   private final List<String> modelos;
   private final Duration limite;
   private final int maxIntentos;
+  private final GoogleGenAiThinkingLevel razonamiento;
   private final ExecutorService llamadas =
       Executors.newCachedThreadPool(
           tarea -> {
@@ -73,6 +75,20 @@ public class LlamadorGemini {
 
   public LlamadorGemini(
       ChatModel chat, List<String> modelos, Duration limitePorIntento, int maxIntentos) {
+    this(chat, modelos, limitePorIntento, maxIntentos, "");
+  }
+
+  /**
+   * Con nivel de razonamiento (minimal, low, medium o high): menos razonamiento es menos latencia y
+   * menos tokens de salida. En blanco, cada modelo usa el suyo por defecto.
+   */
+  public LlamadorGemini(
+      ChatModel chat,
+      List<String> modelos,
+      Duration limitePorIntento,
+      int maxIntentos,
+      String razonamiento) {
+    this.razonamiento = nivel(razonamiento);
     if (modelos.isEmpty()) {
       throw new IllegalArgumentException("hace falta al menos un modelo");
     }
@@ -82,6 +98,21 @@ public class LlamadorGemini {
     this.limite = limitePorIntento;
     this.maxIntentos = Math.max(1, maxIntentos);
     this.modeloUsado = this.modelos.get(0);
+  }
+
+  private static GoogleGenAiThinkingLevel nivel(String texto) {
+    if (texto == null || texto.isBlank()) {
+      return null;
+    }
+    return switch (texto.strip().toLowerCase(java.util.Locale.ROOT)) {
+      case "minimal" -> GoogleGenAiThinkingLevel.MINIMAL;
+      case "low" -> GoogleGenAiThinkingLevel.LOW;
+      case "medium" -> GoogleGenAiThinkingLevel.MEDIUM;
+      case "high" -> GoogleGenAiThinkingLevel.HIGH;
+      default ->
+          throw new IllegalArgumentException(
+              "Nivel de razonamiento desconocido: " + texto + " (minimal, low, medium o high)");
+    };
   }
 
   /** El modelo que contesto en la ultima llamada; antes de la primera, el preferido. */
@@ -258,7 +289,12 @@ public class LlamadorGemini {
         llamadas.submit(
             () ->
                 chat.call(
-                    new Prompt(prompt, GoogleGenAiChatOptions.builder().model(modelo).build())));
+                    new Prompt(
+                        prompt,
+                        GoogleGenAiChatOptions.builder()
+                            .model(modelo)
+                            .thinkingLevel(razonamiento)
+                            .build())));
     ChatResponse respuesta;
     try {
       respuesta = tarea.get(limite.toMillis(), TimeUnit.MILLISECONDS);

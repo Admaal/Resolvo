@@ -1,7 +1,8 @@
 package com.admaal.resolvo.infrastructure.web;
 
 import com.admaal.resolvo.application.Reloj;
-import com.admaal.resolvo.domain.LimiteDeFrecuencia;
+import com.admaal.resolvo.domain.Limite;
+import com.admaal.resolvo.infrastructure.FabricaDeLimites;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
@@ -13,12 +14,15 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Component
 public class LimiteDeIa implements HandlerInterceptor {
 
-  private final LimiteDeFrecuencia limite;
+  private final Limite limite;
   private final Reloj reloj;
 
-  public LimiteDeIa(Reloj reloj, @Value("${resolvo.limites.ia-por-minuto:10}") int porMinuto) {
+  public LimiteDeIa(
+      Reloj reloj,
+      FabricaDeLimites limites,
+      @Value("${resolvo.limites.ia-por-minuto:10}") int porMinuto) {
     this.reloj = reloj;
-    this.limite = new LimiteDeFrecuencia(porMinuto, Duration.ofMinutes(1));
+    this.limite = limites.crear("ia", porMinuto, Duration.ofMinutes(1));
   }
 
   @Override
