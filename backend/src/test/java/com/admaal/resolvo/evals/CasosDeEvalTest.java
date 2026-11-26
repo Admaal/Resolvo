@@ -72,15 +72,36 @@ class CasosDeEvalTest {
             new ClassPathResource("db/migration/V5__semilla_articulos.sql").getInputStream().readAllBytes(),
             StandardCharsets.UTF_8);
 
-    assertThat(rag.stream().filter(CasoRag::tieneRespuesta).map(CasoRag::articulo).distinct())
+    assertThat(rag.stream().map(CasoRag::articulo).filter(java.util.Objects::nonNull).distinct())
         .allSatisfy(titulo -> assertThat(semilla).contains("'" + titulo + "'"));
+  }
+
+  @Test
+  void ragTieneAlMenosCuarentaCasos() {
+    assertThat(rag).hasSizeGreaterThanOrEqualTo(40);
+    assertThat(rag.stream().filter(caso -> !caso.tieneRespuesta()).count()).isGreaterThanOrEqualTo(10);
+  }
+
+  @Test
+  void ragMideTambienLosTicketsResueltosComoFuente() throws IOException {
+    String semilla =
+        new String(
+            new ClassPathResource("db/migration/V3__semilla_demo.sql").getInputStream().readAllBytes(),
+            StandardCharsets.UTF_8);
+    List<CasoRag> conTicket = rag.stream().filter(caso -> caso.ticket() != null).toList();
+
+    assertThat(conTicket).hasSizeGreaterThanOrEqualTo(4);
+    assertThat(conTicket).allSatisfy(caso -> assertThat(caso.articulo()).isNull());
+    assertThat(conTicket.stream().map(CasoRag::ticket).distinct())
+        .allSatisfy(codigo -> assertThat(semilla).contains("'" + codigo + "'"))
+        .containsExactlyInAnyOrder("RS-4", "RS-5");
   }
 
   @Test
   void ragCubreVariosArticulosYNoSoloUno() {
     Map<String, Long> porArticulo =
         rag.stream()
-            .filter(CasoRag::tieneRespuesta)
+            .filter(caso -> caso.articulo() != null)
             .collect(Collectors.groupingBy(CasoRag::articulo, Collectors.counting()));
 
     assertThat(porArticulo).hasSizeGreaterThanOrEqualTo(6);

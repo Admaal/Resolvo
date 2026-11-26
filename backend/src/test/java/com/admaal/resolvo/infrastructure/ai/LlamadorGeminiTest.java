@@ -289,4 +289,40 @@ class LlamadorGeminiTest {
     assertThat(llamador.llamar("hola").texto()).isEqualTo("ok");
     assertThat(vistas).hasSize(1);
   }
+
+  @Test
+  void pideAlModeloElNivelDeRazonamientoConfigurado() {
+    when(chat.call(any(Prompt.class))).thenReturn(conUso("ok", 1, 1));
+    LlamadorGemini llamador =
+        new LlamadorGemini(chat, List.of("modelo-x"), Duration.ofSeconds(5), 1, "low");
+
+    llamador.llamar("hola");
+
+    org.mockito.ArgumentCaptor<Prompt> enviado = org.mockito.ArgumentCaptor.forClass(Prompt.class);
+    org.mockito.Mockito.verify(chat).call(enviado.capture());
+    assertThat(((GoogleGenAiChatOptions) enviado.getValue().getOptions()).getThinkingLevel())
+        .isEqualTo(org.springframework.ai.google.genai.common.GoogleGenAiThinkingLevel.LOW);
+  }
+
+  @Test
+  void sinNivelConfiguradoDejaElDelModelo() {
+    when(chat.call(any(Prompt.class))).thenReturn(conUso("ok", 1, 1));
+    LlamadorGemini llamador =
+        new LlamadorGemini(chat, List.of("modelo-x"), Duration.ofSeconds(5), 1, " ");
+
+    llamador.llamar("hola");
+
+    org.mockito.ArgumentCaptor<Prompt> enviado = org.mockito.ArgumentCaptor.forClass(Prompt.class);
+    org.mockito.Mockito.verify(chat).call(enviado.capture());
+    assertThat(((GoogleGenAiChatOptions) enviado.getValue().getOptions()).getThinkingLevel())
+        .isNull();
+  }
+
+  @Test
+  void unNivelDeRazonamientoDesconocidoNoArranca() {
+    org.assertj.core.api.Assertions.assertThatThrownBy(
+            () -> new LlamadorGemini(chat, List.of("modelo-x"), Duration.ofSeconds(5), 1, "mucho"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("mucho");
+  }
 }

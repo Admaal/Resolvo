@@ -6,6 +6,11 @@ name: Evals de IA
 # cumple, pero el ruleset de main no lo exige.
 on:
   workflow_dispatch:
+    inputs:
+      razonamiento:
+        description: "Nivel de razonamiento de Gemini: minimal, low, medium, high, o modelo para dejar el suyo"
+        required: false
+        default: "modelo"
   pull_request:
     paths:
       - "backend/src/main/resources/prompts/**"
@@ -15,7 +20,7 @@ on:
       - ".github/workflows/evals.yml"
 
 concurrency:
-  group: evals-${{ github.ref }}
+  group: evals-${{ github.ref }}-${{ inputs.razonamiento }}
   cancel-in-progress: true
 
 permissions:
@@ -44,7 +49,12 @@ jobs:
         working-directory: backend
         env:
           RESOLVO_GEMINI_API_KEY: ${{ secrets.RESOLVO_GEMINI_API_KEY }}
-        run: bash ./gradlew evals --console=plain
+          # En un pull_request no hay inputs: se deja el nivel del modelo, como en produccion.
+          RESOLVO_GEMINI_RAZONAMIENTO: ${{ github.event_name == 'workflow_dispatch' && inputs.razonamiento || 'modelo' }}
+        run: |
+          if [ "$RESOLVO_GEMINI_RAZONAMIENTO" = modelo ]; then export RESOLVO_GEMINI_RAZONAMIENTO=; fi
+          echo "Nivel de razonamiento: '${RESOLVO_GEMINI_RAZONAMIENTO}'"
+          bash ./gradlew evals --console=plain
       - name: Informe en el resumen del job
         if: ${{ always() }}
         run: |
