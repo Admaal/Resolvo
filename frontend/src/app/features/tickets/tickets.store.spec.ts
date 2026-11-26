@@ -65,7 +65,7 @@ describe('contarPorVista', () => {
 });
 
 describe('TicketsStore', () => {
-  function montar(listar: () => Promise<unknown>) {
+  function montar(listar: (filtro: unknown, pagina: number) => Promise<unknown>) {
     TestBed.configureTestingModule({ providers: [{ provide: TicketsService, useValue: { listar } }] });
     return TestBed.inject(TicketsStore);
   }
@@ -78,6 +78,19 @@ describe('TicketsStore', () => {
 
     expect(store.carga()).toBe('listo');
     expect(store.tickets()).toHaveLength(8);
+  });
+
+  it('carga todas las páginas y los contadores cuentan los 70', async () => {
+    const todos = Array.from({ length: 70 }, (_, i) => ticket(String(i + 1)));
+    const listar = vi.fn((_filtro: unknown, pagina: number) =>
+      Promise.resolve({ elementos: todos.slice(pagina * 50, pagina * 50 + 50), pagina, tamano: 50, total: 70 }),
+    );
+    const store = montar(listar);
+    await store.cargar();
+
+    expect(listar.mock.calls.map((llamada) => llamada[1])).toEqual([0, 1]);
+    expect(store.tickets()).toHaveLength(70);
+    expect(store.contadores().todos).toBe(70);
   });
 
   it('si falla la carga queda en error y conserva lo que había', async () => {

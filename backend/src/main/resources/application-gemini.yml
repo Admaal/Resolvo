@@ -37,3 +37,8 @@ resolvo:
     modelos: ${RESOLVO_GEMINI_MODELOS:gemini-flash-lite-latest,gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-flash-latest,gemini-3.5-flash,gemini-3.8-flash}
     timeout-segundos: 15
     max-intentos: 3
+    # Nivel de razonamiento de los modelos Gemini 3 (minimal, low, medium o high; vacio, el del
+    # modelo). Se deja el del modelo: con low los evals del 2026-11-26 bajaron la cita de la fuente
+    # esperada del 90 % al 83 % (fallaban los tickets resueltos como fuente) y el p95 solo paso de
+    # 6,1 a 5,5 s, con otro modelo elegido por el sondeo (runs 45811692821 y 45813572386, ADR-0011).
+    razonamiento: ${RESOLVO_GEMINI_RAZONAMIENTO:}

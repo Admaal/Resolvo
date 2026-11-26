@@ -28,7 +28,7 @@ class ConfiguracionGeminiBeanTest {
     Instant ahora = Instant.parse("2026-11-19T12:00:00Z");
 
     LlamadorGemini llamador =
-        new ConfiguracionGemini().llamadorGemini(chat, List.of("m1"), 5, 1, registro, () -> ahora);
+        new ConfiguracionGemini().llamadorGemini(chat, List.of("m1"), 5, 1, "", registro, () -> ahora);
     llamador.llamar(new LlamadorGemini.Contexto("sugerir", UUID.randomUUID()), "di hola");
 
     assertThat(registro.todas()).singleElement().satisfies(fila -> {
