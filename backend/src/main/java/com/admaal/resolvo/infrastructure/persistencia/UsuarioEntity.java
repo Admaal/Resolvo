@@ -7,7 +7,6 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -29,11 +28,6 @@ public class UsuarioEntity {
 
   @Column(nullable = false, length = 100)
   private String hashContrasena;
-
-  @Column(nullable = false)
-  private int fallosSeguidos;
-
-  private Instant bloqueadoHasta;
 
   public UUID getId() {
     return id;
@@ -73,21 +67,5 @@ public class UsuarioEntity {
 
   public void setHashContrasena(String hashContrasena) {
     this.hashContrasena = hashContrasena;
-  }
-
-  public int getFallosSeguidos() {
-    return fallosSeguidos;
-  }
-
-  public void setFallosSeguidos(int fallosSeguidos) {
-    this.fallosSeguidos = fallosSeguidos;
-  }
-
-  public Instant getBloqueadoHasta() {
-    return bloqueadoHasta;
-  }
-
-  public void setBloqueadoHasta(Instant bloqueadoHasta) {
-    this.bloqueadoHasta = bloqueadoHasta;
   }
 }
