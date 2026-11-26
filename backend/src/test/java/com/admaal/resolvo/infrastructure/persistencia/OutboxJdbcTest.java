@@ -188,6 +188,28 @@ class OutboxJdbcTest {
   }
 
   @Test
+  void reactivaLosFallidosHastaTresRondas() {
+    EventoTicket evento = evento(Instant.now());
+    outbox.publicar(evento);
+    for (int ronda = 1; ronda <= 3; ronda++) {
+      outbox.reclamar(10);
+      outbox.fallar(evento.id(), "boom " + ronda, true);
+      assertThat(estado(evento.id())).isEqualTo("FALLIDO");
+
+      assertThat(outbox.reactivarFallidos()).as("ronda " + ronda).isEqualTo(1);
+
+      assertThat(estado(evento.id())).isEqualTo("PENDIENTE");
+      List<Reclamado> otraVez = outbox.reclamar(10);
+      assertThat(otraVez).extracting(r -> r.intentos()).containsExactly(1);
+      jdbc.update("update evento_outbox set reclamado_hasta = null where id = ?", evento.id());
+    }
+    outbox.fallar(evento.id(), "boom final", true);
+
+    assertThat(outbox.reactivarFallidos()).isZero();
+    assertThat(estado(evento.id())).isEqualTo("FALLIDO");
+  }
+
+  @Test
   void unFalloNoDefinitivoAcortaElReclamoParaQueElSiguienteBarridoLoReintente() {
     EventoTicket evento = evento(Instant.now());
     outbox.publicar(evento);

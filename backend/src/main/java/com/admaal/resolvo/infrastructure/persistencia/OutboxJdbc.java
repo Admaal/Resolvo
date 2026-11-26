@@ -13,7 +13,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -26,6 +29,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @Repository
 public class OutboxJdbc implements PublicadorEventos, BandejaEventos, EventosProcesados {
+
+  private static final Logger LOG = LoggerFactory.getLogger(OutboxJdbc.class);
 
   /** Aviso interno de que hay algo nuevo; se entrega al confirmarse la transaccion. */
   public record EventoPublicado(UUID id) {}
@@ -121,6 +126,31 @@ public class OutboxJdbc implements PublicadorEventos, BandejaEventos, EventosPro
         definitivo,
         SEGUNDOS_DE_REINTENTO,
         eventoId);
+  }
+
+  /** Rondas de reactivacion de un evento FALLIDO antes de dejarlo por perdido. */
+  static final int MAXIMO_DE_RONDAS = 3;
+
+  /**
+   * Devuelve a PENDIENTE, con los intentos a cero, los eventos FALLIDO que aun no han gastado sus
+   * rondas. Corre cada hora: un fallo pasajero del proveedor o de la base no deja el evento perdido.
+   */
+  public int reactivarFallidos() {
+    return jdbc.update(
+        """
+        update evento_outbox
+        set estado = 'PENDIENTE', intentos = 0, rondas = rondas + 1, reclamado_hasta = null
+        where estado = 'FALLIDO' and rondas < ?
+        """,
+        MAXIMO_DE_RONDAS);
+  }
+
+  @Scheduled(fixedDelay = 3_600_000, initialDelay = 600_000)
+  void reactivarFallidosCadaHora() {
+    int reactivados = reactivarFallidos();
+    if (reactivados > 0) {
+      LOG.info("Outbox: {} eventos fallidos vuelven a pendiente", reactivados);
+    }
   }
 
   @Override
