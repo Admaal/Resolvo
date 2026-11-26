@@ -27,9 +27,7 @@ public final class Mapeo {
         new OrganizacionId(fila.getOrganizacionId()),
         fila.getEmail(),
         fila.getRol(),
-        fila.getHashContrasena(),
-        fila.getFallosSeguidos(),
-        fila.getBloqueadoHasta());
+        fila.getHashContrasena());
   }
 
   static void copiar(Usuario usuario, UsuarioEntity fila) {
@@ -38,8 +36,6 @@ public final class Mapeo {
     fila.setEmail(usuario.email());
     fila.setRol(usuario.rol());
     fila.setHashContrasena(usuario.hashContrasena());
-    fila.setFallosSeguidos(usuario.fallosSeguidos());
-    fila.setBloqueadoHasta(usuario.bloqueadoHasta());
   }
 
   public static Categoria categoria(CategoriaEntity fila) {
