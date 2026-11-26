@@ -116,3 +116,4 @@ La IA es un perfil: sin `gemini` no se carga ninguna autoconfiguración de Sprin
     - En la demo, el Admin ve los 6 tickets y da de alta RS-9 («Prueba de alta desde la demo»), que abre `/tickets/RS-9`. `K` va de RS-9 a RS-5 y `J` vuelve.
     - Ocultar un comentario de RS-4 deja el fragmento en 109 caracteres sin «reemitido»; restaurarlo lo devuelve a 177. Los dos eventos `COMENTARIO_MODERADO` quedan `HECHO`.
     - Hallazgo: la portada promete al Admin las métricas de IA y la SPA no tiene esa página.
+- Eval de citas de tickets (PR #63, `claude/eval-citas-tickets`, 2026-11-26): se cierra #58 y los casos r33–r36 aceptan el artículo equivalente de RS-4 y RS-5. RED: `CasosDeEvalTest.losCasosConTicketAceptanElArticuloQueDaLaMismaRespuesta`. Evals reales (run 45833313132, `gemini-3.1-flash-lite` y respaldos): cita 96,7 %, recall@5 y sin respuesta al 100 %, clasificación al 100 %, p95 8,3 s. Solo falla r25 (0,305 sobre el umbral de 0,29).
