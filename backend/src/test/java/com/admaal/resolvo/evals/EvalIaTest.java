@@ -193,6 +193,7 @@ class EvalIaTest {
     List<Double> distanciasConRespuesta = new ArrayList<>();
     List<Double> distanciasSinRespuesta = new ArrayList<>();
     List<Double> distanciasConTicket = new ArrayList<>();
+    List<String> sinCita = new ArrayList<>();
     Set<String> errores = new LinkedHashSet<>();
     for (CasoRag caso : casos) {
       // Se cuenta antes de llamar al proveedor: un caso que falla es un fallo, no un caso menos.
@@ -219,8 +220,12 @@ class EvalIaTest {
             recall++;
           }
           Thread.sleep(pausaMs);
-          if (!fragmentos.isEmpty() && citaLaFuente(ticket, fragmentos, esperado)) {
+          if (fragmentos.isEmpty()) {
+            sinCita.add("%s (sin fragmentos bajo el umbral, mejor %.3f)".formatted(caso.id(), mejor));
+          } else if (citaLaFuente(ticket, fragmentos, esperado)) {
             citan++;
+          } else {
+            sinCita.add("%s (no cita la fuente esperada)".formatted(caso.id()));
           }
         } else {
           distanciasSinRespuesta.add(mejor);
@@ -259,6 +264,7 @@ class EvalIaTest {
         MetricasEval.umbralRecomendado(distanciasConRespuesta, distanciasSinRespuesta)
             .map(umbral -> "RAG: umbral de distancia recomendado %.3f (separa las consultas con y sin respuesta)".formatted(umbral))
             .orElse("RAG: ningun umbral de distancia separa las consultas con y sin respuesta"));
+    notas.add("RAG: casos con respuesta que no citan la fuente esperada " + sinCita);
     notas.add("RAG: mejor distancia con respuesta " + distanciasConRespuesta);
     notas.add("RAG: mejor distancia sin respuesta " + distanciasSinRespuesta);
     notas.add("RAG: mejor distancia con un ticket resuelto como fuente " + distanciasConTicket);
