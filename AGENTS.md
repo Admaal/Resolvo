@@ -8,7 +8,7 @@ Este archivo es la fuente de verdad de la fase, de la valla y de los riesgos abi
 
 **Fases 0 a 6 hechas y desplegadas** (la 6 el 2026-11-19), con pulido posterior hasta el 2026-11-25: rediseño de la SPA, moderación de comentarios, código del ticket en la URL, sesión renovada al caducar el token, visibilidad por autor para el CLIENTE y la auditoría de portfolio. **No hay fase en curso.** Resumen por fase en [docs/fases.md](docs/fases.md); el detalle (qué se comprobó en la demo, RED, verificadores, cifras de cada gate) en [docs/bitacora.md](docs/bitacora.md).
 
-La demo corre en https://resolvo-6lc.pages.dev: SPA en Cloudflare Pages con una Pages Function que hace de proxy `/api` a la API en Render Free (Docker, Frankfurt) y Postgres con pgvector en Neon Free. Migraciones V1 a V8 aplicadas en Neon; V9 (artículo semilla del login) está en la rama de la auditoría, sin desplegar. Ping cada 5 minutos con GitHub Actions.
+La demo corre en https://resolvo-6lc.pages.dev: SPA en Cloudflare Pages con una Pages Function que hace de proxy `/api` a la API en Render Free (Docker, Frankfurt) y Postgres con pgvector en Neon Free. Migraciones V1 a V9 aplicadas en Neon (V9, artículo semilla del login, el 2026-11-26). Ping cada 5 minutos con GitHub Actions.
 
 Lo que hay que saber antes de tocar nada:
 
