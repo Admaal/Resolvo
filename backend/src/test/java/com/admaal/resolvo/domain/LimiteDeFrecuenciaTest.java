@@ -33,7 +33,7 @@ class LimiteDeFrecuenciaTest {
     limite.admitir("a", T0.plusSeconds(10));
     limite.admitir("a", T0.plusSeconds(20));
 
-    LimiteDeFrecuencia.Decision decision = limite.admitir("a", T0.plusSeconds(30));
+    Limite.Decision decision = limite.admitir("a", T0.plusSeconds(30));
 
     assertThat(decision.admitida()).isFalse();
     // La mas antigua (T0) sale de la ventana a los 60 s: faltan 30.
@@ -82,7 +82,7 @@ class LimiteDeFrecuenciaTest {
     assertThat(limite.comprobar("a", T0.plusSeconds(2)).admitida()).isTrue();
     limite.registrar("a", T0.plusSeconds(2));
 
-    LimiteDeFrecuencia.Decision decision = limite.comprobar("a", T0.plusSeconds(3));
+    Limite.Decision decision = limite.comprobar("a", T0.plusSeconds(3));
 
     assertThat(decision.admitida()).isFalse();
     assertThat(decision.reintentarEn()).isEqualTo(Duration.ofSeconds(57));

@@ -34,7 +34,8 @@ resolvo:
   # que el proxy manda en X-Cliente-Ip. Vacia = nunca se confia en esa cabecera.
   proxy:
     clave-compartida: ${RESOLVO_PROXY_CLAVE:}
-  # Limites de uso en memoria (una sola instancia). Login: fallos por (email, cliente) y ventana.
+  # Limites de uso, guardados en la base (tabla limite_marca): sobreviven a un reinicio y valen con
+  # varias instancias. Login: fallos por (email, cliente) y ventana.
   # IA: peticiones por usuario y minuto a sugerencias, clasificaciones y reindexado.
   limites:
     login-fallos: ${RESOLVO_LIMITE_LOGIN_FALLOS:5}
