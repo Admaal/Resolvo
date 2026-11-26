@@ -177,6 +177,13 @@ class EvalIaTest {
           articulos.put(fila.getString("titulo"), fila.getObject("id", UUID.class));
         },
         ACME.valor());
+    Map<String, UUID> tickets = new HashMap<>();
+    jdbc.query(
+        "select id, codigo from ticket where organizacion_id = ?",
+        fila -> {
+          tickets.put(fila.getString("codigo"), fila.getObject("id", UUID.class));
+        },
+        ACME.valor());
     List<CasoRag> casos = CargadorDeCasos.rag();
     int conRespuesta = 0;
     int recall = 0;
@@ -185,6 +192,7 @@ class EvalIaTest {
     int sinRespuestaAcertada = 0;
     List<Double> distanciasConRespuesta = new ArrayList<>();
     List<Double> distanciasSinRespuesta = new ArrayList<>();
+    List<Double> distanciasConTicket = new ArrayList<>();
     Set<String> errores = new LinkedHashSet<>();
     for (CasoRag caso : casos) {
       // Se cuenta antes de llamar al proveedor: un caso que falla es un fallo, no un caso menos.
@@ -202,7 +210,11 @@ class EvalIaTest {
             base.buscar(ACME, consulta, K, UUID.randomUUID(), distanciaMaxima);
         if (caso.tieneRespuesta()) {
           distanciasConRespuesta.add(mejor);
-          UUID esperado = articulos.get(caso.articulo());
+          UUID esperado =
+              caso.articulo() != null ? articulos.get(caso.articulo()) : tickets.get(caso.ticket());
+          if (caso.ticket() != null) {
+            distanciasConTicket.add(mejor);
+          }
           if (fuentesCercanas(consulta).contains(esperado)) {
             recall++;
           }
@@ -249,6 +261,7 @@ class EvalIaTest {
             .orElse("RAG: ningun umbral de distancia separa las consultas con y sin respuesta"));
     notas.add("RAG: mejor distancia con respuesta " + distanciasConRespuesta);
     notas.add("RAG: mejor distancia sin respuesta " + distanciasSinRespuesta);
+    notas.add("RAG: mejor distancia con un ticket resuelto como fuente " + distanciasConTicket);
     errores.stream().limit(10).forEach(error -> notas.add("Error de RAG " + error));
   }
 

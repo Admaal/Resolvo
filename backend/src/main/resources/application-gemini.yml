@@ -37,3 +37,7 @@ resolvo:
     modelos: ${RESOLVO_GEMINI_MODELOS:gemini-flash-lite-latest,gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-flash-latest,gemini-3.5-flash,gemini-3.8-flash}
     timeout-segundos: 15
     max-intentos: 3
+    # Nivel de razonamiento de los modelos Gemini 3 (minimal, low, medium o high; vacio, el del
+    # modelo). Menos razonamiento es menos latencia y menos tokens de salida: clasificar y redactar
+    # con citas no necesitan pensar mucho. Medido con los evals (ADR-0011).
+    razonamiento: ${RESOLVO_GEMINI_RAZONAMIENTO:low}

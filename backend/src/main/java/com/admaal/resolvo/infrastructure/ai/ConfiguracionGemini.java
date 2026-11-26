@@ -53,10 +53,12 @@ public class ConfiguracionGemini {
       @Value("${resolvo.gemini.modelos}") List<String> modelos,
       @Value("${resolvo.gemini.timeout-segundos:15}") int segundos,
       @Value("${resolvo.gemini.max-intentos:3}") int maxIntentos,
+      @Value("${resolvo.gemini.razonamiento:}") String razonamiento,
       RegistroLlamadas registro,
       Reloj reloj) {
     LlamadorGemini llamador =
-        new LlamadorGemini(chat, modelos, Duration.ofSeconds(segundos), maxIntentos);
+        new LlamadorGemini(
+            chat, modelos, Duration.ofSeconds(segundos), maxIntentos, razonamiento);
     anotarLlamadas(llamador, registro, reloj);
     return llamador;
   }

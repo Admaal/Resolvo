@@ -20,3 +20,21 @@
 {"id":"r20","asunto":"Existe aplicacion movil nativa","cuerpo":"Hay aplicacion para iOS y Android o solo la web?","articulo":null}
 {"id":"r21","asunto":"Receta de paella","cuerpo":"Como se hace una buena paella valenciana?","articulo":null}
 {"id":"r22","asunto":"Donde se alojan nuestros datos","cuerpo":"Necesito saber en que pais se almacenan los datos para el departamento legal.","articulo":null}
+{"id":"r23","asunto":"Quiero cambiar mi contrasena","cuerpo":"Donde se pone una contrasena nueva si ya se la actual?","articulo":"Como restablecer tu contrasena"}
+{"id":"r24","asunto":"Pantalla en blanco al entrar","cuerpo":"Despues de poner usuario y clave el panel se queda cargando y no entra.","articulo":"Errores al iniciar sesion en el panel"}
+{"id":"r25","asunto":"Descargar los datos del mes","cuerpo":"Necesito sacar el informe de tickets del mes en un fichero para Excel.","articulo":"Exportar informes a CSV"}
+{"id":"r26","asunto":"Dar de alta a un nuevo agente","cuerpo":"Ha entrado una persona nueva en soporte, como le doy acceso?","articulo":"Anadir usuarios a tu equipo"}
+{"id":"r27","asunto":"Cambiar la direccion de facturacion","cuerpo":"Nos hemos mudado y la direccion fiscal de las proximas facturas tiene que ser otra.","articulo":"Cambiar los datos de facturacion"}
+{"id":"r28","asunto":"Cada aviso me llega por partida doble","cuerpo":"Desde ayer cualquier correo de la plataforma me entra dos veces.","articulo":"Notificaciones por correo duplicadas"}
+{"id":"r29","asunto":"El buscador no encuentra nada","cuerpo":"Pongo el codigo de un ticket en el buscador y sale la lista vacia.","articulo":"La busqueda no devuelve resultados"}
+{"id":"r30","asunto":"Plazo para una peticion de prioridad baja","cuerpo":"Cuanto tardais en contestar una consulta que no es urgente?","articulo":"Plazos de primera respuesta"}
+{"id":"r31","asunto":"El CSV sale cortado","cuerpo":"Exporto un informe muy grande y el fichero no trae todas las filas.","articulo":"Exportar informes a CSV"}
+{"id":"r32","asunto":"No me llega el correo para recuperar el acceso","cuerpo":"He pedido recuperar la contrasena tres veces y no recibo nada.","articulo":"Como restablecer tu contrasena"}
+{"id":"r33","asunto":"Facturar a otra empresa del grupo","cuerpo":"La siguiente factura tiene que ir a nombre de una filial distinta, podeis reemitirla?","ticket":"RS-4"}
+{"id":"r34","asunto":"Reemitir factura a otra sociedad","cuerpo":"Necesito que reemitais la ultima factura a nombre de otra sociedad nuestra.","ticket":"RS-4"}
+{"id":"r35","asunto":"Avisos repetidos desde la actualizacion","cuerpo":"Desde la ultima actualizacion cada aviso me llega dos veces al correo.","ticket":"RS-5"}
+{"id":"r36","asunto":"Correo duplicado tras actualizar","cuerpo":"Tras la ultima actualizacion los avisos por correo me llegan repetidos.","ticket":"RS-5"}
+{"id":"r37","asunto":"Borrar mi cuenta y mis datos","cuerpo":"Quiero que elimineis mi cuenta y todos mis datos personales.","articulo":null}
+{"id":"r38","asunto":"Tienen certificado ISO 27001","cuerpo":"Nuestro departamento de compras pide el certificado de seguridad del proveedor.","articulo":null}
+{"id":"r39","asunto":"Cambiar el idioma de la interfaz","cuerpo":"Se puede poner el panel en ingles para un companero de Londres?","articulo":null}
+{"id":"r40","asunto":"Horario del turno de noche","cuerpo":"Teneis soporte por telefono los fines de semana por la noche?","articulo":null}
