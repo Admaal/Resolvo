@@ -40,8 +40,14 @@ export class TicketsStore {
 
   async cargar(): Promise<void> {
     try {
-      const pagina = await this.api.listar({});
-      this.tickets.set(pagina.elementos);
+      // Los contadores y las vistas se calculan aquí, así que hacen falta todas las páginas.
+      const todos: TicketResumen[] = [];
+      for (let numero = 0; ; numero++) {
+        const pagina = await this.api.listar({}, numero);
+        todos.push(...pagina.elementos);
+        if (pagina.elementos.length === 0 || todos.length >= pagina.total) break;
+      }
+      this.tickets.set(todos);
       this.carga.set('listo');
     } catch {
       this.carga.set('error');

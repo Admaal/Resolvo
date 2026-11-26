@@ -7,8 +7,9 @@ import { Categoria, PaginaTickets, TicketDetalle, UsuarioResumen } from './ticke
 export class TicketsService {
   private readonly http = inject(HttpClient);
 
-  listar(filtro: { estado?: string; prioridad?: string; asignado?: string }): Promise<PaginaTickets> {
-    let params = new HttpParams().set('tamano', '50').set('pagina', '0');
+  /** Una página de 50, el máximo que sirve la API. */
+  listar(filtro: { estado?: string; prioridad?: string; asignado?: string }, pagina = 0): Promise<PaginaTickets> {
+    let params = new HttpParams().set('tamano', '50').set('pagina', String(pagina));
     if (filtro.estado) params = params.set('estado', filtro.estado);
     if (filtro.prioridad) params = params.set('prioridad', filtro.prioridad);
     if (filtro.asignado) params = params.set('asignado', filtro.asignado);
