@@ -115,6 +115,22 @@ describe('Shell', () => {
     expect(await enTicket('/tickets?vista=mios')).toBe(false);
   });
 
+  it('el Admin ve el enlace a las métricas de IA', () => {
+    configurar('ADMIN');
+    const fixture = TestBed.createComponent(Shell);
+    fixture.detectChanges();
+    const enlace = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('a[href="/metricas"]');
+
+    expect(enlace?.textContent?.trim()).toBe('Métricas de IA');
+  });
+
+  it('el Agente no ve el enlace a las métricas de IA', () => {
+    const fixture = TestBed.createComponent(Shell);
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('a[href="/metricas"]')).toBeNull();
+  });
+
   it('enseña el rol de la persona', () => {
     const fixture = TestBed.createComponent(Shell);
     fixture.detectChanges();

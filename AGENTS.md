@@ -26,7 +26,7 @@ Lo que hay que saber antes de tocar nada:
 - Casos de uso: `backend/src/main/java/com/admaal/resolvo/application/` (solo depende de `domain` y de sus puertos).
 - Adapters: `backend/src/main/java/com/admaal/resolvo/infrastructure/` (JPA, JDBC y pgvector, Flyway, JWT, HTTP y `ai/` con Spring AI).
 - Lint de pureza: ArchUnit, en `backend/src/test/java/com/admaal/resolvo/architecture/`.
-- Frontend: Angular 22.2.5 standalone con controles nativos y estilos propios (sin Angular Material ni CDK desde el 2026-11-26) y Vitest, en `frontend/`. El access token vive en un campo de `AuthService`. El panel de sugerencias (`features/tickets/sugerencia-panel.ts`) solo se pinta a AGENTE y ADMIN.
+- Frontend: Angular 22.2.5 standalone con controles nativos y estilos propios (sin Angular Material ni CDK desde el 2026-11-26) y Vitest, en `frontend/`. El access token vive en un campo de `AuthService`. El panel de sugerencias (`features/tickets/sugerencia-panel.ts`) solo se pinta a AGENTE y ADMIN. La página `/metricas` (`features/metricas/`) es solo de ADMIN (`soloAdmin`) y pinta `GET /api/metricas/ia` por rango.
 - Guía web: el repo declara el plugin `modern-web-guidance@googlechrome` (skills de Chrome para agentes; `.claude/settings.json`). This project's Baseline target is Baseline Widely available. Antes de tocar CSS, HTML o formularios del frontend, consultar `npx modern-web-guidance@latest search "<tema>"` y `retrieve <id>`; `legacy-scan frontend/src` busca patrones antiguos. Lo visual lo decide [docs/design.md](docs/design.md); los tokens viven en `frontend/src/styles/` (`tokens.css`, `semantic.css`, `themes.css`).
 
 ## Principios no negociables
@@ -105,4 +105,4 @@ Solo lo que sigue vigente. La historia de cada uno, con fechas, runs y cifras, e
 - Los tests end to end (Playwright, `frontend/e2e/`, workflow [e2e.yml](.github/workflows/e2e.yml), PR #54) cubren cuatro flujos contra la pila real y **no forman parte** de `Gate obligatorio` (unos 2,5 min, casi todo preparación). En local: API en :8080 y `cd frontend && npm run e2e`. El resto de flujos se comprueba a mano.
 - El gate `full` tarda unos 120-160 s en frío (tests y mutación), con techo de 300 s: vigilar si los tests `full` crecen. Los tests `full` limitan Hikari a 3 conexiones.
 
-**Sin comprobar a mano** (solo tests): la demo en móvil. El resto de lo pendiente se comprobó el 2026-11-26 (detalle en la bitácora). La portada promete al Admin «las métricas de IA», pero la SPA no tiene esa página: solo existe `GET /api/metricas/ia`.
+**Sin comprobar a mano** (solo tests): la demo en móvil. El resto de lo pendiente se comprobó el 2026-11-26 (detalle en la bitácora).

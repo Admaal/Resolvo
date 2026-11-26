@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth.guard';
+import { soloAdmin } from './core/rol.guard';
 
 export const routes: Routes = [
   {
@@ -16,6 +17,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./core/shell').then((m) => m.Shell),
     children: [
+      {
+        path: 'metricas',
+        canActivate: [soloAdmin],
+        loadComponent: () => import('./features/metricas/metricas.page').then((m) => m.MetricasPage),
+      },
       {
         path: 'tickets',
         loadComponent: () => import('./features/tickets/bandeja.page').then((m) => m.BandejaPage),
