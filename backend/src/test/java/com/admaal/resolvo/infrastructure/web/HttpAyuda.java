@@ -51,8 +51,8 @@ final class HttpAyuda {
     for (String[] fila : new String[][] {{agente, "AGENTE"}, {cliente, "CLIENTE"}}) {
       jdbc.update(
           """
-          insert into usuario (id, organizacion_id, email, rol, hash_contrasena, fallos_seguidos)
-          values (?, ?, ?, ?, ?, 0)
+          insert into usuario (id, organizacion_id, email, rol, hash_contrasena)
+          values (?, ?, ?, ?, ?)
           """,
           UUID.randomUUID(),
           org,

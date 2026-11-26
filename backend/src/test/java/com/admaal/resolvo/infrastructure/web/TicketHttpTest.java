@@ -352,8 +352,8 @@ class TicketHttpTest {
             "cliente@acme.test");
     jdbc.update(
         """
-        insert into usuario (id, organizacion_id, email, rol, hash_contrasena, fallos_seguidos)
-        values (?, '11111111-1111-1111-1111-111111111111', ?, 'CLIENTE', ?, 0)
+        insert into usuario (id, organizacion_id, email, rol, hash_contrasena)
+        values (?, '11111111-1111-1111-1111-111111111111', ?, 'CLIENTE', ?)
         """,
         usuario,
         "otro-" + usuario + "@acme.test",
@@ -400,8 +400,8 @@ class TicketHttpTest {
     jdbc.update("insert into organizacion (id, nombre) values (?, 'Beta')", org);
     jdbc.update(
         """
-        insert into usuario (id, organizacion_id, email, rol, hash_contrasena, fallos_seguidos)
-        values (?, ?, ?, 'CLIENTE', ?, 0)
+        insert into usuario (id, organizacion_id, email, rol, hash_contrasena)
+        values (?, ?, ?, 'CLIENTE', ?)
         """,
         usuario,
         org,
