@@ -403,5 +403,48 @@ Invoke-Case "Test-FastRunsDefaultOnlyForUnmatchedRoute" {
   if (($none -join ",") -ne "test") { throw "sin rutas debe correr solo la suite por defecto: $($none -join ',')" }
 }
 
+function Set-RedCommand($fx, [string]$command) {
+  # La plantilla de la valla no trae RedCommand: el caso lo anade tras el bloque de config.
+  $gatesPath = Join-Path (Join-Path $fx.Repo "scripts") "gates.ps1"
+  $text = [System.IO.File]::ReadAllText($gatesPath)
+  $needle = '$DomainPaths = @("src/domain/")'
+  if (-not $text.Contains($needle)) { throw "no encontre DomainPaths" }
+  $escaped = $command.Replace('"', '`"')
+  [System.IO.File]::WriteAllText($gatesPath, $text.Replace($needle, $needle + "`n`$RedCommand = `"$escaped`""))
+}
+
+Invoke-Case "Test-RedAnotaLaLineaConModoRedSiElTestFalla" {
+  param($fxRef)
+  $fxRef.Value = New-Fixture "pit" ""
+  $fail = if ($onWindows) { "cmd /c exit 1" } else { "sh -c 'exit 1'" }
+  Set-RedCommand $fxRef.Value $fail
+  $run = Run-Gates $fxRef.Value "red" @("backend/src/test/java/com/x/FooTest.java")
+  if ($run.Code -ne 0) { throw "un RED confirmado debe salir 0. Salida: $($run.Output)" }
+  $red = Join-Path (Join-Path $fxRef.Value.Repo ".cursor") "red.log"
+  if (-not (Test-Path $red)) { throw "no escribio red.log. Salida: $($run.Output)" }
+  $line = Get-Content -Path $red -Raw
+  if ($line -notmatch ' red \S+ RED backend/src/test/java/com/x/FooTest.java exit=1') { throw "linea inesperada: $line" }
+}
+
+Invoke-Case "Test-RedNoAnotaNadaSiElTestPasa" {
+  param($fxRef)
+  $fxRef.Value = New-Fixture "pit" ""
+  $ok = if ($onWindows) { "cmd /c exit 0" } else { "true" }
+  Set-RedCommand $fxRef.Value $ok
+  $run = Run-Gates $fxRef.Value "red" @("backend/src/test/java/com/x/FooTest.java")
+  if ($run.Code -eq 0) { throw "un test en verde no es un RED: debe salir 1" }
+  $red = Join-Path (Join-Path $fxRef.Value.Repo ".cursor") "red.log"
+  if ((Test-Path $red) -and ((Get-Content -Path $red -Raw) -match 'FooTest')) { throw "anoto un RED que no existe" }
+}
+
+Invoke-Case "Test-RedPasaLaClaseJavaAlComando" {
+  param($fxRef)
+  $fxRef.Value = New-Fixture "pit" ""
+  $echo = if ($onWindows) { "echo CLASE={clase} & exit /b 1" } else { "echo CLASE={clase}; exit 1" }
+  Set-RedCommand $fxRef.Value $echo
+  $run = Run-Gates $fxRef.Value "red" @("backend/src/test/java/com/x/FooTest.java")
+  if ($run.Output -notmatch 'CLASE=com\.x\.FooTest') { throw "no paso la clase. Salida: $($run.Output)" }
+}
+
 if ($script:failed -gt 0) { exit 1 }
 exit 0
