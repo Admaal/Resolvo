@@ -38,6 +38,7 @@ resolvo:
     timeout-segundos: 15
     max-intentos: 3
     # Nivel de razonamiento de los modelos Gemini 3 (minimal, low, medium o high; vacio, el del
-    # modelo). Menos razonamiento es menos latencia y menos tokens de salida: clasificar y redactar
-    # con citas no necesitan pensar mucho. Medido con los evals (ADR-0011).
-    razonamiento: ${RESOLVO_GEMINI_RAZONAMIENTO:low}
+    # modelo). Se deja el del modelo: con low los evals del 2026-11-26 bajaron la cita de la fuente
+    # esperada del 90 % al 83 % (fallaban los tickets resueltos como fuente) y el p95 solo paso de
+    # 6,1 a 5,5 s, con otro modelo elegido por el sondeo (runs 45811692821 y 45813572386, ADR-0011).
+    razonamiento: ${RESOLVO_GEMINI_RAZONAMIENTO:}
