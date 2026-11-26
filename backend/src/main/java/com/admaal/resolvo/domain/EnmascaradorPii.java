@@ -6,20 +6,24 @@ import java.util.regex.Pattern;
 
 /**
  * Sustituye datos personales del texto por marcadores antes de mandarlo a un proveedor externo.
- * Cubre emails, IBAN, tarjetas (con Luhn), DNI/NIE (con la letra de control) y telefonos
- * espanoles. No toca UUIDs, codigos de ticket ni fechas.
+ * Cubre emails, IBAN, tarjetas (con Luhn), DNI/NIE (con la letra de control, tambien con guion o
+ * espacio) y telefonos espanoles (con espacios, guiones o puntos, y prefijo +34 o 0034). No toca
+ * UUIDs, codigos de ticket ni fechas.
  */
 public final class EnmascaradorPii {
 
   private static final Pattern EMAIL = Pattern.compile("[\\w.+-]+@[\\w-]+(?:\\.[\\w-]+)+");
-  // Solo IBAN de digitos (el espanol y similares); en mayusculas, para no comerse palabras.
+  // Solo IBAN de digitos (el espanol y similares), en mayusculas o minusculas: pide al menos 16
+  // digitos detras de las dos letras, asi que no se come palabras.
   private static final Pattern IBAN =
-      Pattern.compile("(?<!\\w)[A-Z]{2}\\d{2}(?: ?\\d{4}){4,6}(?: ?\\d{1,4})?(?!\\w)");
+      Pattern.compile(
+          "(?<!\\w)[A-Z]{2}\\d{2}(?: ?\\d{4}){4,6}(?: ?\\d{1,4})?(?!\\w)", Pattern.CASE_INSENSITIVE);
   private static final Pattern TARJETA = Pattern.compile("(?<![\\w-])\\d(?:[ -]?\\d){12,18}(?![\\w-])");
   private static final Pattern DOCUMENTO =
-      Pattern.compile("(?<![\\w-])[XYZ]?\\d{7,8}[A-Z](?![\\w-])", Pattern.CASE_INSENSITIVE);
+      Pattern.compile(
+          "(?<![\\w-])(?:[XYZ]-?\\d{7}|\\d{8})[ -]?[A-Z](?![\\w-])", Pattern.CASE_INSENSITIVE);
   private static final Pattern TELEFONO =
-      Pattern.compile("(?<![\\w-])(?:\\+34[ -]?)?[6-9](?:[ -]?\\d){8}(?![\\w-])");
+      Pattern.compile("(?<![\\w-])(?:(?:\\+|00)34[ .-]?)?[6-9](?:[ .-]?\\d){8}(?![\\w-])");
   private static final String LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE";
 
   private EnmascaradorPii() {}
@@ -67,7 +71,7 @@ public final class EnmascaradorPii {
   }
 
   private static boolean letraDeDocumentoValida(String documento) {
-    String mayusculas = documento.toUpperCase();
+    String mayusculas = documento.toUpperCase().replaceAll("[ -]", "");
     char inicial = mayusculas.charAt(0);
     String numero = mayusculas.substring(0, mayusculas.length() - 1);
     if (inicial == 'X' || inicial == 'Y' || inicial == 'Z') {
