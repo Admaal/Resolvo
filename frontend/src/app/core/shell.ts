@@ -58,6 +58,12 @@ function capitalizar(texto: string): string {
           }
         </nav>
         <div class="sidebar-pie">
+          @if (esAdmin()) {
+            <a class="btn fantasma" routerLink="/metricas" [attr.aria-current]="activa() === 'metricas' ? 'page' : null">
+              <rs-icono nombre="chart" />
+              <span class="nombre">Métricas de IA</span>
+            </a>
+          }
           <p class="rol"><rs-icono nombre="user-check" />{{ rol() }}</p>
           <button class="btn fantasma tema" type="button" (click)="tema()">
             <rs-icono [nombre]="oscuro() ? 'sun' : 'moon'" />
@@ -82,6 +88,7 @@ export class Shell {
   readonly oscuro = signal(document.documentElement.dataset['theme'] !== 'light');
   protected readonly contadores = this.store.contadores;
   protected readonly rol = computed(() => capitalizar(this.auth.rol() ?? ''));
+  protected readonly esAdmin = computed(() => this.auth.rol() === 'ADMIN');
   protected readonly items = computed(() => ITEMS.filter((item) => !item.soloEquipo || this.auth.rol() !== 'CLIENTE'));
 
   private readonly url = toSignal(
@@ -93,9 +100,10 @@ export class Shell {
   );
 
   /** La vista (o «nuevo») que corresponde a la URL actual, también al ver un ticket. */
-  protected readonly activa = computed<Vista | 'nuevo' | null>(() => {
+  protected readonly activa = computed<Vista | 'nuevo' | 'metricas' | null>(() => {
     const arbol = this.router.parseUrl(this.url());
     const segmentos = arbol.root.children['primary']?.segments.map((segmento) => segmento.path) ?? [];
+    if (segmentos[0] === 'metricas') return 'metricas';
     if (segmentos[0] !== 'tickets') return null;
     if (segmentos[1] === 'nuevo') return 'nuevo';
     const vista = arbol.queryParams['vista'];

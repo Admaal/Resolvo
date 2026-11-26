@@ -134,3 +134,5 @@
 2026-11-26T13:48:38 fast 4275b3b73e65213835c2c6e192ea7bb85665a58a RED backend/src/test/java/com/admaal/resolvo/domain/EnmascaradorPiiTest.java exit=1
 2026-11-26T13:52:27 manual 4275b3b73e65213835c2c6e192ea7bb85665a58a RED backend/src/test/java/com/admaal/resolvo/infrastructure/persistencia/PresupuestoJdbcTest.java exit=1
 2026-11-26T14:51:14 red 54b1ec9d5dfae9a95b8f770cb15f8cdf75a6c030 RED backend/src/test/java/com/admaal/resolvo/evals/CasosDeEvalTest.java exit=1
+2026-11-26T15:56:42 fast e8fe2438fbeb1b9c785639723ec3cf33ebc925aa RED frontend/src/app/features/metricas/metricas.page.spec.ts exit=1
+2026-11-26T15:59:41 fast e8fe2438fbeb1b9c785639723ec3cf33ebc925aa RED frontend/src/app/features/metricas/metricas.page.spec.ts exit=1
