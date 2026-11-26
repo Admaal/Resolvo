@@ -68,7 +68,9 @@ jobs:
           exit 1
       - name: Dependencias de la SPA
         working-directory: frontend
-        run: npm ci
+        run: |
+          npm install --global npm@11.6.2
+          npm ci
       - name: Navegador de Playwright
         working-directory: frontend
         run: npx playwright install --with-deps chromium
