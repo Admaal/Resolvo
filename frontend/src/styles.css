@@ -709,7 +709,10 @@
   .maqueta-ia p { margin: 0; }
   .maqueta-botones { display: flex; gap: var(--space-2); }
   /* En pantallas estrechas la maqueta enseña solo la bandeja: dos columnas no caben sin cortar. */
+  /* En la portada, los tres accesos van en fila o en columna, nunca dos arriba y uno suelto. */
+  .heroe .accesos-demo { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   @media (max-width: 40rem) {
+    .heroe .accesos-demo { grid-template-columns: minmax(0, 1fr); }
     .maqueta { grid-template-columns: minmax(0, 1fr); }
     .maqueta-lista { border-inline-end: 0; }
     .maqueta-ia { display: none; }
