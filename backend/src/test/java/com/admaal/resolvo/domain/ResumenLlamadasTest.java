@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -23,7 +24,7 @@ class ResumenLlamadasTest {
     return new LlamadaIa(UUID.randomUUID(), acme, operacion, modelo, 0, 0, ms, false, AHORA);
   }
 
-  private static Optional<Tarifa> sinTarifas(String modelo) {
+  private static Optional<Tarifa> sinTarifas(String modelo, LocalDate dia) {
     return Optional.empty();
   }
 
@@ -139,7 +140,8 @@ class ResumenLlamadasTest {
             llamada("sugerir", "m1", 1_000, 500, 1_000), llamada("sugerir", "m1", 2_000, 0, 1_000));
 
     ResumenLlamadas resumen =
-        ResumenLlamadas.de(llamadas, modelo -> "m1".equals(modelo) ? Optional.of(tarifa) : Optional.empty());
+        ResumenLlamadas.de(
+            llamadas, (modelo, dia) -> "m1".equals(modelo) ? Optional.of(tarifa) : Optional.empty());
 
     // 3000 entrada a 0,10 USD por millon + 500 salida a 0,40 USD por millon
     assertThat(resumen.filas().get(0).costeUsd()).isEqualByComparingTo("0.0005");
@@ -153,10 +155,34 @@ class ResumenLlamadasTest {
     Tarifa tarifa = new Tarifa("m1", new BigDecimal("0.10"), new BigDecimal("0.40"));
 
     ResumenLlamadas resumen =
-        ResumenLlamadas.de(llamadas, modelo -> "m1".equals(modelo) ? Optional.of(tarifa) : Optional.empty());
+        ResumenLlamadas.de(
+            llamadas, (modelo, dia) -> "m1".equals(modelo) ? Optional.of(tarifa) : Optional.empty());
 
     assertThat(resumen.filas().get(0).costeUsd()).isNotNull();
     assertThat(resumen.filas().get(1).costeUsd()).isNull();
     assertThat(resumen.costeUsd()).isNull();
+  }
+
+  @Test
+  void cadaLlamadaPagaLaTarifaVigenteElDiaEnQueOcurrio() {
+    Tarifa vieja = new Tarifa("m1", new BigDecimal("1"), new BigDecimal("0"));
+    Tarifa nueva = new Tarifa("m1", new BigDecimal("2"), new BigDecimal("0"));
+    LocalDate cambio = LocalDate.parse("2027-01-01");
+    List<LlamadaIa> llamadas =
+        List.of(
+            new LlamadaIa(
+                UUID.randomUUID(), acme, "sugerir", "m1", 1_000_000, 0, 10, true,
+                Instant.parse("2026-12-31T23:59:00Z")),
+            new LlamadaIa(
+                UUID.randomUUID(), acme, "sugerir", "m1", 1_000_000, 0, 10, true,
+                Instant.parse("2027-01-01T00:01:00Z")));
+
+    ResumenLlamadas resumen =
+        ResumenLlamadas.de(
+            llamadas, (modelo, dia) -> Optional.of(dia.isBefore(cambio) ? vieja : nueva));
+
+    // Un millon de tokens a 1 USD el 31 de diciembre y otro millon a 2 USD el 1 de enero
+    assertThat(resumen.filas()).hasSize(1);
+    assertThat(resumen.costeUsd()).isEqualByComparingTo("3");
   }
 }

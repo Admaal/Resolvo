@@ -59,8 +59,8 @@ resolvo:
     # Precios de lista en USD por millon de tokens, nivel de pago estandar, de la pagina oficial de
     # precios de Gemini (fuente y fecha en cada entrada). Con el nivel gratuito la factura real es 0:
     # esto es lo que costaria a precio de lista. Los alias "latest" y los modelos sin precio publicado
-    # no figuran: su coste queda desconocido (nulo), nunca 0. gemini-3.8-flash y gemini-3.6-flash cuestan el doble desde
-    # el 2027-01-01 (1,50 de entrada y 7,50 de salida).
+    # no figuran: su coste queda desconocido (nulo), nunca 0. Una entrada con "desde" vale a partir de
+    # ese dia (UTC); sin "desde", desde siempre. Cada llamada paga la tarifa vigente el dia en que ocurrio.
     tarifas:
       - modelo: gemini-3.5-flash-lite
         entrada-usd-por-millon: 0.30
@@ -77,11 +77,23 @@ resolvo:
         salida-usd-por-millon: 3.75
         fuente: https://aistudio.google.com/docs/pricing
         fecha: 2026-11-19
+      - modelo: gemini-3.8-flash
+        entrada-usd-por-millon: 1.50
+        salida-usd-por-millon: 7.50
+        fuente: https://aistudio.google.com/docs/pricing
+        fecha: 2026-11-26
+        desde: 2027-01-01
       - modelo: gemini-3.6-flash
         entrada-usd-por-millon: 0.75
         salida-usd-por-millon: 3.75
         fuente: https://aistudio.google.com/docs/pricing
         fecha: 2026-11-19
+      - modelo: gemini-3.6-flash
+        entrada-usd-por-millon: 1.50
+        salida-usd-por-millon: 7.50
+        fuente: https://aistudio.google.com/docs/pricing
+        fecha: 2026-11-26
+        desde: 2027-01-01
       - modelo: gemini-2.5-flash-lite
         entrada-usd-por-millon: 0.10
         salida-usd-por-millon: 0.40

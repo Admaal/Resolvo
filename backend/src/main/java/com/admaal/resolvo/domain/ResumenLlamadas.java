@@ -1,6 +1,8 @@
 package com.admaal.resolvo.domain;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -8,7 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 /**
  * Lo que costaron y tardaron las llamadas a la IA, por operacion y modelo. El coste es a precio de
@@ -39,7 +41,7 @@ public record ResumenLlamadas(List<Fila> filas) {
   }
 
   public static ResumenLlamadas de(
-      List<LlamadaIa> llamadas, Function<String, Optional<Tarifa>> tarifas) {
+      List<LlamadaIa> llamadas, BiFunction<String, LocalDate, Optional<Tarifa>> tarifas) {
     Map<List<String>, List<LlamadaIa>> grupos = new LinkedHashMap<>();
     llamadas.stream()
         .sorted(Comparator.comparing(LlamadaIa::operacion).thenComparing(LlamadaIa::modelo))
@@ -51,12 +53,15 @@ public record ResumenLlamadas(List<Fila> filas) {
                     .add(llamada));
     List<Fila> filas = new ArrayList<>();
     grupos.forEach(
-        (clave, grupo) -> filas.add(fila(clave.get(0), clave.get(1), grupo, tarifas.apply(clave.get(1)))));
+        (clave, grupo) -> filas.add(fila(clave.get(0), clave.get(1), grupo, tarifas)));
     return new ResumenLlamadas(filas);
   }
 
   private static Fila fila(
-      String operacion, String modelo, List<LlamadaIa> grupo, Optional<Tarifa> tarifa) {
+      String operacion,
+      String modelo,
+      List<LlamadaIa> grupo,
+      BiFunction<String, LocalDate, Optional<Tarifa>> tarifas) {
     long entrada = grupo.stream().mapToLong(LlamadaIa::tokensEntrada).sum();
     long salida = grupo.stream().mapToLong(LlamadaIa::tokensSalida).sum();
     List<Long> duraciones = new ArrayList<>(grupo.stream().map(LlamadaIa::milisegundos).toList());
@@ -70,7 +75,25 @@ public record ResumenLlamadas(List<Fila> filas) {
         salida,
         percentil(duraciones, 0.50),
         percentil(duraciones, 0.95),
-        tarifa.map(t -> t.coste(entrada, salida)).orElse(null));
+        coste(grupo, tarifas));
+  }
+
+  /**
+   * Cada llamada paga la tarifa vigente el dia (UTC) en que ocurrio: un precio que cambia a mitad
+   * del periodo no se aplica hacia atras. Nulo si alguna llamada no tiene tarifa.
+   */
+  private static BigDecimal coste(
+      List<LlamadaIa> grupo, BiFunction<String, LocalDate, Optional<Tarifa>> tarifas) {
+    BigDecimal total = BigDecimal.ZERO;
+    for (LlamadaIa llamada : grupo) {
+      LocalDate dia = LocalDate.ofInstant(llamada.ocurridaEn(), ZoneOffset.UTC);
+      Optional<Tarifa> tarifa = tarifas.apply(llamada.modelo(), dia);
+      if (tarifa.isEmpty()) {
+        return null;
+      }
+      total = total.add(tarifa.get().coste(llamada.tokensEntrada(), llamada.tokensSalida()));
+    }
+    return total;
   }
 
   /** Rango mas cercano: el menor valor que deja al menos esa fraccion de las muestras por debajo. */
