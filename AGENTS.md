@@ -26,7 +26,7 @@ Lo que hay que saber antes de tocar nada:
 - Casos de uso: `backend/src/main/java/com/admaal/resolvo/application/` (solo depende de `domain` y de sus puertos).
 - Adapters: `backend/src/main/java/com/admaal/resolvo/infrastructure/` (JPA, JDBC y pgvector, Flyway, JWT, HTTP y `ai/` con Spring AI).
 - Lint de pureza: ArchUnit, en `backend/src/test/java/com/admaal/resolvo/architecture/`.
-- Frontend: Angular 22.2.5 standalone, Angular Material y Vitest, en `frontend/`. El access token vive en un campo de `AuthService`. El panel de sugerencias (`features/tickets/sugerencia-panel.ts`) solo se pinta a AGENTE y ADMIN.
+- Frontend: Angular 22.2.5 standalone con controles nativos y estilos propios (sin Angular Material ni CDK desde el 2026-11-26) y Vitest, en `frontend/`. El access token vive en un campo de `AuthService`. El panel de sugerencias (`features/tickets/sugerencia-panel.ts`) solo se pinta a AGENTE y ADMIN.
 - Guía web: el repo declara el plugin `modern-web-guidance@googlechrome` (skills de Chrome para agentes; `.claude/settings.json`). This project's Baseline target is Baseline Widely available. Antes de tocar CSS, HTML o formularios del frontend, consultar `npx modern-web-guidance@latest search "<tema>"` y `retrieve <id>`; `legacy-scan frontend/src` busca patrones antiguos. Lo visual lo decide [docs/design.md](docs/design.md); los tokens viven en `frontend/src/styles/` (`tokens.css`, `semantic.css`, `themes.css`).
 
 ## Principios no negociables
