@@ -102,4 +102,29 @@ class EnmascaradorPiiTest {
     assertThat(EnmascaradorPii.enmascarar("Y1234567X")).isEqualTo("[DNI]");
     assertThat(EnmascaradorPii.enmascarar("Z1234567R")).isEqualTo("[DNI]");
   }
+
+  @Test
+  void tapaDniYNieConGuionOEspacioAntesDeLaLetra() {
+    assertThat(EnmascaradorPii.enmascarar("DNI 12345678-Z y 12345678 Z")).isEqualTo("DNI [DNI] y [DNI]");
+    assertThat(EnmascaradorPii.enmascarar("NIE X-1234567-L")).isEqualTo("NIE [DNI]");
+  }
+
+  @Test
+  void unDniConGuionYLetraIncorrectaNoSeTapa() {
+    assertThat(EnmascaradorPii.enmascarar("Ref 12345678-A")).isEqualTo("Ref 12345678-A");
+  }
+
+  @Test
+  void tapaTelefonosConPuntosOConPrefijo0034() {
+    assertThat(EnmascaradorPii.enmascarar("Tel 612.345.678 o 91.234.56.78"))
+        .isEqualTo("Tel [TELEFONO] o [TELEFONO]");
+    assertThat(EnmascaradorPii.enmascarar("Tel 0034 612 345 678 y 0034612345678"))
+        .isEqualTo("Tel [TELEFONO] y [TELEFONO]");
+  }
+
+  @Test
+  void tapaUnIbanEnMinusculas() {
+    assertThat(EnmascaradorPii.enmascarar("iban es91 2100 0418 4502 0005 1332 fin"))
+        .isEqualTo("iban [IBAN] fin");
+  }
 }
