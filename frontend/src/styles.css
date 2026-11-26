@@ -685,7 +685,6 @@
   .heroe .cta .ayuda { margin: var(--space-3) 0 0; }
 
   .maqueta {
-    container: maqueta / inline-size;
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     margin: var(--space-12) auto 0;
@@ -698,20 +697,23 @@
     overflow: hidden;
     user-select: none;
   }
-  @container maqueta (max-width: 36rem) { .maqueta-ia { display: none; } }
   .maqueta-lista { border-inline-end: 1px solid var(--border-1); }
   .maqueta-ia { padding: var(--space-4); background: var(--bg-2); display: flex; flex-direction: column; gap: var(--space-2); }
   .maqueta-titulo { display: flex; align-items: center; gap: var(--space-1_5); margin: 0; padding: var(--space-3) var(--space-4); border-block-end: 1px solid var(--border-1); font-weight: 600; }
   .maqueta-ia .maqueta-titulo { padding: 0 0 var(--space-2); border: 0; color: var(--ai); }
   .maqueta-grupo { display: flex; align-items: center; gap: var(--space-1_5); padding: var(--space-1_5) var(--space-4); border-block-end: 1px solid var(--border-1); font-size: var(--fs-mini); font-weight: 600; color: var(--text-2); }
   .maqueta-grupo span { color: var(--text-3); font-weight: 400; }
-  .maqueta-fila { display: flex; gap: var(--space-3); padding: var(--space-2) var(--space-4); border-block-end: 1px solid var(--border-1); line-height: 1.8; }
-  .maqueta-fila rs-estado { margin-block-start: 0.35rem; }
+  .maqueta-fila { display: flex; padding: var(--space-3) var(--space-4); border-block-end: 1px solid var(--border-1); }
   .maqueta-fila.activa { background: var(--bg-5); }
-  .maqueta-fila b { font-family: var(--font-mono); font-weight: 400; color: var(--text-3); font-size: var(--fs-mini); margin-inline-end: var(--space-1_5); }
   .maqueta-borrador { margin: 0; padding: var(--space-3); background: var(--bg-1); border: 1px solid var(--border-2); border-radius: var(--radius-md); color: var(--text-2); }
   .maqueta-ia p { margin: 0; }
   .maqueta-botones { display: flex; gap: var(--space-2); }
+  /* En pantallas estrechas la maqueta enseña solo la bandeja: dos columnas no caben sin cortar. */
+  @media (max-width: 40rem) {
+    .maqueta { grid-template-columns: minmax(0, 1fr); }
+    .maqueta-lista { border-inline-end: 0; }
+    .maqueta-ia { display: none; }
+  }
 
   .valor { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: var(--space-4); padding-block: var(--space-8); }
   .valor article { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4); background: var(--bg-1); border: 1px solid var(--border-1); border-radius: var(--radius-md); }

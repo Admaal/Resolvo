@@ -53,17 +53,40 @@ import { Icono } from '../../shared/icono';
               <p class="maqueta-titulo">Todos los tickets</p>
               <div class="maqueta-grupo"><rs-icono nombre="alert" [tam]="12" /> SLA incumplido <span>1</span></div>
               <div class="maqueta-fila">
-                <rs-estado estado="ABIERTO" />
-                <span><b>RS-24</b> No puedo iniciar sesión<br /><span class="chip prioridad-urgente">Urgente</span> <span class="chip sla-incumplido">−1h 45m</span></span>
+                <span class="fila-texto">
+                  <span class="fila-cabecera">
+                    <span class="codigo">RS-24</span>
+                    <span class="sla sla-incumplido"><rs-icono nombre="alert" [tam]="12" />−1h 45m</span>
+                  </span>
+                  <span class="fila-asunto">No puedo iniciar sesión</span>
+                  <span class="fila-meta">
+                    <span class="fila-estado"><rs-estado estado="ABIERTO" /> Abierto</span>
+                    <span class="fila-prioridad prioridad-urgente"><rs-icono nombre="zap" [tam]="12" /> Urgente</span>
+                  </span>
+                </span>
               </div>
               <div class="maqueta-grupo"><rs-icono nombre="inbox" [tam]="12" /> Resto <span>2</span></div>
               <div class="maqueta-fila activa">
-                <rs-estado estado="PENDIENTE" />
-                <span><b>RS-21</b> Factura duplicada<br /><span class="chip prioridad-alta">Alta</span> <span class="chip sla-ok">3h 20m</span></span>
+                <span class="fila-texto">
+                  <span class="fila-cabecera">
+                    <span class="codigo">RS-21</span>
+                    <span class="sla sla-ok"><rs-icono nombre="clock" [tam]="12" />3h 20m</span>
+                  </span>
+                  <span class="fila-asunto">Factura duplicada</span>
+                  <span class="fila-meta">
+                    <span class="fila-estado"><rs-estado estado="PENDIENTE" /> Pendiente</span>
+                    <span class="fila-prioridad prioridad-alta"><rs-icono nombre="zap" [tam]="12" /> Alta</span>
+                  </span>
+                </span>
               </div>
               <div class="maqueta-fila">
-                <rs-estado estado="RESUELTO" />
-                <span><b>RS-18</b> Cambiar datos de la cuenta<br /><span class="chip resuelto">Resuelto</span></span>
+                <span class="fila-texto">
+                  <span class="fila-cabecera"><span class="codigo">RS-18</span></span>
+                  <span class="fila-asunto">Cambiar datos de la cuenta</span>
+                  <span class="fila-meta">
+                    <span class="fila-estado"><rs-estado estado="RESUELTO" /> Resuelto</span>
+                  </span>
+                </span>
               </div>
             </div>
             <div class="maqueta-ia">

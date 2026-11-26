@@ -1,12 +1,20 @@
 # Resolvo
 
+[English version](README.en.md)
+
 Helpdesk B2B multi-tenant para equipos de soporte, hecho en solitario como proyecto de portfolio: la demo pública usa datos ficticios. El producto está en [docs/producto.md](docs/producto.md) y las decisiones técnicas en [docs/adr/](docs/adr/).
 
-**Demo:** https://resolvo-6lc.pages.dev
+**Demo:** https://resolvo-6lc.pages.dev (entra con un clic como Cliente, Agente o Admin)
+
+![Bandeja agrupada por SLA y detalle del ticket, como Agente](docs/img/bandeja.jpg)
+
+| Portada | Asistente con cita de la fuente |
+| --- | --- |
+| ![Portada con los accesos de demo](docs/img/portada.jpg) | ![Clasificación y borrador sugeridos por la IA, con la fuente citada y aprobación humana](docs/img/asistente.jpg) |
 
 ## Qué hace
 
-Un cliente abre un ticket; el equipo lo gestiona con SLA, estados y comentarios (públicos o internos). Cada organización solo ve lo suyo: pedir un recurso ajeno da 404, sin delatar que existe. La IA ayuda, pero nunca decide sola:
+Un cliente abre un ticket; el equipo lo gestiona con SLA, estados y comentarios (públicos o internos). Cada organización solo ve lo suyo, y dentro de ella un cliente solo ve y comenta sus propios tickets: pedir un recurso ajeno da 404, igual que uno inexistente, sin delatar que existe. La bandeja se agrupa por urgencia de SLA, se navega con `J`/`K` y los tickets se abren por su código (`/tickets/RS-3`). Un agente puede ocultar un comentario con motivo (spam, ofensivo, otro) y solo un admin lo restaura; nada se borra. La sesión se renueva sola cuando caduca el token de 15 minutos. La IA ayuda, pero nunca decide sola:
 
 - **Sugerencia de respuesta con citas (RAG).** Busca en los artículos de ayuda y los tickets resueltos de la propia organización (pgvector, búsqueda exacta) y redacta un borrador que cita sus fuentes. Un agente lo edita y lo aprueba; hasta entonces no sale nada al cliente.
 - **Clasificación sugerida.** Propone categoría y prioridad; la persona la corrige y la aplica (recalcula el SLA) o la descarta.
@@ -24,7 +32,9 @@ Todo lo que llega al modelo viene de un tercero, así que se trata como dato hos
 
 ## Cómo se construye
 
-Monolito modular hexagonal (Java 21, Spring Boot 3.5): `domain` y `application` no importan Spring ni JPA y lo comprueba ArchUnit en el gate ([ADR-0002](docs/adr/0002-arquitectura.md)). Cada clase nueva de esas capas nace con un test en rojo y PIT exige un 80 % de mutantes muertos; hooks y CI llaman al mismo script ([ADR-0010](docs/adr/0010-tests-y-valla.md), [AGENTS.md](AGENTS.md)). El historial de fases está en [docs/fases.md](docs/fases.md).
+Monolito modular hexagonal (Java 21, Spring Boot 3.5, Angular 22): `domain` y `application` no importan Spring ni JPA y lo comprueba ArchUnit en el gate ([ADR-0002](docs/adr/0002-arquitectura.md)). Cada clase nueva de esas capas nace con un test en rojo y PIT exige un 80 % de mutantes muertos (la última medición, por encima del 95 %); los tests de integración corren contra Postgres real con Testcontainers. Hooks y CI llaman al mismo script y `main` solo acepta PRs con el check `Gate obligatorio` en verde ([ADR-0010](docs/adr/0010-tests-y-valla.md), [AGENTS.md](AGENTS.md)). El historial de fases está en [docs/fases.md](docs/fases.md) y la dirección visual en [docs/design.md](docs/design.md).
+
+Límites conocidos, a propósito o pendientes: no hay tests end to end de navegador (la SPA se cubre con tests de componente y comprobaciones a mano en la demo); los límites de uso viven en memoria porque Render Free corre una sola instancia; y la latencia de la IA depende del modelo gratuito de Google (p95 de los evals entre 1,5 y 12,7 s según la corrida).
 
 ```mermaid
 flowchart LR
@@ -95,8 +105,14 @@ El log de arranque dice qué modelos responden y en cuánto tiempo (`Gemini sond
    | `RESOLVO_IA_LLAMADAS_DIA` / `RESOLVO_IA_TOKENS_DIA` | opcionales: presupuesto diario de IA por organización (200 y 300000) |
    | `RESOLVO_PROXY_CLAVE` | clave compartida con la Pages Function (la misma que el secreto `PROXY_CLAVE` de Pages: `npx wrangler pages secret put PROXY_CLAVE --project-name resolvo`); sin ella el límite de login cuenta a todos los clientes como uno |
    | `RESOLVO_LIMITE_IA_POR_MINUTO` / `RESOLVO_LIMITE_LOGIN_FALLOS` | opcionales: peticiones de IA por usuario y minuto (10) y fallos de login por 15 min (5) |
+   | `RESOLVO_LIMITE_COMENTARIOS_POR_MINUTO` | opcional: comentarios por usuario y minuto (10) |
+   | `RESOLVO_DEMO_PURGAR_COMENTARIOS` | `true` en la demo pública: borra al arrancar y cada 24 h los comentarios de visitantes de más de 24 h (los de la semilla se conservan) |
 
 3. **Cloudflare Pages:** proyecto `resolvo` de subida directa (no está conectado a Git). El workflow [despliegue.yml](.github/workflows/despliegue.yml) lo despliega cuando cambia `frontend/` en `main` (o a mano desde Actions); necesita los secretos de GitHub `CLOUDFLARE_API_TOKEN` (permiso Cloudflare Pages: Edit) y `CLOUDFLARE_ACCOUNT_ID`, y sin ellos termina en verde sin desplegar. A mano, desde `frontend/`: `npm run build && npx wrangler pages deploy --project-name resolvo --branch main` (con `--branch main`, o sale como preview). Las Pages Functions de `frontend/functions` van en el mismo despliegue. Variable `API_ORIGIN` = URL del servicio de Render (sin barra final), ya definida en `wrangler.toml`.
 4. **Ping:** el workflow [ping.yml](.github/workflows/ping.yml) de GitHub Actions llama cada 5 minutos a `GET <URL de Render>/api/salud`. Ningún otro servicio en Render: 744 h/mes caben en las 750 h del plan.
 
 Los secretos viven solo en las variables de Render y Pages, nunca en el repositorio.
+
+## Licencia
+
+[PolyForm Noncommercial 1.0.0](LICENSE.md).
