@@ -1,5 +1,7 @@
 # Resolvo
 
+[![CI](https://github.com/Admaal/Resolvo/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Admaal/Resolvo/actions/workflows/ci.yml)
+
 [Versión en español](README.md)
 
 A multi-tenant B2B helpdesk for support teams, built solo as a portfolio project. The public demo runs on fictional data. The rest of the documentation is in Spanish: product in [docs/producto.md](docs/producto.md), technical decisions in [docs/adr/](docs/adr/).
