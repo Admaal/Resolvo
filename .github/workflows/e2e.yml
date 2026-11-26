@@ -1,0 +1,87 @@
+name: E2E
+
+# Flujos de punta a punta en el navegador (Playwright) contra la pila real: Postgres con pgvector,
+# la API (jar, sin perfil gemini: la IA responde 503) y la SPA con ng serve. Va aparte de
+# `Gate obligatorio` (enmienda de ADR-0010): tarda unos minutos y no debe frenar cada push.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "backend/src/main/**"
+      - ".github/workflows/e2e.yml"
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: resolvo
+          POSTGRES_USER: resolvo
+          POSTGRES_PASSWORD: resolvo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U resolvo" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+          cache-dependency-path: |
+            backend/gradle/wrapper/gradle-wrapper.properties
+            backend/build.gradle.kts
+            backend/settings.gradle.kts
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Construir la API
+        run: bash backend/gradlew -p backend bootJar --console=plain
+      - name: Arrancar la API
+        env:
+          RESOLVO_JWT_SECRET: e2e-secreto-de-prueba-de-al-menos-32-bytes
+          RESOLVO_DB_URL: jdbc:postgresql://localhost:5432/resolvo
+        run: |
+          nohup java -jar backend/build/libs/*.jar > api.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:8080/api/salud && exit 0
+            sleep 2
+          done
+          cat api.log
+          exit 1
+      - name: Dependencias de la SPA
+        working-directory: frontend
+        run: npm ci
+      - name: Navegador de Playwright
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Playwright
+        working-directory: frontend
+        run: npx playwright test
+      - name: Informe de Playwright
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+            api.log
+          retention-days: 7
