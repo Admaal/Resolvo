@@ -31,7 +31,7 @@ function capitalizar(texto: string): string {
   selector: 'app-shell',
   imports: [RouterOutlet, RouterLink, Icono],
   template: `
-    <div class="shell">
+    <div class="shell" [class.en-ticket]="enTicket()">
       <aside class="sidebar">
         <div class="sidebar-cabecera">
           <a class="marca" routerLink="/tickets" aria-label="Resolvo, ir a la bandeja">
@@ -100,6 +100,12 @@ export class Shell {
     if (segmentos[1] === 'nuevo') return 'nuevo';
     const vista = arbol.queryParams['vista'];
     return VISTAS.includes(vista) ? vista : 'todos';
+  });
+
+  /** Se ve un ticket o el alta: en móvil la barra de vistas se esconde para dejar sitio al hilo y al teclado. */
+  protected readonly enTicket = computed(() => {
+    const segmentos = this.router.parseUrl(this.url()).root.children['primary']?.segments ?? [];
+    return segmentos[0]?.path === 'tickets' && segmentos.length > 1;
   });
 
   tema(): void {
