@@ -7,15 +7,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Limite de peticiones por clave con ventana deslizante, en memoria. Vale para una sola
- * instancia de la API (Render Free corre una). El tiempo lo pone quien llama.
+ * Limite de peticiones por clave con ventana deslizante, en memoria. La API usa el de la base
+ * (LimitesJdbc); este sirve para los tests unitarios y como referencia del comportamiento.
  */
-public final class LimiteDeFrecuencia {
+public final class LimiteDeFrecuencia implements Limite {
 
   /** Con mas claves que esto, cada escritura purga las caducadas. */
   private static final int CLAVES_ANTES_DE_PURGAR = 1000;
-
-  public record Decision(boolean admitida, Duration reintentarEn) {}
 
   private final int maximo;
   private final Duration ventana;
@@ -51,7 +49,7 @@ public final class LimiteDeFrecuencia {
     vigentes.addLast(ahora);
   }
 
-  /** Mira y cuenta en un solo paso: un rechazo no consume cupo. */
+  @Override
   public synchronized Decision admitir(String clave, Instant ahora) {
     Decision decision = comprobar(clave, ahora);
     if (decision.admitida()) {
@@ -60,6 +58,7 @@ public final class LimiteDeFrecuencia {
     return decision;
   }
 
+  @Override
   public synchronized void reiniciar(String clave) {
     marcas.remove(clave);
   }

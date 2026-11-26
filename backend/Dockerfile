@@ -14,9 +14,12 @@ FROM eclipse-temurin:21-jre AS extraer
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 RUN java -Djarmode=tools -jar app.jar extract --destination extraido
-# Archivo CDS para arrancar antes. El entrenamiento no tiene base de datos: si falla,
-# la imagen se construye igual, solo que sin CDS (-Xshare:auto lo ignora).
-RUN java -XX:ArchiveClassesAtExit=extraido/app.jsa \
+# Archivo CDS para arrancar antes. Se entrena desde la misma carpeta y con la misma ruta
+# (app.jar) que usa la imagen final: si el classpath no coincide, la JVM descarta el archivo
+# ("Required classpath entry does not exist"). El entrenamiento no tiene base de datos: si
+# falla, la imagen se construye igual, solo que sin CDS (-Xshare:auto lo ignora).
+WORKDIR /app/extraido
+RUN java -XX:ArchiveClassesAtExit=app.jsa \
       -Dspring.context.exit=onRefresh \
       -Dspring.flyway.enabled=false \
       -Dspring.jpa.hibernate.ddl-auto=none \
@@ -24,7 +27,7 @@ RUN java -XX:ArchiveClassesAtExit=extraido/app.jsa \
       -Dspring.jpa.properties.hibernate.boot.allow_jdbc_metadata_access=false \
       -Dspring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect \
       -DRESOLVO_JWT_SECRET=entrenamiento-cds-no-es-un-secreto-real \
-      -jar extraido/app.jar || echo "Sin CDS: el entrenamiento necesita base de datos."
+      -jar app.jar || echo "Sin CDS: el entrenamiento necesita base de datos."
 
 FROM eclipse-temurin:21-jre
 RUN useradd --system --uid 10001 resolvo
