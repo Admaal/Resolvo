@@ -120,3 +120,5 @@
 2026-11-25T21:11:51 fast ed359a5060dcb6d28331524a5a004db12c3539f7 RED frontend/src/app/features/inicio/inicio.page.spec.ts exit=1
 2026-11-25T21:36:38 manual ed359a5060dcb6d28331524a5a004db12c3539f7 RED backend/src/test/java/com/admaal/resolvo/infrastructure/persistencia/ArticulosJdbcTest.java exit=1
 2026-11-26T10:12:20 fast 0664da4fe9be7e04c4b47af1f92f94a0ecc412d6 RED frontend/src/app/core/shell.spec.ts exit=1
+2026-11-26T12:09:04 manual 42d207d7e58e2909135c388b99781b4f2e92b0a5 RED backend/src/test/java/com/admaal/resolvo/domain/ResumenLlamadasTest.java exit=1
+2026-11-26T12:09:04 manual 42d207d7e58e2909135c388b99781b4f2e92b0a5 RED backend/src/test/java/com/admaal/resolvo/infrastructure/ai/TarifasDeListaTest.java exit=1

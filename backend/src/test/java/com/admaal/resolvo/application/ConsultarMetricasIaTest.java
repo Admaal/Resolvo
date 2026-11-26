@@ -26,7 +26,7 @@ class ConsultarMetricasIaTest {
   private final OrganizacionId otra = new OrganizacionId(UUID.randomUUID());
   private final RegistroLlamadasEnMemoria registro = new RegistroLlamadasEnMemoria();
   private final Tarifas tarifas =
-      modelo ->
+      (modelo, dia) ->
           "m1".equals(modelo)
               ? Optional.of(new Tarifa("m1", new BigDecimal("1"), new BigDecimal("2")))
               : Optional.empty();
