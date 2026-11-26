@@ -8,7 +8,7 @@ Este archivo es la fuente de verdad de la fase, de la valla y de los riesgos abi
 
 **Fases 0 a 6 hechas y desplegadas** (la 6 el 2026-11-19), con pulido posterior hasta el 2026-11-25: rediseño de la SPA, moderación de comentarios, código del ticket en la URL, sesión renovada al caducar el token, visibilidad por autor para el CLIENTE y la auditoría de portfolio. **No hay fase en curso.** Resumen por fase en [docs/fases.md](docs/fases.md); el detalle (qué se comprobó en la demo, RED, verificadores, cifras de cada gate) en [docs/bitacora.md](docs/bitacora.md).
 
-La demo corre en https://resolvo-6lc.pages.dev: SPA en Cloudflare Pages con una Pages Function que hace de proxy `/api` a la API en Render Free (Docker, Frankfurt) y Postgres con pgvector en Neon Free. Migraciones V1 a V9 aplicadas en Neon (V9, artículo semilla del login, el 2026-11-26). Ping cada 5 minutos con GitHub Actions.
+La demo corre en https://resolvo-6lc.pages.dev: SPA en Cloudflare Pages con una Pages Function que hace de proxy `/api` a la API en Render Free (Docker, Frankfurt) y Postgres con pgvector en Neon Free. Migraciones V1 a V11 aplicadas en Neon (V10, sin columnas de bloqueo, y V11, límites de uso, el 2026-11-26 a las 12:08 UTC). Ping cada 5 minutos con GitHub Actions.
 
 Lo que hay que saber antes de tocar nada:
 
@@ -84,7 +84,7 @@ Solo lo que sigue vigente. La historia de cada uno, con fechas, runs y cifras, e
 **Despliegue y operación**
 - `gh` 2.104 está instalado en `C:\Program Files\GitHub CLI` y con sesión como `Admaal`: los PRs, su CI y el merge se hacen con él (`gh pr create`, `gh pr merge --merge`).
 - **Cloudflare Pages no está conectado a Git**: un merge a `main` despliega la API en Render, y la SPA la sube el workflow [despliegue.yml](.github/workflows/despliegue.yml) cuando cambia `frontend/` (secretos `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID`; sin ellos termina en verde sin desplegar). A mano, desde `frontend/`: `npm run build && npx wrangler pages deploy --project-name resolvo --branch main` (sin `--branch main` sale como preview). Necesita `wrangler login`.
-- Arranque en frío en Render de unos 47 s con Spring AI (3 s en local). El archivo CDS no se usaba porque se entrenaba con otra ruta del jar; desde el PR #49 se entrena en `/app/extraido` y en local se carga (5,2 s frente a 8,1 s en Docker). Falta medir el arranque en Render tras desplegarlo. Lo cubre el aviso de la SPA.
+- Arranque en Render con Spring AI de unos 35-40 s (3 s en local), medido el 2026-11-26 con `Started ResolvoApplication in` en seis arranques: entre 34,7 y 39,6 s. Antes del PR #49 iba de 51 a 61 s, porque el archivo CDS no se usaba. A eso se suman unos 2,5 s de JVM y lo que tarde Render en despertar el contenedor. Lo cubre el aviso de la SPA.
 - Los límites de uso (IA, login, comentarios) viven en Postgres desde el PR #52 (`limite_marca`, V11, con cerrojo consultivo por clave): sobreviven a un reinicio y valen con varias instancias. El presupuesto diario suma `llamada_ia`, pero sus reservas en curso siguen en memoria y valen para una sola instancia. `RESOLVO_LIMITE_COMENTARIOS_POR_MINUTO=10` está puesta explícitamente en Render.
 - Tras despliegues seguidos se han visto 502 de `/api/salud` y 500 de un chunk de JS en Pages, pasajeros; sin investigar.
 - El procesador de eventos solo corre dentro de la API: si Render se duerme con eventos pendientes, esperan al siguiente arranque. Una fila `FALLIDO` de `evento_outbox` no se reintenta sola. Revertir el código con eventos `COMENTARIO_MODERADO` pendientes rompería la lectura por tipo desconocido.
